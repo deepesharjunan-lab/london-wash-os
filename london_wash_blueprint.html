@@ -1,0 +1,1115 @@
+<title>London Wash Blueprint</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f2ea;
+  --surface:#fffdf8;
+  --surface-2:#ece5d3;
+  --surface-3:#e2dac4;
+  --ink:#1c2430;
+  --ink-2:#5c6472;
+  --ink-3:#8b8879;
+  --border:#d9d2bb;
+  --border-strong:#c2b99c;
+  --accent:#204d6e;
+  --accent-ink:#ffffff;
+  --accent-soft:#dfe8ee;
+  --brass:#8a6a37;
+  --brass-soft:#f0e6cf;
+  --ok:#2f7a4f;
+  --ok-soft:#e2efe4;
+  --warn:#a2660c;
+  --warn-soft:#f7ecd7;
+  --danger:#a8432b;
+  --danger-soft:#f6e3dc;
+  --shadow: 0 1px 2px rgba(28,36,48,.06), 0 8px 24px -12px rgba(28,36,48,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151b; --surface:#171d25; --surface-2:#1f2731; --surface-3:#2a3340;
+    --ink:#e9e5d8; --ink-2:#a4acb8; --ink-3:#767f8c;
+    --border:#2b3442; --border-strong:#3a4556;
+    --accent:#7fb4da; --accent-ink:#0d1720; --accent-soft:#1d3345;
+    --brass:#d3b06a; --brass-soft:#332a17;
+    --ok:#72c794; --ok-soft:#173225;
+    --warn:#e3ad57; --warn-soft:#332a13;
+    --danger:#e2836a; --danger-soft:#3a231d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171d25; --surface-2:#1f2731; --surface-3:#2a3340;
+  --ink:#e9e5d8; --ink-2:#a4acb8; --ink-3:#767f8c;
+  --border:#2b3442; --border-strong:#3a4556;
+  --accent:#7fb4da; --accent-ink:#0d1720; --accent-soft:#1d3345;
+  --brass:#d3b06a; --brass-soft:#332a17;
+  --ok:#72c794; --ok-soft:#173225;
+  --warn:#e3ad57; --warn-soft:#332a13;
+  --danger:#e2836a; --danger-soft:#3a231d;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px -12px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;}
+body{ background:var(--bg); color:var(--ink); font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif; font-size:15.5px; line-height:1.6; }
+::selection{ background:var(--accent-soft); color:var(--ink); }
+a{ color:var(--accent); }
+h1,h2,h3,h4{ font-family:'Fraunces',Georgia,'Times New Roman',serif; text-wrap:balance; font-weight:600; color:var(--ink); margin:0; }
+code, .mono, .id, table.spec td.mono, .sheetno{ font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace; }
+.wrap{ display:grid; grid-template-columns:272px minmax(0,1fr); gap:0; max-width:1400px; margin:0 auto; }
+.rail{ position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:28px 18px 40px 28px; border-right:1px solid var(--border); background:var(--surface); }
+.rail::-webkit-scrollbar{ width:8px; }
+.rail::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
+.brand{ display:flex; align-items:baseline; gap:8px; margin-bottom:2px; }
+.brand .mark{ width:9px; height:9px; background:var(--accent); border-radius:1px; transform:rotate(45deg); flex:none; }
+.brand-name{ font-family:'Fraunces',serif; font-weight:600; font-size:15px; letter-spacing:.01em; }
+.brand-sub{ font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin:2px 0 22px 17px; }
+.rail nav{ display:flex; flex-direction:column; }
+.rail .group-label{ font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 6px; }
+.rail .group-label:first-of-type{ margin-top:4px; }
+.rail a.tocitem{ display:flex; gap:9px; align-items:baseline; padding:5px 8px; border-radius:5px; text-decoration:none; color:var(--ink-2); font-size:12.6px; line-height:1.35; }
+.rail a.tocitem:hover{ background:var(--surface-2); color:var(--ink); }
+.rail a.tocitem .n{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-3); width:16px; flex:none; }
+.rail a.tocitem.new .n{ color:var(--brass); }
+main{ min-width:0; padding:0 0 120px; }
+.titleblock{ margin:36px 40px 8px; border:1px solid var(--border-strong); background:var(--surface); box-shadow:var(--shadow); }
+.tb-top{ padding:34px 38px 26px; border-bottom:1px solid var(--border); }
+.tb-eyebrow{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--brass); font-weight:600; margin-bottom:14px; }
+.tb-title{ font-size:clamp(28px,4vw,42px); line-height:1.06; max-width:18ch; }
+.tb-tagline{ font-family:'Fraunces',serif; font-style:italic; font-weight:400; color:var(--ink-2); font-size:16px; margin-top:10px; }
+.tb-grid{ display:grid; grid-template-columns:repeat(4,1fr); }
+.tb-cell{ padding:14px 20px; border-right:1px solid var(--border); }
+.tb-cell:last-child{ border-right:none; }
+.tb-cell .k{ font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:5px; }
+.tb-cell .v{ font-family:'IBM Plex Mono',monospace; font-size:13px; }
+.status-chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 9px 3px; border-radius:20px; background:var(--warn-soft); color:var(--warn); font-size:11px; font-weight:600; letter-spacing:.03em; }
+.status-chip::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--warn); }
+.changelog{ margin:0; padding:16px 38px; background:var(--brass-soft); border-top:1px solid var(--border); font-size:12.8px; color:var(--ink); }
+.changelog b{ color:var(--brass); }
+.content{ max-width:820px; margin:0 40px; padding-top:6px; }
+.lede{ font-size:17px; color:var(--ink-2); max-width:64ch; margin:26px 0 8px; }
+.lede strong{ color:var(--ink); }
+section.sheet{ padding:56px 0 8px; border-top:1px solid var(--border); scroll-margin-top:24px; }
+section.sheet:first-of-type{ border-top:none; }
+.sheet-head{ display:flex; gap:20px; align-items:baseline; margin-bottom:6px; }
+.sheetno{ font-size:13px; color:var(--brass); font-weight:600; letter-spacing:.04em; flex:none; padding-top:6px;}
+.sheet-head h2{ font-size:26px; }
+.newtag{ display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-ink); background:var(--accent); padding:2px 7px; border-radius:3px; margin-left:10px; vertical-align:2px; }
+.sheet-kicker{ font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3); margin:0 0 14px 33px; }
+.sheet-body{ margin-left:33px; max-width:66ch; }
+.sheet-body.wide{ max-width:none; }
+.sheet-body p{ margin:0 0 14px; color:var(--ink); }
+.sheet-body p.muted{ color:var(--ink-2); }
+.sheet-body ul, .sheet-body ol{ margin:0 0 16px; padding-left:1.3em; }
+.sheet-body li{ margin-bottom:6px; }
+.sheet-body h4{ font-size:14.5px; margin:22px 0 8px; }
+.decision{ border:1px solid var(--border); background:var(--surface); margin:18px 0 22px; box-shadow:var(--shadow); }
+.decision-head{ display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); }
+.decision-head .name{ font-weight:700; font-size:13.5px; }
+.decision-head .adr{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-3); }
+.decision-body{ padding:16px 18px 6px; }
+.decision-row{ display:grid; grid-template-columns:104px 1fr; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13.5px; }
+.decision-row:first-child{ border-top:none; }
+.decision-row .label{ font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); padding-top:2px; }
+.decision-row .val{ color:var(--ink); }
+.decision-row .val.rec{ color:var(--accent); font-weight:600; }
+table{ border-collapse:collapse; width:100%; font-size:12.8px; }
+.tbl-scroll{ overflow-x:auto; border:1px solid var(--border); margin:6px 0 22px; background:var(--surface); }
+.tbl-scroll table{ min-width:560px; }
+th{ text-align:left; background:var(--surface-2); color:var(--ink-2); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; padding:9px 12px; border-bottom:1px solid var(--border-strong); white-space:nowrap; }
+td{ padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--ink); }
+tr:last-child td{ border-bottom:none; }
+td.mono{ font-family:'IBM Plex Mono',monospace; font-size:11.8px; color:var(--ink-2); white-space:nowrap; }
+td.desc{ color:var(--ink-2); }
+tbody tr:hover td{ background:var(--surface-2); }
+.entity{ border:1px solid var(--border-strong); margin:18px 0; background:var(--surface); box-shadow:var(--shadow); }
+.entity-head{ display:flex; justify-content:space-between; align-items:baseline; padding:10px 16px; background:var(--accent-soft); border-bottom:1px solid var(--border-strong); }
+.entity-head .tname{ font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13.5px; color:var(--accent); }
+.entity-head .purpose{ font-size:11.5px; color:var(--ink-2); text-align:right; max-width:60%; }
+.entity table{ font-size:12.2px; }
+.entity td.flags span{ display:inline-block; font-size:9.5px; padding:1px 6px; border-radius:3px; margin-right:4px; font-weight:600; letter-spacing:.03em; }
+.pk{ background:var(--brass-soft); color:var(--brass); }
+.fk{ background:var(--accent-soft); color:var(--accent); }
+.uq{ background:var(--ok-soft); color:var(--ok); }
+.im{ background:var(--danger-soft); color:var(--danger); }
+.ascii-wrap{ overflow-x:auto; border:1px solid var(--border-strong); background:var(--surface-2); margin:8px 0 22px; }
+pre.ascii{ font-family:'IBM Plex Mono',monospace; font-size:11.3px; line-height:1.5; padding:22px 26px; margin:0; color:var(--ink); white-space:pre; }
+.pillrow{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 20px; }
+.pill{ font-size:11.5px; padding:5px 11px; border:1px solid var(--border-strong); border-radius:20px; background:var(--surface); color:var(--ink-2); }
+.pill b{ color:var(--ink); font-weight:600; }
+.tag{ display:inline-flex; align-items:center; font-size:10.5px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:3px; text-transform:uppercase; }
+.tag.high{ background:var(--danger-soft); color:var(--danger); }
+.tag.med{ background:var(--warn-soft); color:var(--warn); }
+.tag.low{ background:var(--ok-soft); color:var(--ok); }
+.tag.off{ background:var(--surface-3); color:var(--ink-2); }
+.tag.on{ background:var(--ok-soft); color:var(--ok); }
+.phase-grid{ display:grid; grid-template-columns:1fr; gap:0; border:1px solid var(--border); margin:10px 0 22px; }
+.phase-group{ border-bottom:1px solid var(--border); }
+.phase-group:last-child{ border-bottom:none; }
+.phase-group-head{ display:flex; justify-content:space-between; padding:9px 16px; background:var(--surface-2); font-size:11.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-2); }
+.phase-list{ display:grid; grid-template-columns:1fr 1fr; }
+.phase-item{ display:flex; gap:10px; padding:8px 16px; border-top:1px solid var(--border); font-size:12.8px; }
+.phase-item:nth-child(odd){ border-right:1px solid var(--border); }
+.phase-item .pn{ font-family:'IBM Plex Mono',monospace; color:var(--brass); flex:none; width:26px; }
+@media (max-width:700px){ .phase-list{ grid-template-columns:1fr; } .phase-item:nth-child(odd){ border-right:none; } }
+.toggle-demo{ display:flex; align-items:center; gap:12px; border:1px solid var(--border-strong); background:var(--surface); padding:14px 18px; margin:10px 0 20px; box-shadow:var(--shadow); }
+.toggle-demo .sw{ width:38px; height:21px; border-radius:12px; background:var(--surface-3); position:relative; flex:none; border:1px solid var(--border-strong); }
+.toggle-demo .sw::after{ content:""; position:absolute; width:15px; height:15px; border-radius:50%; background:var(--ink-3); top:2px; left:2px; }
+.toggle-demo .tlabel{ font-weight:600; font-size:13px; }
+.toggle-demo .tsub{ font-size:11.5px; color:var(--ink-2); }
+.approval{ margin:60px 0 0; padding:30px 34px; border:1px solid var(--border-strong); background:var(--surface); box-shadow:var(--shadow); }
+.approval h3{ font-size:17px; margin-bottom:10px; }
+.signrow{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; margin-top:22px; border-top:1px solid var(--border); }
+.signcell{ padding:16px 18px 0; }
+.signcell .line{ border-bottom:1px solid var(--ink-3); height:34px; }
+.signcell .lbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-3); margin-top:6px; }
+footer.doc{ margin:50px 40px 40px; padding-top:18px; border-top:1px solid var(--border); font-size:11.5px; color:var(--ink-3); display:flex; justify-content:space-between; }
+@media (max-width:900px){
+  .wrap{ grid-template-columns:1fr; }
+  .rail{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--border); }
+  .content, .titleblock{ margin:24px 18px; }
+  .tb-grid{ grid-template-columns:1fr 1fr; }
+  .sheet-body, .sheet-kicker{ margin-left:0; }
+  .sheet-head{ flex-direction:column; gap:2px; }
+}
+</style>
+
+<div class="wrap">
+  <aside class="rail">
+    <div class="brand"><span class="mark"></span><span class="brand-name">The London Wash</span></div>
+    <div class="brand-sub">Laundry OS &middot; Blueprint</div>
+    <nav>
+      <div class="group-label">Foundations</div>
+      <a class="tocitem" href="#s01"><span class="n">01</span>Technology stack</a>
+      <a class="tocitem" href="#s02"><span class="n">02</span>System diagram</a>
+      <a class="tocitem" href="#s03"><span class="n">03</span>Frontend</a>
+      <a class="tocitem" href="#s04"><span class="n">04</span>Backend</a>
+      <div class="group-label">Data</div>
+      <a class="tocitem" href="#s05"><span class="n">05</span>Database architecture</a>
+      <a class="tocitem new" href="#s06"><span class="n">06</span>Monetary architecture</a>
+      <a class="tocitem" href="#s07"><span class="n">07</span>Entity relationship model</a>
+      <a class="tocitem" href="#s08"><span class="n">08</span>Table specification</a>
+      <div class="group-label">Platform services</div>
+      <a class="tocitem" href="#s09"><span class="n">09</span>API</a>
+      <a class="tocitem" href="#s10"><span class="n">10</span>Authentication</a>
+      <a class="tocitem" href="#s11"><span class="n">11</span>RBAC</a>
+      <a class="tocitem new" href="#s12"><span class="n">12</span>Privileged action approval</a>
+      <a class="tocitem" href="#s13"><span class="n">13</span>Events</a>
+      <a class="tocitem" href="#s14"><span class="n">14</span>Queues &amp; jobs</a>
+      <a class="tocitem" href="#s15"><span class="n">15</span>File storage</a>
+      <div class="group-label">Commerce</div>
+      <a class="tocitem new" href="#s35"><span class="n">35</span>Pricing engine &amp; price lists</a>
+      <div class="group-label">Customer-facing</div>
+      <a class="tocitem" href="#s16"><span class="n">16</span>Notifications</a>
+      <a class="tocitem" href="#s17"><span class="n">17</span>WhatsApp commerce</a>
+      <a class="tocitem" href="#s18"><span class="n">18</span>Payments</a>
+      <div class="group-label">Compliance</div>
+      <a class="tocitem new" href="#s19"><span class="n">19</span>Tax &amp; GST engine</a>
+      <a class="tocitem new" href="#s20"><span class="n">20</span>Privacy &amp; consent</a>
+      <div class="group-label">Intelligence</div>
+      <a class="tocitem" href="#s21"><span class="n">21</span>AI architecture</a>
+      <a class="tocitem" href="#s22"><span class="n">22</span>Automation engine</a>
+      <div class="group-label">Operations</div>
+      <a class="tocitem" href="#s23"><span class="n">23</span>Multi-branch</a>
+      <a class="tocitem" href="#s24"><span class="n">24</span>Hardware abstraction</a>
+      <a class="tocitem" href="#s25"><span class="n">25</span>Security</a>
+      <a class="tocitem" href="#s26"><span class="n">26</span>Backup &amp; recovery</a>
+      <a class="tocitem" href="#s27"><span class="n">27</span>Observability</a>
+      <a class="tocitem" href="#s28"><span class="n">28</span>Testing</a>
+      <a class="tocitem" href="#s29"><span class="n">29</span>Deployment</a>
+      <div class="group-label">Programme</div>
+      <a class="tocitem" href="#s30"><span class="n">30</span>Development phases</a>
+      <a class="tocitem" href="#s31"><span class="n">31</span>Technical risks</a>
+      <a class="tocitem" href="#s32"><span class="n">32</span>Decision log</a>
+      <a class="tocitem" href="#s33"><span class="n">33</span>Assumptions</a>
+      <a class="tocitem" href="#s34"><span class="n">34</span>Future expansion</a>
+      <a class="tocitem" href="#approval" style="margin-top:10px; color:var(--brass);"><span class="n">&#8594;</span>Sign-off</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="titleblock">
+      <div class="tb-top">
+        <div class="tb-eyebrow">Technical Architecture Blueprint</div>
+        <h1 class="tb-title">The London Wash — Laundry Operating System</h1>
+        <div class="tb-tagline">"The Art of Laundry" &mdash; from garment to intelligence</div>
+      </div>
+      <div class="tb-grid">
+        <div class="tb-cell"><div class="k">Document</div><div class="v">LW-OS-ARCH-001</div></div>
+        <div class="tb-cell"><div class="k">Revision</div><div class="v">1.2</div></div>
+        <div class="tb-cell"><div class="k">Prepared</div><div class="v">10 Sep 2026</div></div>
+        <div class="tb-cell"><div class="k">Status</div><div class="v"><span class="status-chip">Approved — Phase 1&ndash;3 in progress</span></div></div>
+      </div>
+      <p class="changelog"><b>Rev 1.1 changes:</b> added a maker-checker Privileged Action Approval workflow (§12), reworked money handling to integer minor units (§06), added a configurable GST/Tax engine defaulting to <b>off</b> (§19), and added a first-class Privacy &amp; Consent module (§20) ahead of India's DPDP Act deadline. <b>Rev 1.2 changes:</b> added a dedicated Pricing Engine &amp; Price Lists sheet (§35) — named, per-customer price list profiles (e.g. Standard Retail vs. Corporate/Hotel) instead of the single flat catalogue Rev 1.0/1.1 implied. New sheets marked <span class="newtag" style="margin-left:0;">new</span> in the index at left.</p>
+    </div>
+
+    <div class="content">
+      <p class="lede">Phase 0 approved; Phases 1&ndash;3 (project foundation, database, auth/RBAC/approval) are underway, with vendor-blocked integrations (WhatsApp BSP, SMS, payment gateway) stubbed behind interfaces pending contracts. This revision adds one addendum sheet: a proper multi-tier pricing engine, so hotels, corporate accounts, and general customers each get their own price list rather than sharing one catalogue.</p>
+
+      <section class="sheet" id="s01">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;01</span><h2>Recommended technology stack</h2></div>
+        <div class="sheet-kicker">Foundations</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0. The stack is chosen for one governing constraint: this system has 90+ configurable business rules that must live in reviewable, testable, versioned code, not scattered across database triggers or a no-code layer.</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>Layer</th><th>Choice</th><th>Version / notes</th></tr>
+            <tr><td>Language</td><td class="mono">TypeScript</td><td class="desc">End-to-end, strict mode — one type system across API, workers, and all three frontends</td></tr>
+            <tr><td>Backend framework</td><td class="mono">NestJS 10</td><td class="desc">Modular monolith — see §04</td></tr>
+            <tr><td>ORM</td><td class="mono">Prisma 5</td><td class="desc">Type-safe queries, declarative migrations — see §05</td></tr>
+            <tr><td>Database</td><td class="mono">PostgreSQL 16</td><td class="desc">System of record; Row-Level Security for branch isolation</td></tr>
+            <tr><td>Cache / queue broker</td><td class="mono">Redis 7</td><td class="desc">Backs BullMQ, rate-limit counters, hot-path caches</td></tr>
+            <tr><td>Job queue</td><td class="mono">BullMQ</td><td class="desc">See §14</td></tr>
+            <tr><td>Realtime</td><td class="mono">Socket.io</td><td class="desc">Production board, order-status pushes, approval alerts</td></tr>
+            <tr><td>Admin / POS frontend</td><td class="mono">Next.js 14 (App Router)</td><td class="desc">Desktop-dense UI for counter, production, management</td></tr>
+            <tr><td>Customer portal</td><td class="mono">Next.js 14, PWA</td><td class="desc">Mobile-first, installable, no native app required for V1</td></tr>
+            <tr><td>Driver app</td><td class="mono">Next.js 14, PWA</td><td class="desc">Offline-tolerant shell for route/stop data</td></tr>
+            <tr><td>UI system</td><td class="mono">Tailwind CSS + shadcn/ui + Radix</td><td class="desc">Accessible primitives, themeable design system — see §03</td></tr>
+            <tr><td>Object storage</td><td class="mono">S3-compatible (Cloudflare R2)</td><td class="desc">Garment photos, damage evidence, proof-of-delivery, invoices</td></tr>
+            <tr><td>AI layer</td><td class="mono">Claude (Anthropic API)</td><td class="desc">Grounded in real data via tool-calling — see §21</td></tr>
+            <tr><td>Messaging</td><td class="mono">WhatsApp Business Platform via BSP</td><td class="desc">See §17</td></tr>
+            <tr><td>Monorepo tooling</td><td class="mono">Turborepo + pnpm workspaces</td><td class="desc">Three frontends, one API, one worker fleet, shared packages</td></tr>
+          </table></div>
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-01 &middot; Modular monolith vs. microservices</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Modular monolith (NestJS modules with enforced boundaries per domain). Extract a service only when a concrete load or team-ownership reason appears.</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s02">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;02</span><h2>System architecture diagram</h2></div>
+        <div class="sheet-kicker">Foundations</div>
+        <div class="sheet-body wide">
+          <p>Four planes: client apps, a single API surface, the Postgres system of record with its outbox, and a worker fleet fanning out to external providers. The approval gate (§12) and consent gate (§20) both sit inside the Core API layer, as checks the relevant modules call through — not separate services.</p>
+          <div class="ascii-wrap"><pre class="ascii">
+┌─────────────────────────────── CLIENT LAYER ────────────────────────────────┐
+│   Admin / POS console        Customer Portal (PWA)        Driver App (PWA)   │
+└─────────────┬───────────────────────┬───────────────────────────┬───────────┘
+              │  HTTPS/REST (JWT)     │  HTTPS/REST + WS          │  HTTPS/REST + WS
+              ▼                       ▼                           ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      EDGE  ·  TLS · rate limit · JWT verify                  │
+└───────────────────────────────────┬──────────────────────────────────────────┘
+                                     ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          CORE API  (NestJS modular monolith)                 │
+│  Customers · Orders · Garments · Workflow · Production · QC · POS · Pricing  │
+│  Loyalty · Membership · Subscriptions · Wallet · Payments · Inventory        │
+│  Staff/Attendance/Payroll · Logistics · Complaints · Settings · Audit        │
+│  ── Approval Gate (§12)         ── Consent Gate (§20)                        │
+│              also hosts: Realtime Gateway (Socket.io)                        │
+└───────┬─────────────────────────────┬─────────────────────────────┬─────────┘
+        ▼                             ▼                             ▼
+┌───────────────────┐      ┌────────────────────┐        ┌───────────────────────┐
+│   PostgreSQL 16     │      │   Redis 7            │        │  AI Copilot Gateway    │
+│   (system of record,│      │   cache + BullMQ      │        │  Claude API, read-only │
+│   RLS per branch)    │      │   job queues          │        │  tool-calling only     │
+│   + event_log table  │      └──────────┬────────────┘        └────────┬──────────────┘
+└──────────┬────────────┘                 │                              │
+           │  outbox relay                 ▼                              │
+           └─────────────────▶ ┌────────────────────────────────────────┴──────┐
+                                │            BACKGROUND WORKER FLEET             │
+                                │  Notification dispatch · WhatsApp send/receive │
+                                │  Analytics roll-up · Forecasting · Route calc  │
+                                │  Subscription renewal · Automation-rule eval   │
+                                └───────┬──────────┬───────────┬────────┬───────┘
+                                        ▼          ▼           ▼        ▼
+                              ┌───────────┐ ┌────────────┐ ┌────────┐ ┌───────────────┐
+                              │ WhatsApp   │ │ Payment     │ │ Object │ │ SMS / Email    │
+                              │ BSP        │ │ Gateway     │ │ Storage│ │ Provider       │
+                              └───────────┘ └────────────┘ └────────┘ └───────────────┘
+          </pre></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s03">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;03</span><h2>Frontend architecture</h2></div>
+        <div class="sheet-kicker">Foundations</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0. Three applications, one monorepo, one design system.</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>App</th><th>Priority</th><th>Device</th><th>Key screens</th></tr>
+            <tr><td class="mono">apps/admin</td><td>Speed, density, error prevention</td><td>Desktop-first, tablet-capable</td><td class="desc">POS, production board, QC queue, dispatch, inventory, staff/payroll, <b>approval inbox</b>, analytics, AI copilot, settings incl. tax toggle</td></tr>
+            <tr><td class="mono">apps/portal</td><td>Trust, simplicity, mobile-first</td><td>Mobile PWA, installable</td><td class="desc">Order tracking, reorder, wallet, loyalty, subscriptions, addresses, invoices, <b>privacy &amp; consent settings</b>, support</td></tr>
+            <tr><td class="mono">apps/driver</td><td>One-handed, offline-tolerant</td><td>Mobile PWA</td><td class="desc">Route, stop detail, OTP, proof-of-delivery, cash collection</td></tr>
+          </table></div>
+          <p>New for this revision: the admin app gains an <b>Approval Inbox</b> (pending requests awaiting the signed-in manager's decision, badge-counted like an email inbox) and the portal gains a <b>Privacy Centre</b> screen (consent toggles per channel, "export my data," "delete my account").</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s04">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;04</span><h2>Backend architecture</h2></div>
+        <div class="sheet-kicker">Foundations</div>
+        <div class="sheet-body wide">
+          <p>Module clusters, updated to add the two new domains:</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>Module cluster</th><th>Owns</th></tr>
+            <tr><td class="mono">identity</td><td class="desc">auth, users, roles, permissions, sessions, audit-log</td></tr>
+            <tr><td class="mono">org</td><td class="desc">organizations, branches, collection-points, locations</td></tr>
+            <tr><td class="mono">crm</td><td class="desc">customers, addresses, family/corporate accounts, notes, tags</td></tr>
+            <tr><td class="mono">catalogue</td><td class="desc">services, categories, <b>price list profiles &amp; entries (§35)</b>, promotions, coupons</td></tr>
+            <tr><td class="mono">orders</td><td class="desc">orders, order items, POS, payments, refunds, wallet</td></tr>
+            <tr><td class="mono">garments</td><td class="desc">garment records, photos, conditions, garment events</td></tr>
+            <tr><td class="mono">workflow</td><td class="desc">workflow definitions, stages, production jobs, machines, QC, reprocessing</td></tr>
+            <tr><td class="mono">logistics</td><td class="desc">pickups, deliveries, drivers, routes, zones, POD, packing/bags</td></tr>
+            <tr><td class="mono">growth</td><td class="desc">loyalty, referrals, membership, subscriptions</td></tr>
+            <tr><td class="mono">supply</td><td class="desc">inventory, stock ledger, suppliers, purchase orders</td></tr>
+            <tr><td class="mono">people</td><td class="desc">employees, attendance, shifts, leave, payroll, incentives</td></tr>
+            <tr><td class="mono">finance</td><td class="desc">expenses, financial accounts, reconciliation</td></tr>
+            <tr><td class="mono governance"><b>governance</b></td><td class="desc"><b>new</b> &mdash; approval rules, approval requests, decision routing (§12)</td></tr>
+            <tr><td class="mono"><b>compliance</b></td><td class="desc"><b>new</b> &mdash; tax rules/profiles (§19), consent records, data export &amp; deletion requests (§20)</td></tr>
+            <tr><td class="mono">engagement</td><td class="desc">notifications, messages, automation rules, complaints, claims</td></tr>
+            <tr><td class="mono">intelligence</td><td class="desc">analytics aggregation, AI copilot gateway, forecasting</td></tr>
+            <tr><td class="mono">platform</td><td class="desc">settings, file assets, event outbox, health checks</td></tr>
+          </table></div>
+          <p>The <code>governance</code> module intercepts, not replaces: a refund is still initiated inside <code>orders</code>, but before it executes, <code>orders</code> asks <code>governance</code> "does this need approval?" — see §12 for the exact mechanics.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s05">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;05</span><h2>Database architecture</h2></div>
+        <div class="sheet-kicker">Data</div>
+        <div class="sheet-body wide">
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-02 &middot; Multi-branch data isolation</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Shared schema, <code>branch_id</code> on every branch-scoped table, RLS policies keyed to the JWT's branch claims, plus application-layer checks as defence-in-depth.</div></div>
+            </div>
+          </div>
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-03 &middot; ORM: Prisma vs. Drizzle vs. raw SQL</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Prisma for the transactional domain model and migrations. Raw parameterized SQL for heavy analytics/reporting and AI copilot tool-calls.</div></div>
+            </div>
+          </div>
+          <h4>Conventions applied to every table</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Rule</th><th>Applied as</th></tr>
+            <tr><td>Primary keys</td><td class="desc">UUID v7 (time-ordered), generated in the application layer</td></tr>
+            <tr><td>Timestamps</td><td class="desc"><code>created_at</code>, <code>updated_at</code> on every table; trigger-maintained</td></tr>
+            <tr><td>Soft delete</td><td class="desc"><code>deleted_at</code> on reference/config data only; <b>never</b> on financial or event records</td></tr>
+            <tr><td>Immutability</td><td class="desc">Payments, refunds, wallet transactions, loyalty transactions, stock transactions, garment events, approval decisions, and audit logs are insert-only</td></tr>
+            <tr><td>Branch scoping</td><td class="desc"><code>branch_id</code> FK + RLS policy on every branch-owned table</td></tr>
+            <tr><td>Money</td><td class="desc"><b>Integer minor units (bigint) — see §06, superseding the Rev 1.0 <code>numeric(12,2)</code> convention</b></td></tr>
+            <tr><td>Enumerations</td><td class="desc">Postgres native <code>enum</code> for closed sets; a lookup table for sets the business will edit</td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s06">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;06</span><h2>Monetary architecture <span class="newtag">new</span></h2></div>
+        <div class="sheet-kicker">Data</div>
+        <div class="sheet-body wide">
+          <p>You're right to push on this — Rev 1.0 specified <code>numeric(12,2)</code>, which avoids floating-point error but doesn't by itself stop rounding drift once amounts pass through GST splits, percentage promos, loyalty-point conversion, subscription proration, and split payments. Each of those is a division or percentage operation, and if every module rounds its own fractional paise independently, a wallet ledger and an order ledger can each be individually correct and still disagree by a few paise in total. The fix isn't a bigger decimal column — it's making every rounding decision happen in exactly one place.</p>
+
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-10 &middot; Money representation</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Alternatives</div><div class="val">(a) <code>NUMERIC(12,2)</code> fixed-point decimal, as originally specified. (b) Integer minor units (paise for INR, cents generally) stored as <code>bigint</code>. (c) An arbitrary-precision decimal string type.</div></div>
+              <div class="decision-row"><div class="label">Trade-offs</div><div class="val"><code>NUMERIC</code> is readable directly in SQL and fine for simple single-currency ledgers, but GST %, promo %, loyalty conversion, and split-payment remainders all still produce fractional paise that someone has to round — and "someone" tends to mean several call sites, each doing it slightly differently over a codebase's lifetime. Integer minor units make every amount an exact integer with no fractional representation possible at all: sums, comparisons, and equality checks are trivially correct, and the <i>only</i> place a rounding decision can occur is the single shared <code>Money</code> utility that converts a computed fraction (18% of ₹450) down to a whole number of paise. This is the same pattern Stripe and Razorpay use internally. The one cost is that every display layer must divide by 100 (or the currency's minor-unit exponent) at the UI boundary — a one-line formatter, applied once.</div></div>
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Integer minor units. Every monetary column becomes <code class="mono">bigint</code> storing the amount in paise, paired with a <code class="mono">currency</code> char(3) column (ISO 4217) even though V1 is INR-only. A single shared <code class="mono">Money</code> value object (<code>{amountMinor: bigint, currency: string}</code>) is the only code in the entire system permitted to perform arithmetic on money — no controller, no report query, no AI tool function computes a percentage of an amount by hand.</div></div>
+            </div>
+          </div>
+
+          <h4>Where rounding decisions are made explicit</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Operation</th><th>Rounding rule</th></tr>
+            <tr><td>GST calculation (when enabled, §19)</td><td class="desc">round-half-up to the nearest paise, applied once to the tax-inclusive line total, never per-item then summed</td></tr>
+            <tr><td>Percentage promo / discount</td><td class="desc">round-half-up; discount is capped so it can never exceed the line subtotal</td></tr>
+            <tr><td>Loyalty point ↔ currency conversion</td><td class="desc">points always redeem to whole paise; any fractional remainder stays as unredeemed points rather than being paid out</td></tr>
+            <tr><td>Split payment across N methods</td><td class="desc">first N&minus;1 splits are floor-rounded; the final split absorbs whatever paise remain, so the sum always equals the total exactly — a documented, deterministic rule rather than an ad hoc "closest split gets the remainder"</td></tr>
+            <tr><td>Subscription proration</td><td class="desc">pieces/credits consumed round down (customer-favourable) to avoid ever over-charging a subscription balance</td></tr>
+          </table></div>
+          <p class="muted">This also changes the entity specs in §08 — every <code class="mono">numeric(12,2)</code> from Rev 1.0's Payment/Order/Wallet tables is now <code class="mono">bigint</code> minor units.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s07">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;07</span><h2>Complete entity relationship model</h2></div>
+        <div class="sheet-kicker">Data</div>
+        <div class="sheet-body wide">
+          <p>91 entities across 16 domains (six added in Rev 1.1: <code>ApprovalRule</code>, <code>ApprovalRequest</code>, <code>TaxProfile</code>, <code>TaxRule</code>, <code>ConsentRecord</code>, <code>DataRightsRequest</code>; one added in Rev 1.2: <code>PriceListProfile</code> — see §35). Read each arrow as "foreign key," grouped by owning domain.</p>
+          <div class="pillrow">
+            <span class="pill"><b>91</b> tables</span>
+            <span class="pill"><b>16</b> domains</span>
+            <span class="pill"><b>13</b> immutable/append-only ledgers</span>
+            <span class="pill"><b>1</b> tenancy key — <code class="mono">branch_id</code></span>
+          </div>
+
+          <h4>Identity &amp; access</h4>
+          <p class="muted"><code>Organization</code> 1&ndash;&#8594;* <code>Branch</code> &#8594; <code>User</code> *&ndash;&#8596;* <code>Role</code> *&ndash;&#8596;* <code>Permission</code> &#8594; <code>Employee</code> &#8594; <code>AuditLog</code></p>
+
+          <h4>Governance <span class="newtag">new</span></h4>
+          <p class="muted"><code>ApprovalRule</code>&#9733; (action_type, threshold, required role, branch scope) &#8594; <code>ApprovalRequest</code>&#9733; (references the acting User, the target entity, a captured action payload, and — on decision — the approving User) &#8594; feeds <code>AuditLog</code></p>
+
+          <h4>Customer CRM</h4>
+          <p class="muted"><code>Customer</code> &#8594; <code>CustomerAddress</code>, <code>CustomerPreference</code>, <code>CustomerNote</code>, <code>CustomerTag</code>, <code>price_list_profile_id</code> (§35 &mdash; which named price list this customer's orders are priced against); <code>FamilyAccount</code> 1&ndash;&#8594;* <code>Customer</code>; <code>CorporateAccount</code> &#8594; <code>CorporateContact</code>, <code>CorporateAddress</code>, its own <code>PriceListProfile</code>, <code>gstin</code></p>
+
+          <h4>Compliance <span class="newtag">new</span></h4>
+          <p class="muted"><code>Customer</code> 1&ndash;&#8594;* <code>ConsentRecord</code>&#9733; (per channel: marketing/whatsapp/sms/email/photos) &#8594; read by every <code>Notification</code> send; <code>Customer</code> 1&ndash;&#8594;* <code>DataRightsRequest</code>&#9733; (type: export | delete/anonymise) &#8594; on fulfilment, references a <code>FileAsset</code> (export) or writes an anonymisation audit trail (deletion)</p>
+
+          <h4>Catalogue, pricing &amp; tax <span class="newtag">new fields</span></h4>
+          <p class="muted"><code>ServiceCategory</code> 1&ndash;&#8594;* <code>Service</code> &#8594; <code>Workflow</code>, <code>TaxRule</code>&#9733; (nullable while <code>tax.enabled</code> is off); <code>PriceListProfile</code> <span class="newtag">new</span> (§35 &mdash; e.g. "Standard Retail", "Corporate / Hotel") 1&ndash;&#8594;* <code>PriceListEntry</code> <span class="newtag">new</span> (service &times; item &times; price, scoped to one profile) &#8594; replaces the single flat <code>PriceRule</code> table from Rev 1.0/1.1; <code>Promotion</code>, <code>Coupon</code>; <code>TaxProfile</code>&#9733; (org/branch default rate set, versioned by <code>effective_from</code>/<code>effective_to</code>)</p>
+
+          <h4>Orders &amp; garments — the core chain</h4>
+          <p class="muted"><code>Customer</code> &#8594; <code>Order</code> &#8594; <code>OrderItem</code> &#8594; <code>Garment</code> &#8594; <code>GarmentPhoto</code>, <code>GarmentCondition</code>, <code>GarmentEvent</code>&#9733;</p>
+
+          <h4>Workflow &amp; production</h4>
+          <p class="muted"><code>Workflow</code>&#9733; 1&ndash;&#8594;* <code>WorkflowStage</code>&#9733; &#8594; <code>WorkflowRule</code>; <code>ProductionJob</code>&#9733; &#8594; <code>Workstation</code>, <code>Machine</code>, <code>Location</code>; <code>QualityCheck</code>&#9733; &#8594; <code>Reprocess</code></p>
+
+          <h4>Packing &amp; logistics</h4>
+          <p class="muted"><code>PackedBag</code> *&ndash;&#8596;* <code>Garment</code>; <code>Order</code> &#8594; <code>Pickup</code>, <code>Delivery</code> &#8594; <code>Driver</code>, <code>Route</code>, <code>DeliveryZone</code>, <code>ProofOfDelivery</code></p>
+
+          <h4>Money — now integer minor units throughout</h4>
+          <p class="muted"><code>Order</code> 1&ndash;&#8594;* <code>Payment</code>&#9733; &#8594; <code>Refund</code>&#9733;; <code>Customer</code> 1&ndash;1 <code>Wallet</code>&#9733; &#8594; <code>WalletTransaction</code>&#9733;</p>
+
+          <h4>Growth</h4>
+          <p class="muted"><code>Customer</code> 1&ndash;1 <code>LoyaltyAccount</code> &#8594; <code>LoyaltyTransaction</code>, <code>LoyaltyTier</code>, <code>Reward</code>; <code>Referral</code>; <code>Membership</code>; <code>Subscription</code> &#8594; <code>SubscriptionPlan</code>, <code>SubscriptionUsage</code></p>
+
+          <h4>Supply chain</h4>
+          <p class="muted"><code>InventoryItem</code> &#8594; <code>InventoryLocation</code>, <code>StockTransaction</code>&#9733;; <code>Supplier</code> &#8594; <code>PurchaseOrder</code> &#8594; <code>PurchaseOrderItem</code></p>
+
+          <h4>People</h4>
+          <p class="muted"><code>Employee</code> &#8594; <code>Attendance</code>, <code>Shift</code>, <code>Leave</code>, <code>Payroll</code>&#9733;, <code>Incentive</code></p>
+
+          <h4>Finance, engagement &amp; platform</h4>
+          <p class="muted"><code>Expense</code>, <code>FinancialAccount</code>; <code>Notification</code>, <code>Message</code>, <code>AutomationRule</code>; <code>Complaint</code>, <code>Claim</code>; <code>AuditLog</code>&#9733;, <code>SystemSetting</code>, <code>FileAsset</code>, <code>EventLog</code>&#9733;</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s08">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;08</span><h2>Table-by-table database specification</h2></div>
+        <div class="sheet-kicker">Data</div>
+        <div class="sheet-body wide">
+          <p>Full DDL for all 90 tables is Phase 2's deliverable. Below: the cornerstone tables, including the four new entity groups from this revision. <span class="tag low">PK</span> primary key &nbsp;<span class="tag med">FK</span> foreign key &nbsp;<span class="tag low">UQ</span> unique &nbsp;<span class="tag high">IM</span> immutable.</p>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">approval_rule</span><span class="purpose">New — the configurable thresholds that decide what needs sign-off</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span></td><td></td></tr>
+              <tr><td class="mono">action_type</td><td class="mono">enum</td><td></td><td class="desc">refund / price_override / order_void / inventory_adjustment / payroll_adjustment / customer_compensation / wallet_adjustment</td></tr>
+              <tr><td class="mono">branch_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td class="desc">nullable — organization-wide rule if unset</td></tr>
+              <tr><td class="mono">threshold_amount_minor</td><td class="mono">bigint</td><td></td><td class="desc">nullable — some action types (order void) need approval regardless of amount</td></tr>
+              <tr><td class="mono">threshold_percent</td><td class="mono">int</td><td></td><td class="desc">e.g. price override &gt; 15% off catalogue price</td></tr>
+              <tr><td class="mono">approver_roles</td><td class="mono">uuid[]</td><td></td><td class="desc">any one of these roles may decide; supports a future ordered sequence without a schema change</td></tr>
+              <tr><td class="mono">escalate_after_minutes</td><td class="mono">int</td><td></td><td class="desc">feeds an Automation Rule (§22) that nudges/escalates a stale request</td></tr>
+              <tr><td class="mono">is_active</td><td class="mono">boolean</td><td></td><td></td></tr>
+            </table>
+          </div>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">approval_request</span><span class="purpose">New — the captured action, held until a decision is made</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span> <span class="im">IM</span></td><td></td></tr>
+              <tr><td class="mono">rule_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td></td></tr>
+              <tr><td class="mono">entity_type, entity_id</td><td class="mono">text, uuid</td><td></td><td class="desc">the Order, Payroll row, etc. the action targets</td></tr>
+              <tr><td class="mono">requested_by</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td></td></tr>
+              <tr><td class="mono">payload</td><td class="mono">jsonb</td><td></td><td class="desc">the captured, not-yet-executed action — e.g. <code>{refund_amount_minor, reason}</code></td></tr>
+              <tr><td class="mono">status</td><td class="mono">enum</td><td></td><td class="desc">pending / approved / rejected / expired</td></tr>
+              <tr><td class="mono">decided_by, decided_at, decision_note</td><td class="mono">uuid, timestamptz, text</td><td class="flags"><span class="fk">FK</span></td><td class="desc">nullable until decided</td></tr>
+              <tr><td class="mono">idempotency_key</td><td class="mono">text</td><td class="flags"><span class="uq">UQ</span></td><td class="desc">guarantees an approval is executed exactly once</td></tr>
+            </table>
+          </div>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">tax_rule</span><span class="purpose">New — versioned GST rates, never overwritten in place</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span></td><td></td></tr>
+              <tr><td class="mono">service_category_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td class="desc">nullable = applies to all services</td></tr>
+              <tr><td class="mono">sac_code</td><td class="mono">text</td><td></td><td class="desc">e.g. <code>999712</code> for laundry/dry-cleaning</td></tr>
+              <tr><td class="mono">rate_percent, cgst_percent, sgst_percent, igst_percent</td><td class="mono">numeric(5,2)</td><td></td><td class="desc">e.g. 18.00 / 9.00 / 9.00 / 18.00</td></tr>
+              <tr><td class="mono">effective_from, effective_to</td><td class="mono">date</td><td></td><td class="desc">null <code class="mono">effective_to</code> = current rule; an order snapshots the rule id + rate it used, so a Council rate change never rewrites a past invoice</td></tr>
+            </table>
+          </div>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">consent_record</span><span class="purpose">New — one row per (customer, channel, decision)</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span> <span class="im">IM</span></td><td></td></tr>
+              <tr><td class="mono">customer_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td></td></tr>
+              <tr><td class="mono">consent_type</td><td class="mono">enum</td><td></td><td class="desc">marketing_whatsapp / marketing_sms / marketing_email / photo_capture / data_processing</td></tr>
+              <tr><td class="mono">status</td><td class="mono">enum</td><td></td><td class="desc">granted / withdrawn</td></tr>
+              <tr><td class="mono">source</td><td class="mono">enum</td><td></td><td class="desc">signup_form / portal_settings / whatsapp_optin / counter_staff_entry</td></tr>
+              <tr><td class="mono">captured_at</td><td class="mono">timestamptz</td><td></td><td class="desc">a change of mind is a new row, never an edit — the full consent history stays intact</td></tr>
+            </table>
+          </div>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">price_list_profile</span><span class="purpose">New (Rev 1.2) — a named, reusable price list; see §35</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span></td><td></td></tr>
+              <tr><td class="mono">branch_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td class="desc">nullable — organization-wide profile if unset</td></tr>
+              <tr><td class="mono">name</td><td class="mono">text</td><td></td><td class="desc">e.g. "Standard Retail", "Corporate &mdash; Grand Heritage Hotel"</td></tr>
+              <tr><td class="mono">description</td><td class="mono">text</td><td></td><td class="desc">nullable, staff-facing note on who this list is for</td></tr>
+              <tr><td class="mono">is_default</td><td class="mono">boolean</td><td></td><td class="desc">exactly one default per branch — assigned to a customer with no explicit profile</td></tr>
+              <tr><td class="mono">is_active</td><td class="mono">boolean</td><td></td><td></td></tr>
+            </table>
+          </div>
+
+          <div class="entity">
+            <div class="entity-head"><span class="tname">price_list_entry</span><span class="purpose">New (Rev 1.2) — one priced line within one profile; see §35</span></div>
+            <table>
+              <tr><th>Column</th><th>Type</th><th>Flags</th><th>Notes</th></tr>
+              <tr><td class="mono">id</td><td class="mono">uuid</td><td class="flags"><span class="pk">PK</span></td><td class="desc">the row identity a POS/order line references &mdash; never the (item, service) text pair, which is ambiguous once two profiles both price "Shirt / Wash &amp; Iron"</td></tr>
+              <tr><td class="mono">price_list_profile_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td></td></tr>
+              <tr><td class="mono">service_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td></td></tr>
+              <tr><td class="mono">item_id</td><td class="mono">uuid</td><td class="flags"><span class="fk">FK</span></td><td class="desc">nullable — a service-level entry (e.g. "per kg wash") need not name a garment item</td></tr>
+              <tr><td class="mono">price_minor</td><td class="mono">bigint</td><td></td><td class="desc">integer minor units per §06/ADR-10 &mdash; never a float</td></tr>
+              <tr><td class="mono">unit</td><td class="mono">enum</td><td></td><td class="desc">per_piece / per_kg / per_set</td></tr>
+              <tr><td class="mono">is_active</td><td class="mono">boolean</td><td></td><td class="desc">an inactive entry is hidden from POS/portal but kept for historical order line references</td></tr>
+              <tr><td class="mono">effective_from, effective_to</td><td class="mono">date</td><td></td><td class="desc">nullable &mdash; same versioning pattern as <code>tax_rule</code>, so a price change never rewrites a past invoice's line price</td></tr>
+            </table>
+            <p class="muted">Unique constraint on <code class="mono">(price_list_profile_id, service_id, item_id)</code> where <code class="mono">effective_to</code> is null &mdash; one current price per item/service per profile.</p>
+          </div>
+
+          <p>Payment/Order/Wallet money columns are now <code class="mono">bigint</code> per §06 (was <code class="mono">numeric(12,2)</code> in Rev 1.0). The remaining tables follow the §05 conventions unchanged; full DDL is produced in Phase 2.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s09">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;09</span><h2>API architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0, plus two new route groups:</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>Path</th><th>Owns</th></tr>
+            <tr><td class="mono">/api/v1/auth, /customers, /orders, /garments, /workflows, /production, /pickups, /deliveries, /payments, /wallet, /loyalty, /subscriptions, /inventory, /staff, /analytics, /ai</td><td class="desc">as Rev 1.0</td></tr>
+            <tr><td class="mono"><b>/api/v1/approvals</b></td><td class="desc"><b>new</b> &mdash; list pending requests (scoped to the caller's approver role), decide (approve/reject)</td></tr>
+            <tr><td class="mono"><b>/api/v1/privacy</b></td><td class="desc"><b>new</b> &mdash; consent read/update, data export request, deletion request</td></tr>
+          </table></div>
+          <p>Every write endpoint that matches a configured <code>ApprovalRule</code> returns <code class="mono">202 Accepted</code> with the created <code>ApprovalRequest</code> instead of executing — the client (POS/admin UI) shows "sent for approval," not a silent failure.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s10">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;10</span><h2>Authentication architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0.</p>
+          <ul>
+            <li><b>Access tokens:</b> short-lived JWT (15 min), carrying user id, branch id, role ids.</li>
+            <li><b>Refresh tokens:</b> rotating, stored hashed, revocable per-session.</li>
+            <li><b>Password hashing:</b> argon2id.</li>
+            <li><b>MFA:</b> TOTP, mandatory for Owner, Super Admin, Branch Manager, Accountant — and, given §12, for anyone who can hold approver authority.</li>
+            <li><b>Customer portal:</b> OTP-over-WhatsApp/SMS as primary login.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sheet" id="s11">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;11</span><h2>RBAC architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>Unchanged in structure — permission-based, roles scoped to a branch or the organization. One addition: approval authority is itself a permission, not a side-effect of a role name.</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>Permission</th><th>Meaning</th></tr>
+            <tr><td class="mono">approvals:decide:refund</td><td class="desc">may approve/reject a pending refund request</td></tr>
+            <tr><td class="mono">approvals:decide:price_override</td><td class="desc">may approve/reject a pending price-override request</td></tr>
+            <tr><td class="mono">approvals:decide:payroll_adjustment</td><td class="desc">typically Owner/Accountant only — deliberately separate from the Branch Manager's other approval permissions</td></tr>
+          </table></div>
+          <p>This matters because "Branch Manager approves everything" is exactly the kind of blanket rule that defeats the point of dual control — a manager who can both request <i>and</i> approve the same action type has approved nothing. The guard checks <code>requested_by !== decided_by</code> unconditionally, on every action type, regardless of role.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s12">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;12</span><h2>Privileged action approval <span class="newtag">new</span></h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>A maker-checker gate: the actions you listed don't execute on submission — they're captured, held pending, and only take effect once a different, authorised person decides. This is standard practice in any business handling cash and customer property, and it's cheap to build because it's one generic mechanism wrapping many action types, not seven bespoke approval flows.</p>
+
+          <div class="ascii-wrap"><pre class="ascii">
+Counter staff initiates an action
+  (e.g. refund ₹3,500)
+        │
+        ▼
+Does an active ApprovalRule match?
+  action_type=refund, amount ≥ ₹2,000 threshold  ──── no ──▶ executes immediately, as normal
+        │ yes
+        ▼
+Action is CAPTURED, not executed.
+ApprovalRequest created — status: PENDING
+  { entity: Order #LW-26091245, payload: {amount, reason}, requested_by: staff }
+        │
+        ▼
+Notification → everyone holding approvals:decide:refund for this branch
+        │
+   ┌────┴─────┐
+   ▼          ▼
+APPROVE      REJECT
+   │          │
+   ▼          ▼
+Original    Requester notified
+action      with the decision note.
+executes,   Nothing executes.
+exactly
+once
+(idempotency_key)
+   │
+   ▼
+AuditLog: both the request and the decision are recorded — who asked,
+who decided, what changed, when
+          </pre></div>
+
+          <h4>Default thresholds — configurable per branch from launch</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Action</th><th>Suggested default threshold</th><th>Default approver</th></tr>
+            <tr><td>Refund</td><td class="desc">&gt; ₹2,000, or any refund on an order older than 30 days</td><td class="desc">Branch Manager</td></tr>
+            <tr><td>Price override</td><td class="desc">&gt; 15% below catalogue price</td><td class="desc">Branch Manager</td></tr>
+            <tr><td>Order void / delete</td><td class="desc">always</td><td class="desc">Branch Manager</td></tr>
+            <tr><td>Inventory adjustment</td><td class="desc">&gt; 10% of current stock, or any write-off</td><td class="desc">Operations Manager</td></tr>
+            <tr><td>Payroll adjustment</td><td class="desc">always</td><td class="desc">Owner / Accountant</td></tr>
+            <tr><td>Customer compensation</td><td class="desc">&gt; ₹500 or any free-service goodwill credit</td><td class="desc">Branch Manager</td></tr>
+            <tr><td>Wallet manual adjustment</td><td class="desc">always (manual adjustments bypass the normal recharge/redeem flow, so they're inherently higher-risk)</td><td class="desc">Branch Manager</td></tr>
+          </table></div>
+          <p class="muted">These are starting numbers for Phase 3 configuration, not fixed policy — you set the real thresholds per branch once you're live.</p>
+
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-11 &middot; Single-approver vs. multi-level sign-off</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Trade-offs</div><div class="val">A single required approver is enough friction to stop most misuse and mistakes without slowing the counter down. Multi-level (e.g. Manager, then Owner, for very large refunds) adds real safety for the rare large-amount case but meaningfully slows every other approval if built as one rigid chain.</div></div>
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Ship single-approver in V1 — the <code>approval_rule.approver_roles</code> column is already an array and the request/decision model already supports a decision sequence, so adding a second required step later (e.g. only above a much higher amount) is a configuration change, not a schema migration.</div></div>
+            </div>
+          </div>
+          <p>A request that sits unactioned past <code>escalate_after_minutes</code> is picked up by the Automation Engine (§22) — "WHEN approval pending &gt; N minutes THEN notify the next role up" — reusing the mechanism already built for SLA alerts rather than inventing a parallel escalation system.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s13">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;13</span><h2>Event architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-05 &middot; Event bus: Kafka vs. transactional outbox</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Transactional outbox: every state change writes to <code class="mono">event_log</code> in the same transaction as the business write; a relay worker publishes to BullMQ. Reliable without Kafka's operational cost; the relay can point at Kafka later with no change to producers.</div></div>
+            </div>
+          </div>
+          <p>Two new canonical events this revision: <code class="mono">APPROVAL_REQUESTED</code>, <code class="mono">APPROVAL_DECIDED</code> — both consumed by Notifications (§16) and available to the Automation Engine (§22) exactly like every other event.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s14">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;14</span><h2>Queue &amp; background-job architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0 — BullMQ on Redis, named queues per responsibility (<code class="mono">notifications</code>, <code class="mono">analytics</code>, <code class="mono">forecasting</code>, <code class="mono">routing</code>, <code class="mono">billing</code>, <code class="mono">automation</code>). Approval escalation timers run as delayed jobs on the <code class="mono">automation</code> queue.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s15">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;15</span><h2>File storage architecture</h2></div>
+        <div class="sheet-kicker">Platform services</div>
+        <div class="sheet-body wide">
+          <p>Unchanged — S3-compatible object storage (Cloudflare R2), presigned uploads, <code class="mono">file_asset</code> metadata table. A data-export request (§20) produces its bundle here, referenced from <code class="mono">DataRightsRequest.file_asset_id</code>.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s16">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;16</span><h2>Notification architecture</h2></div>
+        <div class="sheet-kicker">Customer-facing</div>
+        <div class="sheet-body wide">
+          <p>Unchanged in mechanism — one <code>NotificationChannel</code> interface, four implementations, templated bodies. One new rule: before any <i>marketing</i>-type send, the dispatcher checks <code>ConsentRecord</code> for that customer/channel and silently skips (not queues, not retries) if consent is withdrawn or was never granted. Transactional/service notifications (order ready, pickup confirmation) are not gated the same way — see §20 for how that line is drawn.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s17">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;17</span><h2>WhatsApp commerce architecture</h2></div>
+        <div class="sheet-kicker">Customer-facing</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0 — a BSP (e.g. 360dialog or Gupshup) behind a <code>MessagingProvider</code> interface, structured button/list-driven flows rather than open-ended NLU for anything transactional.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s18">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;18</span><h2>Payment architecture</h2></div>
+        <div class="sheet-kicker">Customer-facing</div>
+        <div class="sheet-body wide">
+          <p>Unchanged in structure — Payment is its own entity, an order can carry many, refunds are new signed rows. What changes this revision is the representation: every amount here is now integer minor units (§06), and any refund over the configured threshold (§12) is captured as a pending <code>ApprovalRequest</code> rather than executing on submission.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s19">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;19</span><h2>Tax &amp; GST engine <span class="newtag">new</span></h2></div>
+        <div class="sheet-kicker">Compliance</div>
+        <div class="sheet-body wide">
+          <p>Built for Kerala, India from the start, switched off until you're ready — exactly as you asked. Invoicing without GST today and turning it on later is a settings change, not a migration, because the tax calculation was never hard-coded out of the pricing flow; it's a step that's simply skipped while the toggle is off.</p>
+
+          <div class="toggle-demo">
+            <div class="sw"></div>
+            <div><div class="tlabel">Enable GST calculation</div><div class="tsub">Settings → Finance → Tax &nbsp;·&nbsp; <span class="tag off">OFF at launch</span> — orders total without a tax line until you switch this on</div></div>
+          </div>
+
+          <h4>What's configured, ready to switch on</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Item</th><th>Value researched for Kerala laundry/dry-cleaning</th></tr>
+            <tr><td>SAC code</td><td class="desc"><code class="mono">999712</code> &mdash; dry-cleaning services (covers wash &amp; fold / wash &amp; iron / dry-clean under the same heading)</td></tr>
+            <tr><td>GST rate</td><td class="desc">18% &mdash; confirmed current post the GST Council's rate rationalisation effective 22 Sep 2025</td></tr>
+            <tr><td>Intra-state split (Kerala customer, Kerala branch)</td><td class="desc">CGST 9% + SGST 9%</td></tr>
+            <tr><td>Inter-state (a future branch or corporate billing address outside Kerala)</td><td class="desc">IGST 18%</td></tr>
+          </table></div>
+          <p class="muted">GST rates move by Council notification — this is exactly why §06/§07 store <code>TaxRule</code> as a dated, versioned record rather than a constant: when the rate next changes, you add a new rule with a new <code class="mono">effective_from</code> date, and every invoice already issued keeps the rate it actually charged.</p>
+
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-12 &middot; Tax engine defaults to off</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Why it matters</div><div class="val">Whether to charge and register for GST is a business/accounting decision tied to your turnover and registration status, not something the software should decide by shipping tax-on by default.</div></div>
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">A single org-level <code>SystemSetting</code> (<code class="mono">tax.enabled</code>, boolean, default <b>false</b>). While off, <code>Order</code> totals skip the tax step entirely — no GST line, no CGST/SGST split — and the invoice template omits GSTIN and tax fields rather than printing zeros. When you're ready, an admin enters the branch <code class="mono">GSTIN</code> and flips the toggle; nothing else in the order/pricing flow changes.</div></div>
+            </div>
+          </div>
+          <p class="muted">One limit worth stating plainly: this toggle controls what the <i>software</i> computes and prints. Whether and when London Wash is legally required to register for and charge GST is a determination for you and your accountant, not something this document or the AI copilot (§21) can decide — consistent with the boundary your original brief draws around AI and legal/financial authority.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s20">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;20</span><h2>Privacy &amp; consent module <span class="newtag">new</span></h2></div>
+        <div class="sheet-kicker">Compliance</div>
+        <div class="sheet-body wide">
+          <p>You're right that this was missing as its own area — CRM (§04) had customer preferences, but nothing owned consent as a legal record, or gave a customer a way to export or delete their data. This module fixes that, and the timing matters: India's Digital Personal Data Protection Act rules were notified on 13 Nov 2025, with consent, notice, and security obligations becoming fully enforceable on <b>13 May 2027</b> under the Data Protection Board of India. That's inside this programme's build window — worth having in place well before it's mandatory, not scrambled together against the deadline.</p>
+
+          <h4>What it tracks</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Capability</th><th>Mechanism</th></tr>
+            <tr><td>Marketing consent (WhatsApp / SMS / email, tracked separately)</td><td class="desc"><code class="mono">ConsentRecord</code> per channel — see §08</td></tr>
+            <tr><td>Consent timestamp &amp; source</td><td class="desc">every record captures when and where consent was given (signup form, portal settings, WhatsApp opt-in, counter staff entry) — never inferred, never assumed</td></tr>
+            <tr><td>Opt-out / withdrawal</td><td class="desc">a new <code class="mono">ConsentRecord</code> row with status <code class="mono">withdrawn</code> — the prior grant stays in history, not deleted, so you can show exactly when consent changed if ever questioned</td></tr>
+            <tr><td>Communication preference</td><td class="desc">a customer's channel-of-choice for service messages, separate from marketing consent — set in the Portal Privacy Centre (§03)</td></tr>
+            <tr><td>Data export request ("right to access")</td><td class="desc"><code class="mono">DataRightsRequest</code> type=export &#8594; a background job compiles the customer's orders, garments, payments, and consent history into a file, stored via §15, delivered to the customer</td></tr>
+            <tr><td>Account deletion request</td><td class="desc"><code class="mono">DataRightsRequest</code> type=delete &#8594; see anonymisation workflow below</td></tr>
+          </table></div>
+
+          <h4>Deletion means anonymisation, not erasure — and here's why</h4>
+          <p>A customer's order history is also your financial ledger (§05/§18's immutability rule, and likely statutory bookkeeping retention requirements). Hard-deleting a customer would either break every historical order/payment/garment-event row that references them, or force deleting financial records outright — neither is acceptable. The resolution: on an approved deletion request, personally identifying fields (name, phone, address, stored photos) are overwritten on the <code class="mono">Customer</code> row and linked <code class="mono">CustomerAddress</code>/<code class="mono">GarmentPhoto</code> rows; the order, payment, and garment-event history remains, now attached to an anonymised customer stub instead of an identifiable person. This satisfies an erasure request without corrupting your books.</p>
+          <p class="muted">Like refunds and payroll (§12), a deletion request is itself routed through the approval workflow — it's irreversible, so it gets a human check, not an instant self-service button.</p>
+
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-13 &middot; Where consent is enforced</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Alternatives</div><div class="val">(a) Check consent at each UI/portal entry point. (b) Enforce centrally inside the Notification dispatch service. (c) Enforce via a database-level access policy.</div></div>
+              <div class="decision-row"><div class="label">Trade-offs</div><div class="val">Checking at the UI is the easiest to forget — a new "send a promo blast" feature added six months from now could bypass it entirely if the check isn't structural. Enforcing at the database layer is robust but awkward for something that's really a business rule about message dispatch, not row visibility.</div></div>
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Enforce inside the Notification dispatch service (§16) — every channel adapter already funnels through this one chokepoint (§14 in Rev 1.0's brief), so the consent check happens exactly once, for every notification, regardless of which module triggered it.</div></div>
+            </div>
+          </div>
+          <p class="muted">Note on scope: transactional/service messages (order ready, pickup confirmed) are treated separately from marketing sends under most consent frameworks, including the practical shape of India's Act — but the precise line between "service" and "marketing" for your specific message templates is worth a short review with counsel before go-live, not something this document finalises unilaterally.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s21">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;21</span><h2>AI architecture</h2></div>
+        <div class="sheet-kicker">Intelligence</div>
+        <div class="sheet-body wide">
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-08 &middot; Grounding the AI copilot</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Claude via tool-calling over a curated set of read-only, reviewed query functions — never raw SQL access. Every answer states its data period, metrics used, and limitations.</div></div>
+            </div>
+          </div>
+          <p>Unchanged from Rev 1.0, with one addition: the copilot's tool set now includes read access to approval-request aging and consent-coverage metrics ("how many pending approvals are overdue," "what % of customers have marketing consent") — same grounding rule applies, same read-only boundary.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s22">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;22</span><h2>Automation engine</h2></div>
+        <div class="sheet-kicker">Intelligence</div>
+        <div class="sheet-body wide">
+          <p>Unchanged in mechanism — a generic <code class="mono">AutomationRule</code> table subscribed to the event outbox. Two new triggers available this revision:</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>Trigger</th><th>Condition</th><th>Action</th></tr>
+            <tr><td class="mono">APPROVAL_REQUESTED</td><td class="desc">pending &gt; escalate_after_minutes</td><td class="desc">notify the next role up</td></tr>
+            <tr><td class="mono">scheduled (daily)</td><td class="desc">customer with no consent record 90 days after signup</td><td class="desc">prompt a consent-capture nudge on next portal login</td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s23">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;23</span><h2>Multi-branch architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <p>Unchanged from Rev 1.0 — shared schema, <code class="mono">branch_id</code>, RLS, three location types (full branch, collection point, central processing facility). Approval rules and tax rules can both be set organization-wide or overridden per branch, using the same <code class="mono">branch_id</code>-nullable pattern.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s24">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;24</span><h2>Hardware abstraction architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <p>Unchanged — a <code>DeviceGateway</code> interface per device class; V1 covers barcode/QR scanners (HID keyboard-wedge) and thermal/label/receipt printers plus cash drawers (local print-agent pattern). RFID/IoT/telemetry deferred, interface reserved.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s25">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;25</span><h2>Security architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <div class="tbl-scroll"><table>
+            <tr><th>Control</th><th>Implementation</th></tr>
+            <tr><td>Transport</td><td class="desc">TLS everywhere; HSTS</td></tr>
+            <tr><td>Authentication</td><td class="desc">argon2id, MFA for privileged roles — §10</td></tr>
+            <tr><td>Authorization</td><td class="desc">server-side permission guards + Postgres RLS — §11</td></tr>
+            <tr><td><b>Dual control</b></td><td class="desc"><b>new</b> &mdash; maker-checker approval on high-risk actions, requester ≠ approver enforced unconditionally — §12</td></tr>
+            <tr><td>Input validation</td><td class="desc">DTO validation on every request; Prisma parameterizes all queries</td></tr>
+            <tr><td>XSS / CSP</td><td class="desc">Next.js escaping by default, strict CSP headers</td></tr>
+            <tr><td>CSRF</td><td class="desc">Bearer-token API; any refresh cookie is <code>SameSite=Strict</code> + <code>HttpOnly</code></td></tr>
+            <tr><td>Rate limiting</td><td class="desc">per-IP and per-account, Redis-backed, tighter on auth/payment endpoints</td></tr>
+            <tr><td>Secrets</td><td class="desc">platform secrets manager, never committed, rotated on staff offboarding</td></tr>
+            <tr><td>Audit logging</td><td class="desc">every override, refund, permission change, approval decision, and data export writes an immutable <code>AuditLog</code> row</td></tr>
+            <tr><td><b>Data rights</b></td><td class="desc"><b>new</b> &mdash; consent-gated marketing sends, export/anonymisation workflow — §20</td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s26">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;26</span><h2>Backup &amp; recovery architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <div class="tbl-scroll"><table>
+            <tr><th>Target</th><th>Approach</th><th>RPO</th><th>RTO</th></tr>
+            <tr><td>Postgres</td><td class="desc">daily full backup + continuous WAL archiving (PITR)</td><td class="mono">~15 min</td><td class="mono">1&ndash;4 hr</td></tr>
+            <tr><td>Object storage</td><td class="desc">versioning + cross-region replication</td><td class="mono">near-zero</td><td class="mono">minutes</td></tr>
+          </table></div>
+          <p>Retention distinguishes two clocks now: financial/audit records follow statutory bookkeeping retention (not customer-erasable, per §20), while customer PII retention is a separate, shorter, configurable window reviewed against inactivity — anonymising, not just backing up, stale personal data over time.</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s27">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;27</span><h2>Observability architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <div class="tbl-scroll"><table>
+            <tr><th>Signal</th><th>Tool</th></tr>
+            <tr><td>Structured logs</td><td class="desc">pino (JSON), shipped to a log aggregator</td></tr>
+            <tr><td>Error tracking</td><td class="desc">Sentry</td></tr>
+            <tr><td>Tracing / APM</td><td class="desc">OpenTelemetry</td></tr>
+            <tr><td>Queue health</td><td class="desc">BullBoard</td></tr>
+            <tr><td>Business alerts</td><td class="desc">SLA breach rate, failed-payment rate, notification-failure rate, <b>overdue approval-request rate</b></td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s28">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;28</span><h2>Testing architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <p>Unchanged in tooling (Vitest, Supertest, Playwright). New required edge cases this revision: approval request decided by the same user who requested it (must reject), approval request decided twice (idempotency), refund attempted below vs. above threshold, GST toggle flipped mid-order-lifecycle (must not alter an already-invoiced order's stored tax snapshot), consent withdrawn mid-campaign-send (must halt remaining sends), deletion request against a customer with open orders (must block or queue until orders close).</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s29">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;29</span><h2>Deployment architecture</h2></div>
+        <div class="sheet-kicker">Operations</div>
+        <div class="sheet-body wide">
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-09 &middot; Hosting</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Next.js apps on Vercel; NestJS API + worker fleet + Redis on a managed container platform; Postgres managed separately. Kubernetes only if/when multi-region franchise deployment is actually contracted.</div></div>
+            </div>
+          </div>
+          <p>Unchanged otherwise — <code class="mono">development</code> → <code class="mono">staging</code> → <code class="mono">production</code>, GitHub Actions CI, manual approval gate on production releases (the software deployment kind — not to be confused with the business-process approvals in §12, though both share the same "nothing sensitive happens without a second person" philosophy).</p>
+        </div>
+      </section>
+
+      <section class="sheet" id="s30">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;30</span><h2>Development phases</h2></div>
+        <div class="sheet-kicker">Programme</div>
+        <div class="sheet-body wide">
+          <p>Your 40-phase order, kept intact. Two placements worth flagging: the Privileged Action Approval workflow slots naturally into <b>Phase 3 (Authentication &amp; RBAC)</b>, since it's an authorization concern; the Tax engine and Privacy &amp; Consent module both slot into <b>Phase 5 (Customer CRM)</b> / <b>Phase 6 (Services &amp; pricing)</b>, ahead of Phase 7 (POS), so nothing downstream is built against money or customer records that later need retrofitting.</p>
+
+          <div class="phase-grid">
+            <div class="phase-group">
+              <div class="phase-group-head"><span>Milestone A &mdash; Foundation</span><span>Phases 0&ndash;9</span></div>
+              <div class="phase-list">
+                <div class="phase-item"><span class="pn">00</span>Architecture blueprint (this document)</div>
+                <div class="phase-item"><span class="pn">01</span>Project foundation / monorepo scaffold</div>
+                <div class="phase-item"><span class="pn">02</span>Database architecture / migrations</div>
+                <div class="phase-item"><span class="pn">03</span>Authentication, RBAC &amp; approval workflow</div>
+                <div class="phase-item"><span class="pn">04</span>Organization &amp; branch management</div>
+                <div class="phase-item"><span class="pn">05</span>Customer CRM &amp; consent module</div>
+                <div class="phase-item"><span class="pn">06</span>Services, pricing &amp; tax engine</div>
+                <div class="phase-item"><span class="pn">07</span>POS</div>
+                <div class="phase-item"><span class="pn">08</span>Orders</div>
+                <div class="phase-item"><span class="pn">09</span>Garment tracking</div>
+              </div>
+            </div>
+            <div class="phase-group">
+              <div class="phase-group-head"><span>Milestone B &mdash; Core operations</span><span>Phases 10&ndash;22</span></div>
+              <div class="phase-list">
+                <div class="phase-item"><span class="pn">10</span>QR / barcode</div>
+                <div class="phase-item"><span class="pn">11</span>Inspection</div>
+                <div class="phase-item"><span class="pn">12</span>Production workflow</div>
+                <div class="phase-item"><span class="pn">13</span>Workstations &amp; machines</div>
+                <div class="phase-item"><span class="pn">14</span>Quality control</div>
+                <div class="phase-item"><span class="pn">15</span>Packing</div>
+                <div class="phase-item"><span class="pn">16</span>Pickup</div>
+                <div class="phase-item"><span class="pn">17</span>Delivery &amp; drivers</div>
+                <div class="phase-item"><span class="pn">18</span>Payments &amp; wallet</div>
+                <div class="phase-item"><span class="pn">19</span>Inventory</div>
+                <div class="phase-item"><span class="pn">20</span>Procurement</div>
+                <div class="phase-item"><span class="pn">21</span>Staff &amp; attendance</div>
+                <div class="phase-item"><span class="pn">22</span>Payroll / incentives</div>
+              </div>
+            </div>
+            <div class="phase-group">
+              <div class="phase-group-head"><span>Milestone C &mdash; Growth &amp; intelligence</span><span>Phases 23&ndash;34</span></div>
+              <div class="phase-list">
+                <div class="phase-item"><span class="pn">23</span>Loyalty</div>
+                <div class="phase-item"><span class="pn">24</span>Membership</div>
+                <div class="phase-item"><span class="pn">25</span>Subscriptions</div>
+                <div class="phase-item"><span class="pn">26</span>WhatsApp</div>
+                <div class="phase-item"><span class="pn">27</span>Notifications</div>
+                <div class="phase-item"><span class="pn">28</span>Customer portal</div>
+                <div class="phase-item"><span class="pn">29</span>Complaints &amp; claims</div>
+                <div class="phase-item"><span class="pn">30</span>Analytics</div>
+                <div class="phase-item"><span class="pn">31</span>Reports</div>
+                <div class="phase-item"><span class="pn">32</span>Automation engine</div>
+                <div class="phase-item"><span class="pn">33</span>AI Business Copilot</div>
+                <div class="phase-item"><span class="pn">34</span>AI operational intelligence</div>
+              </div>
+            </div>
+            <div class="phase-group">
+              <div class="phase-group-head"><span>Milestone D &mdash; Scale &amp; hardening</span><span>Phases 35&ndash;40</span></div>
+              <div class="phase-list">
+                <div class="phase-item"><span class="pn">35</span>Multi-branch</div>
+                <div class="phase-item"><span class="pn">36</span>Hardware abstraction</div>
+                <div class="phase-item"><span class="pn">37</span>Security audit</div>
+                <div class="phase-item"><span class="pn">38</span>Performance optimisation</div>
+                <div class="phase-item"><span class="pn">39</span>Complete testing</div>
+                <div class="phase-item"><span class="pn">40</span>Production deployment</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s31">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;31</span><h2>Major technical risks</h2></div>
+        <div class="sheet-kicker">Programme</div>
+        <div class="sheet-body wide">
+          <div class="tbl-scroll"><table>
+            <tr><th>Risk</th><th>Severity</th><th>Mitigation</th></tr>
+            <tr><td>Scope: 40 phases is a multi-quarter build</td><td><span class="tag high">High</span></td><td class="desc">phases are independently shippable; Phases 0&ndash;18 alone run a full single branch</td></tr>
+            <tr><td>Workflow engine under-designed becomes a rewrite magnet</td><td><span class="tag high">High</span></td><td class="desc">configurable stages/rules from Phase 12 on — §04</td></tr>
+            <tr><td>AI hallucination in financial/operational answers</td><td><span class="tag high">High</span></td><td class="desc">tool-calling over reviewed, read-only queries only — ADR-08</td></tr>
+            <tr><td>Branch-isolation bug leaking cross-branch data</td><td><span class="tag high">High</span></td><td class="desc">RLS + application guards, defence-in-depth — ADR-02</td></tr>
+            <tr><td><b>Approval workflow becomes rubber-stamped or bypassed</b></td><td><span class="tag med">Medium</span></td><td class="desc">requester≠approver enforced in code, not policy; every decision audit-logged — §11/§12</td></tr>
+            <tr><td><b>GST rate/slab changes by Council notification</b></td><td><span class="tag med">Medium</span></td><td class="desc">versioned <code class="mono">TaxRule</code> with effective dates, config-driven, not hardcoded — §19</td></tr>
+            <tr><td><b>DPDP Act full enforcement (13 May 2027) catches the business unready</b></td><td><span class="tag med">Medium</span></td><td class="desc">Privacy &amp; Consent module built in Phase 5, well ahead of the deadline — §20</td></tr>
+            <tr><td>WhatsApp BSP dependency / template approval delays</td><td><span class="tag med">Medium</span></td><td class="desc"><code>MessagingProvider</code> interface keeps the vendor swappable</td></tr>
+            <tr><td>Offline POS sync conflicts</td><td><span class="tag med">Medium</span></td><td class="desc">deterministic conflict rule, conflicting payment flagged for manual review</td></tr>
+            <tr><td>Early over-investment in franchise/IoT/RFID</td><td><span class="tag low">Low</span></td><td class="desc">interfaces reserved, features deferred — §34</td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s32">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;32</span><h2>Decision log</h2></div>
+        <div class="sheet-kicker">Programme</div>
+        <div class="sheet-body wide">
+          <p>14 ADRs &mdash; four added in Rev 1.1 (10&ndash;13), one added in Rev 1.2 (14).</p>
+          <div class="tbl-scroll"><table>
+            <tr><th>ADR</th><th>Decision</th><th>Recommendation</th></tr>
+            <tr><td class="mono">ADR-01</td><td class="desc">Service topology</td><td class="desc">Modular monolith, split only where load demands</td></tr>
+            <tr><td class="mono">ADR-02</td><td class="desc">Multi-branch isolation</td><td class="desc">Shared schema + <code>branch_id</code> + Postgres RLS</td></tr>
+            <tr><td class="mono">ADR-03</td><td class="desc">ORM</td><td class="desc">Prisma for the domain model; raw SQL for heavy analytics</td></tr>
+            <tr><td class="mono">ADR-04</td><td class="desc">Identity provider</td><td class="desc">Postgres-native auth + custom RBAC tables</td></tr>
+            <tr><td class="mono">ADR-05</td><td class="desc">Event bus</td><td class="desc">Transactional outbox + BullMQ relay, not Kafka, for V1</td></tr>
+            <tr><td class="mono">ADR-06</td><td class="desc">WhatsApp integration</td><td class="desc">BSP behind a <code>MessagingProvider</code> interface</td></tr>
+            <tr><td class="mono">ADR-07</td><td class="desc">Payment gateway</td><td class="desc">Stripe default &mdash; <b>awaiting your confirmation of launch market</b></td></tr>
+            <tr><td class="mono">ADR-08</td><td class="desc">AI grounding</td><td class="desc">Claude via tool-calling over read-only, reviewed query functions only</td></tr>
+            <tr><td class="mono">ADR-09</td><td class="desc">Hosting</td><td class="desc">Vercel + managed containers + managed Postgres, not Kubernetes, for V1</td></tr>
+            <tr><td class="mono">ADR-10</td><td class="desc">Money representation</td><td class="desc">Integer minor units (bigint), one shared Money utility &mdash; §06</td></tr>
+            <tr><td class="mono">ADR-11</td><td class="desc">Approval sign-off depth</td><td class="desc">Single-approver in V1, schema ready for multi-level later &mdash; §12</td></tr>
+            <tr><td class="mono">ADR-12</td><td class="desc">Tax engine default state</td><td class="desc">Off by default, versioned rates, admin-toggled &mdash; §19</td></tr>
+            <tr><td class="mono">ADR-13</td><td class="desc">Consent enforcement point</td><td class="desc">Centralised in the Notification dispatcher &mdash; §20</td></tr>
+            <tr><td class="mono"><b>ADR-14</b></td><td class="desc"><b>Multi-tier pricing model</b></td><td class="desc"><b>Independent named price list profiles, not a flat catalogue + discount % &mdash; §35</b></td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s33">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;33</span><h2>Assumptions</h2></div>
+        <div class="sheet-kicker">Programme</div>
+        <div class="sheet-body wide">
+          <ul>
+            <li>Tax model, currency, and locale remain configurable per branch; Kerala/India GST specifics (18%, SAC 999712) are pre-configured but switched off until you enable them.</li>
+            <li>Enabling GST computes and prints tax correctly against the rule you configure — it does not itself constitute GST registration or filing; that remains your and your accountant's decision, per §19.</li>
+            <li>The Privacy &amp; Consent module (§20) is built to be ready ahead of the DPDP Act's 13 May 2027 full-enforcement date, not because it is already mandatory today — treat this as getting ahead of a known deadline, confirmed via current public reporting on the Act's rules.</li>
+            <li>Default approval thresholds in §12 are starting values for Phase 3 configuration, not fixed policy — you set real thresholds once live.</li>
+            <li>Launch scope remains one branch with the full data model in place; Milestone A+B (Phases 0&ndash;18) constitute a usable V1.</li>
+            <li>Payment gateway is a recommendation (Stripe), not a locked decision — flagged in the decision log as awaiting your input.</li>
+            <li>Staff roles and approval-authority assignments are configured against your actual org chart during Phase 3, not fixed by this document.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="sheet" id="s34">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;34</span><h2>Future expansion strategy</h2></div>
+        <div class="sheet-kicker">Programme</div>
+        <div class="sheet-body wide">
+          <div class="tbl-scroll"><table>
+            <tr><th>Future capability</th><th>Seam already reserved</th></tr>
+            <tr><td>Native mobile apps</td><td class="desc">Same REST API the PWAs use — a new consumer, not a new backend</td></tr>
+            <tr><td>RFID / IoT / machine telemetry</td><td class="desc"><code>DeviceGateway</code> interface — §24</td></tr>
+            <tr><td>Advanced route optimisation</td><td class="desc"><code>Route</code>/<code>DeliveryZone</code> tables exist from Phase 17; V1 routing is heuristic</td></tr>
+            <tr><td>Additional payment gateways</td><td class="desc"><code>PaymentGatewayAdapter</code> interface &mdash; ADR-07</td></tr>
+            <tr><td>Accounting system integration (Xero/QuickBooks/Tally)</td><td class="desc">Financial tables are an export-ready ledger, already in integer minor units matching most accounting APIs' own conventions</td></tr>
+            <tr><td>Franchise management</td><td class="desc">Organization &#8594; Branch hierarchy extends to Organization &#8594; Franchisee &#8594; Branch without touching branch-scoped schema</td></tr>
+            <tr><td>Multi-level approval chains</td><td class="desc"><code>approval_rule.approver_roles</code> already an array; a sequenced chain is additive &mdash; ADR-11</td></tr>
+            <tr><td>DPDP consent-manager integration</td><td class="desc">registration opens 13 Nov 2026 under the Act's rules; <code>ConsentRecord</code>'s source/channel model is designed to map onto a future consent-manager feed without restructuring</td></tr>
+            <tr><td>Multi-state / inter-state GST</td><td class="desc"><code>TaxRule</code> already models CGST/SGST/IGST split by customer/branch state</td></tr>
+          </table></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="s35">
+        <div class="sheet-head"><span class="sheetno">SHEET&nbsp;35</span><h2>Pricing engine &amp; price lists <span class="newtag">new</span></h2></div>
+        <div class="sheet-kicker">Commerce</div>
+        <div class="sheet-body wide">
+          <p>You caught a real gap. Rev 1.0/1.1 modelled pricing as a single flat <code>PriceRule</code> table — one price per (item, service), full stop. That's wrong for a business that serves both walk-in retail customers and contracted hotel/corporate accounts at different rates for the same garment: a hotel's bulk bedsheet rate and a walk-in customer's per-piece rate are not the same number, and a single table can't hold two different "correct" prices for "Bedsheet / Wash &amp; Fold" at once. The working UI model you're reviewing had the same flaw — one flat catalogue — until this addendum.</p>
+
+          <div class="decision">
+            <div class="decision-head"><span class="name">ADR-14 &middot; Multi-tier pricing model</span><span class="adr">decision</span></div>
+            <div class="decision-body">
+              <div class="decision-row"><div class="label">Alternatives</div><div class="val">(a) One flat catalogue with a per-customer discount percentage applied at checkout. (b) One flat catalogue with per-corporate-account override rows layered on top. (c) Fully independent named price lists — a customer is assigned one profile, and every item/service is priced separately per profile.</div></div>
+              <div class="decision-row"><div class="label">Trade-offs</div><div class="val">A flat catalogue + discount % (a) is simplest to build but can't express a hotel rate that's <i>cheaper on some items and more expensive on others</i> than retail (common in real bulk-linen contracts — high volume on basic items, premium handling on delicates) — a single percentage can't capture that shape. Override rows on top of a base catalogue (b) gets closer, but every report and every POS lookup now has to ask "is there an override for this customer on this item? if not, fall back to base" — two lookups, two sources of truth, and a class of bug where the fallback logic itself has an edge case. Fully independent named profiles (c) cost one extra table and one extra join, but every price lookup becomes a single, unambiguous query: "this customer's profile id, this item, this service, current row" — no fallback branching, no two sources of truth, and no ambiguity from matching on item+service text instead of a stable row id.</div></div>
+              <div class="decision-row"><div class="label">Recommendation</div><div class="val rec">Independent named price list profiles (c). <code class="mono">PriceListProfile</code> (§08) holds named, reusable lists — "Standard Retail," "Corporate / Hotel," or a dedicated list per large account like "Corporate &mdash; Grand Heritage Hotel." Each <code class="mono">Customer</code> carries a <code class="mono">price_list_profile_id</code>; every order prices its lines by looking up that customer's profile against <code class="mono">PriceListEntry</code> rows, keyed by entry id, never by matching item+service strings. One branch-wide default profile catches customers with no explicit assignment. This is the pattern now live in the working UI console's new <b>Services &amp; Price Lists</b> screen (Catalogue nav group).</div></div>
+            </div>
+          </div>
+
+          <h4>How a price is resolved</h4>
+          <div class="tbl-scroll"><table>
+            <tr><th>Step</th><th>What happens</th></tr>
+            <tr><td class="mono">1</td><td class="desc">POS/portal reads the customer's <code>price_list_profile_id</code> (falls back to the branch's default profile if unset)</td></tr>
+            <tr><td class="mono">2</td><td class="desc">Catalogue chips shown are filtered to <code>PriceListEntry</code> rows for that one profile — a hotel account never sees, or accidentally selects, a retail-priced row</td></tr>
+            <tr><td class="mono">3</td><td class="desc">Each order line stores the <code>price_list_entry_id</code> it was added from, plus a snapshot of the price paid — a later price change never rewrites a past invoice, same discipline as <code>tax_rule</code> in §19</td></tr>
+            <tr><td class="mono">4</td><td class="desc">Promotions/coupons (existing <code>catalogue</code> module) apply on top of the resolved line price, unchanged from Rev 1.1</td></tr>
+          </table></div>
+
+          <h4>Managing price lists (admin)</h4>
+          <p>The <b>Services &amp; Price Lists</b> screen (Catalogue nav group in the admin console) has two views: <i>Services &amp; Pricing</i> — the priced items within one selected profile, with add / activate-deactivate / remove actions — and <i>Price List Profiles</i> — the list of named profiles themselves, each showing how many items are priced and how many customers are assigned, with a "+ Add price list" action for creating a new one (e.g. a dedicated contract rate card for a new hotel account). A customer's assigned profile is set from their customer record and immediately changes which catalogue they see in POS/New Order.</p>
+
+          <p class="muted">This also updates §04 (catalogue module now owns <code>price_list_profile</code>/<code>price_list_entry</code> instead of the old flat <code>price rules</code>), §07 (ERD), and §08 (two new entity cards) from Rev 1.1. Phase 2's DDL deliverable (§30) now includes these two tables.</p>
+        </div>
+      </section>
+
+      <div class="approval" id="approval">
+        <div class="tb-eyebrow" style="margin-bottom:8px;">Sign-off</div>
+        <h3>Rev 1.2 — pricing engine addendum, in effect; full document re-review optional.</h3>
+        <p class="muted" style="margin:0;">Rev 1.1's four hardenings remain in place: dual-control approvals (§12), exact money arithmetic (§06), a GST engine that's fully specified but off by default (§19), and a first-class privacy/consent module (§20). Rev 1.2 adds one thing: named, multi-tier price lists (§35) so hotel/corporate and general-customer pricing are no longer forced into one flat catalogue — already reflected in the working UI console. Two items still await your input: the payment gateway market (ADR-07) and the default approval thresholds in §12, which are starting values for Phase 3, not fixed policy.</p>
+        <div class="signrow">
+          <div class="signcell"><div class="line"></div><div class="lbl">Reviewed by</div></div>
+          <div class="signcell"><div class="line"></div><div class="lbl">Approved / changes requested</div></div>
+          <div class="signcell"><div class="line"></div><div class="lbl">Date</div></div>
+        </div>
+      </div>
+
+      <footer class="doc">
+        <span>LW-OS-ARCH-001 &middot; Rev 1.2</span>
+        <span>The London Wash &mdash; The Art of Laundry</span>
+      </footer>
+    </div>
+  </main>
+</div>

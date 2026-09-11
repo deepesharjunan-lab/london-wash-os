@@ -1,0 +1,1873 @@
+<title>London Wash OS Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --paper:#f5f4f3; --surface:#ffffff; --surface-2:#f2f0ef; --surface-3:#e7e4e2;
+  --ink:#201e1d; --ink-2:#67615e; --ink-3:#a19b97;
+  --line:#eae7e5; --line-strong:#ddd8d5;
+  --accent:#ec3013; --accent-ink:#ffffff; --accent-soft:#fde3dd;
+  --accent-700:#ae1800; --accent-800:#7c1405;
+  --brass:#c94b39; --brass-soft:#fde3dd;
+  --ok:#189a5b; --ok-soft:#e1f6ea;
+  --warn:#dd9a0c; --warn-soft:#fdf1da;
+  --danger:#e23c2b; --danger-soft:#fce2df;
+  --info:#3d6fe0; --info-soft:#e7edfd;
+  --violet:#8457e6; --violet-soft:#efe8fd;
+  --teal:#0e9488; --teal-soft:#dff5f2;
+  /* soft, layered shadows — the "friendlier" card language this pass adopts */
+  --shadow-sm:0 1px 2px rgba(32,28,26,.05), 0 1px 3px rgba(32,28,26,.07);
+  --shadow-md:0 6px 16px -4px rgba(32,28,26,.10), 0 2px 6px -2px rgba(32,28,26,.06);
+  --shadow-lg:0 20px 44px -14px rgba(32,28,26,.24);
+  --shadow:var(--shadow-sm);
+  --radius-sm:8px; --radius-md:12px; --radius-lg:18px; --radius-pill:999px;
+  --radius:var(--radius-md);
+  --sidebar-bg:#1c1a1e; --sidebar-line:#332f30; --sidebar-ink:#f3f2f2; --sidebar-ink-2:#928c8a; --sidebar-hover:#29262a;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif; font-size:14px; line-height:1.5; font-variant-numeric:tabular-nums; }
+h1,h2,h3,h4{ font-family:'Archivo',system-ui,sans-serif; font-weight:800; letter-spacing:-.015em; text-wrap:balance; margin:0; color:var(--ink); }
+code,.mono{ font-family:'Archivo',system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+button{ font-family:inherit; cursor:pointer; }
+input,select,textarea{ font-family:inherit; font-size:13.5px; }
+a{ color:var(--accent); }
+::selection{ background:var(--accent-soft); }
+*:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+::-webkit-scrollbar{ width:9px; height:9px; }
+::-webkit-scrollbar-thumb{ background:var(--ink-3); border-radius:8px; }
+
+/* ---------- workspace switcher shell ---------- */
+#shell{ min-height:100vh; display:flex; flex-direction:column; }
+.ws-topbar{ display:flex; align-items:center; justify-content:space-between; padding:9px 20px; background:var(--sidebar-bg); color:var(--sidebar-ink); border-bottom:2px solid var(--sidebar-line); gap:16px; }
+.ws-brand{ display:flex; align-items:center; gap:9px; }
+.ws-brand .mark{ width:9px; height:9px; background:var(--accent); flex:none; }
+.ws-brand-name{ font-family:'Archivo',sans-serif; font-weight:800; font-size:14px; letter-spacing:-.01em; }
+.ws-brand-tag{ font-size:10px; color:var(--accent); letter-spacing:.1em; text-transform:uppercase; margin-left:6px; }
+.ws-switch{ display:flex; gap:2px; background:var(--sidebar-hover); border-radius:var(--radius-pill); padding:3px; }
+.ws-switch button{ border:none; background:transparent; padding:7px 14px; border-radius:var(--radius-pill); font-size:12px; font-weight:700; font-family:'Archivo',sans-serif; color:var(--sidebar-ink-2); }
+.ws-switch button.active{ background:var(--accent); color:#fff; }
+.ws-meta{ font-size:11px; color:var(--sidebar-ink-2); }
+#workspaceRoot{ flex:1; min-height:0; }
+
+/* ---------- admin console shell ---------- */
+.console{ display:grid; grid-template-columns:236px 1fr; height:calc(100vh - 47px); }
+.sidebar{ background:var(--sidebar-bg); color:var(--sidebar-ink); border-right:none; overflow-y:auto; padding:14px 0 24px; display:flex; flex-direction:column; }
+.side-group{ font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--sidebar-ink-2); padding:16px 18px 6px; margin:0; }
+.side-group:first-child{ padding-top:2px; }
+.side-link{ display:flex; align-items:center; gap:10px; margin:1px 10px; padding:8px 10px; border-radius:var(--radius-sm); border-left:3px solid transparent; color:var(--sidebar-ink-2); font-size:13.5px; font-weight:500; text-decoration:none; position:relative; }
+.side-link .ic{ width:26px; height:26px; flex:none; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; background:var(--sidebar-hover); color:var(--sidebar-ink-2); }
+.side-link:hover{ background:var(--sidebar-hover); color:var(--sidebar-ink); }
+.side-link.active{ background:var(--sidebar-hover); border-left-color:var(--accent); color:#fff; font-weight:700; }
+.side-link.active .ic{ background:var(--accent); color:#fff; }
+.side-link .badge-n{ margin-left:auto; background:var(--accent); color:#fff; font-size:10px; font-weight:800; padding:1px 7px; border-radius:var(--radius-pill); }
+.sidebar-foot{ margin-top:auto; border-top:1px solid var(--sidebar-line); padding:14px 18px; display:flex; align-items:center; gap:10px; }
+.admin-main{ overflow-y:auto; padding:0; background:var(--paper); }
+.admin-topbar{ display:flex; align-items:flex-end; gap:20px; flex-wrap:wrap; padding:18px 26px 14px; border-bottom:1px solid var(--line); background:var(--paper); position:sticky; top:0; z-index:20; }
+.admin-topbar-strip{ display:flex; align-items:center; gap:0; padding:0 26px; border-top:1px solid var(--line); flex-wrap:wrap; background:var(--paper); position:sticky; top:64px; z-index:19; }
+.strip-item{ display:flex; align-items:center; gap:7px; padding:7px 14px 7px 0; font-size:11.5px; color:var(--ink-2); border-right:1px solid var(--line); }
+.strip-item:first-child{ padding-left:0; }
+.strip-item .sqdot{ width:7px; height:7px; border-radius:50%; display:block; flex:none; }
+.page-kicker{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-700); }
+.page-title{ font-size:27px; letter-spacing:-.02em; margin-top:4px; }
+.page-sub{ display:none; }
+.admin-content-pad{ padding:24px 26px 56px; }
+.searchbox{ display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-pill); padding:0 14px; height:36px; min-width:230px; box-shadow:var(--shadow-sm); }
+.searchbox input{ border:none; background:transparent; outline:none; color:var(--ink); flex:1; font-size:13px; }
+.topbar-right{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-left:auto; }
+.branch-pill{ font-size:13px; border:1px solid var(--line-strong); border-radius:var(--radius-pill); padding:0 14px; height:36px; display:inline-flex; align-items:center; gap:8px; color:var(--ink); background:var(--surface); font-weight:600; }
+.avatar{ width:32px; height:32px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex:none; }
+
+/* ---------- generic building blocks ---------- */
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); }
+.card-pad{ padding:16px 18px; }
+.section-title{ font-size:15px; font-weight:800; font-family:'Archivo',sans-serif; margin-bottom:2px; }
+.small-muted{ font-size:12px; color:var(--ink-2); }
+.tiny-muted{ font-size:11px; color:var(--ink-3); }
+.flex-between{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.stack{ display:flex; flex-direction:column; gap:16px; }
+.grid{ display:grid; gap:16px; }
+.mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-20{margin-top:20px;}
+
+.btn{ display:inline-flex; align-items:center; gap:6px; border-radius:var(--radius-sm); padding:8px 14px; font-size:13px; font-weight:800; font-family:'Archivo',sans-serif; border:1px solid transparent; white-space:nowrap; }
+.btn-primary{ background:var(--accent); color:var(--accent-ink); box-shadow:var(--shadow-sm); }
+.btn-primary:hover{ background:var(--accent-700); }
+.btn-outline{ background:var(--surface); border-color:var(--line-strong); color:var(--ink); }
+.btn-outline:hover{ background:var(--surface-2); }
+.btn-danger{ background:var(--danger); color:#fff; }
+.btn-ok{ background:var(--ok); color:#fff; }
+.btn-sm{ padding:6px 11px; font-size:12px; }
+.btn[disabled]{ opacity:.45; cursor:not-allowed; }
+.btn-ghost{ background:transparent; border:none; color:var(--accent); padding:5px 6px; font-weight:700; border-radius:var(--radius-sm); }
+.btn-ghost:hover{ background:var(--accent-soft); }
+
+.field label{ display:block; font-size:12px; margin-bottom:5px; color:var(--ink-2); }
+.field input, .field select, .field textarea{ width:100%; min-height:36px; padding:6px 10px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); }
+.field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.form-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+.pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:var(--radius-pill); letter-spacing:.02em; }
+.pill.ok{ background:var(--ok-soft); color:var(--ok); }
+.pill.warn{ background:var(--warn-soft); color:var(--warn); }
+.pill.danger{ background:var(--danger); color:#fff; }
+.pill.info{ background:var(--info-soft); color:var(--info); }
+.pill.neutral{ background:var(--surface-3); color:var(--ink-2); }
+.pill .dot{ width:7px; height:7px; border-radius:50%; background:currentColor; flex:none; }
+
+table{ border-collapse:collapse; width:100%; font-size:13px; }
+.tbl-wrap{ overflow-x:auto; }
+th{ text-align:left; padding:8px 12px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2); border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+td{ padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+tr:last-child td{ border-bottom:none; }
+tbody tr:hover td{ background:var(--surface-2); }
+.row-click{ cursor:pointer; }
+td.mono{ color:var(--ink-2); }
+
+.kpi-grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:14px; }
+.kpi{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:16px 18px 14px; box-shadow:var(--shadow-sm); }
+.kpi-icon{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+.kpi .k-label{ font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-2); font-weight:600; }
+.kpi .k-value{ font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; letter-spacing:-.03em; margin-top:6px; font-variant-numeric:tabular-nums; }
+.kpi .k-delta{ font-size:11.5px; margin-top:2px; font-weight:600; }
+.kpi.kpi-danger{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.kpi.kpi-danger .k-label{ color:rgba(255,255,255,.85); }
+.kpi.kpi-danger .k-delta{ color:rgba(255,255,255,.95); }
+.kpi.kpi-danger .kpi-icon{ background:rgba(255,255,255,.2); }
+.kpi .k-delta.up{ color:var(--ok); } .kpi .k-delta.down{ color:var(--danger); }
+@media (max-width:1400px){ .kpi-grid{ grid-template-columns:repeat(3,1fr); } }
+
+.chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{ font-size:12.5px; font-weight:700; font-family:'Archivo',sans-serif; border:1px solid var(--line-strong); border-radius:var(--radius-pill); padding:7px 14px; background:var(--surface); color:var(--ink); cursor:pointer; }
+.chip.selected{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* kanban */
+.kanban{ display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; }
+.kanban-col{ background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-md); min-width:230px; flex:none; padding:10px; }
+.kanban-col-head{ display:flex; justify-content:space-between; align-items:center; padding:2px 4px 10px; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-2); }
+.kanban-count{ background:var(--ink); color:var(--paper); border-radius:var(--radius-pill); padding:1px 8px; font-size:10.5px; font-weight:700; }
+.g-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 11px; margin-bottom:8px; box-shadow:var(--shadow-sm); cursor:pointer; }
+.g-card:hover{ border-color:var(--accent); box-shadow:var(--shadow-md); }
+.g-card .gid{ font-family:'Archivo',sans-serif; font-size:11px; color:var(--accent-700); font-weight:700; }
+.g-card .gname{ font-size:12.6px; font-weight:600; margin-top:3px; }
+.g-card .gmeta{ font-size:10.8px; color:var(--ink-3); margin-top:3px; }
+.g-card .gsla{ margin-top:7px; }
+
+/* modal */
+.modal-backdrop{ position:fixed; inset:0; background:color-mix(in srgb, var(--ink) 55%, transparent); display:flex; align-items:center; justify-content:center; z-index:80; padding:20px; }
+.modal{ background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--line); box-shadow:var(--shadow-lg); width:100%; max-width:520px; max-height:88vh; overflow-y:auto; padding:22px; }
+.modal.wide{ max-width:760px; }
+.modal h3{ font-size:19px; margin-bottom:4px; font-weight:800; }
+.modal .muted{ font-size:12.5px; color:var(--ink-2); margin-bottom:16px; }
+
+/* toggle switch */
+.toggle{ width:40px; height:22px; border-radius:var(--radius-pill); background:var(--surface-3); border:1px solid var(--line-strong); position:relative; flex:none; transition:.15s; }
+.toggle::after{ content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:var(--ink-3); top:2px; left:2px; transition:.15s; }
+.toggle.on{ background:var(--ok); border-color:var(--ok); }
+.toggle.on::after{ left:20px; background:#fff; }
+
+/* timeline (digital garment passport) */
+.tl{ position:relative; padding-left:22px; }
+.tl::before{ content:""; position:absolute; left:5px; top:4px; bottom:4px; width:1px; background:var(--line-strong); }
+.tl-item{ position:relative; padding-bottom:18px; }
+.tl-item:last-child{ padding-bottom:0; }
+.tl-item::before{ content:""; position:absolute; left:-22px; top:2px; width:9px; height:9px; border-radius:0; background:var(--accent); border:2px solid var(--paper); box-shadow:0 0 0 1px var(--accent); }
+.tl-item.fail::before{ background:var(--danger); box-shadow:0 0 0 1px var(--danger); }
+.tl-time{ font-size:10.5px; color:var(--ink-3); font-family:'Archivo',sans-serif; }
+.tl-label{ font-size:13px; font-weight:600; margin-top:1px; }
+.tl-meta{ font-size:11.5px; color:var(--ink-2); margin-top:1px; }
+
+/* AI copilot */
+.chat-bubble{ max-width:80%; padding:10px 14px; border-radius:var(--radius-md); font-size:13px; line-height:1.5; }
+.chat-bubble.user{ background:var(--accent); color:var(--accent-ink); margin-left:auto; border-bottom-right-radius:4px; }
+.chat-bubble.ai{ background:var(--surface); border:1px solid var(--line); margin-right:auto; box-shadow:var(--shadow-sm); border-bottom-left-radius:4px; }
+.chat-cite{ font-size:10.5px; color:var(--ink-3); margin-top:6px; border-top:1px dashed var(--line-strong); padding-top:6px; }
+
+/* ---------- mobile device frame (portal / driver) ---------- */
+.device-stage{ min-height:calc(100vh - 47px); display:flex; align-items:flex-start; justify-content:center; padding:34px 20px; background:var(--surface); gap:40px; flex-wrap:wrap; }
+.device-col{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+.device-caption{ font-size:11.5px; color:var(--ink-2); text-align:center; max-width:300px; }
+.device-caption b{ color:var(--ink); }
+.phone{ width:360px; height:720px; background:var(--paper); border:8px solid var(--ink); border-radius:36px; box-shadow:0 20px 44px -18px rgba(0,0,0,.35); overflow:hidden; display:flex; flex-direction:column; position:relative; }
+.phone-notch{ height:22px; background:var(--ink); display:flex; align-items:center; justify-content:center; }
+.phone-notch::after{ content:""; width:70px; height:6px; background:#000; border-radius:4px; }
+.phone-screen{ flex:1; overflow-y:auto; background:var(--paper); }
+.phone-topbar{ background:var(--paper); padding:14px 16px 12px; border-bottom:2px solid var(--line); position:sticky; top:0; z-index:5; }
+.phone-topbar .pt-eyebrow{ font-size:9.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); font-weight:800; }
+.phone-topbar h2{ font-size:19px; margin-top:3px; }
+.phone-body{ padding:14px 16px 90px; }
+.phone-tabbar{ position:absolute; left:0; right:0; bottom:0; background:var(--sidebar-bg); border-top:none; display:flex; padding:6px 4px 8px; }
+.pt-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px; border-radius:var(--radius-sm); color:var(--sidebar-ink-2); font-size:9.5px; font-weight:700; }
+.pt-item .ic{ font-size:16px; }
+.pt-item.active{ color:var(--accent); }
+
+.mcard{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:14px; box-shadow:var(--shadow-sm); margin-bottom:12px; }
+.mcard-tight{ padding:12px 14px; }
+.progress-track{ height:8px; background:var(--surface-3); border-radius:var(--radius-pill); overflow:hidden; margin-top:8px;}
+.progress-fill{ height:100%; background:var(--accent); border-radius:var(--radius-pill); }
+
+[hidden]{ display:none !important; }
+</style>
+
+<div id="shell">
+  <div class="ws-topbar">
+    <div class="ws-brand"><span class="mark"></span><span class="ws-brand-name">The London Wash</span><span class="ws-brand-tag">UI WORKING MODEL &middot; for review</span></div>
+    <div class="ws-switch" id="wsSwitch">
+      <button data-ws="admin" class="active">Admin Console</button>
+      <button data-ws="portal">Customer Portal</button>
+      <button data-ws="driver">Driver App</button>
+    </div>
+    <div class="ws-meta">Kochi, Kerala &middot; Branch: Main Store</div>
+  </div>
+  <div id="workspaceRoot"></div>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+/* ============================================================
+   THE LONDON WASH — UI WORKING MODEL
+   Click-through prototype for IA/visual review, per the approved
+   blueprint LW-OS-ARCH-001 Rev 1.1. No backend — all state is
+   in-memory, seeded with example data so every screen opens in a
+   realistic working state.
+   ============================================================ */
+
+const fmt = (paise) => '₹' + (paise/100).toLocaleString('en-IN', {maximumFractionDigits: 0});
+const fmt2 = (paise) => '₹' + (paise/100).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const todayStr = () => '10 Sep 2026';
+let idSeq = 9000;
+const nid = (prefix) => prefix + '-' + (idSeq++);
+
+/* ---------------- workflow ---------------- */
+const STAGES = ['Received','Inspection','Washing','Drying','Ironing','Quality Control','Packing','Ready','Dispatched'];
+
+/* ---------------- seed: customers ---------------- */
+let customers = [
+  {id:'C001', name:'Anjali Menon', phone:'+91 98470 11234', tier:'Gold', points:640, wallet:85000, lifetimeSpend:2140000, orders:38, addr:'TC 14/220, Panampilly Nagar, Kochi', consent:{whatsapp:true, sms:true, email:false}, fold:'Hanger', detergent:'Fragrance-free', priceProfileId:'PL1'},
+  {id:'C002', name:'Rahul Varma', phone:'+91 94470 55621', tier:'Silver', points:120, wallet:0, lifetimeSpend:412000, orders:9, addr:'Door 42, MG Road, Ernakulam', consent:{whatsapp:true, sms:false, email:false}, fold:'Folded', detergent:'Regular', priceProfileId:'PL1'},
+  {id:'C003', name:'Grand Heritage Hotel', phone:'+91 48412 20099', tier:'Corporate', points:0, wallet:0, lifetimeSpend:8850000, orders:64, addr:'Marine Drive, Kochi — Corporate Account', consent:{whatsapp:true, sms:true, email:true}, fold:'Boxed', detergent:'Regular', corporate:true, gstin:'32AACCG1234B1ZQ', priceProfileId:'PL2'},
+  {id:'C004', name:'Fathima Rasheed', phone:'+91 97460 83321', tier:'Platinum', points:1180, wallet:32000, lifetimeSpend:3260000, orders:52, addr:'Vyttila Hub, Kochi', consent:{whatsapp:true, sms:true, email:true}, fold:'Hanger', detergent:'Unscented', priceProfileId:'PL1'},
+  {id:'C005', name:'Sooraj Nair', phone:'+91 90480 17765', tier:'Silver', points:60, wallet:15000, lifetimeSpend:198000, orders:5, addr:'Kakkanad, Kochi', consent:{whatsapp:false, sms:false, email:false}, fold:'Folded', detergent:'Regular', priceProfileId:'PL1'},
+];
+
+/* ---------------- seed: price list profiles & pricing ---------------- */
+// Every price row belongs to a profile — this is how "hotels pay one
+// rate, walk-in customers pay another" works. A customer is assigned
+// a profile (see priceProfileId above); POS prices from that profile.
+let priceProfiles = [
+  {id:'PL1', name:'Standard Retail', desc:'Walk-in and individual customers'},
+  {id:'PL2', name:'Corporate / Hotel', desc:'Contracted bulk-linen rates for hotel and corporate accounts'},
+];
+let plSeq = 1;
+function pl(item, service, price, profileId){ return {id:'PR'+(plSeq++), item, service, price, profileId, active:true}; }
+let priceList = [
+  pl('Shirt (formal)','Wash & Iron',6000,'PL1'),
+  pl('Shirt (formal)','Dry Clean',9500,'PL1'),
+  pl('Trouser','Wash & Iron',7000,'PL1'),
+  pl('Blazer','Dry Clean',22000,'PL1'),
+  pl('Saree (silk)','Special Treatment',35000,'PL1'),
+  pl('Bedsheet (double)','Wash & Fold',12000,'PL1'),
+  pl('Curtain (set)','Steam & Press',28000,'PL1'),
+  pl('Suit (2-piece)','Express Dry Clean',45000,'PL1'),
+  pl('Jeans','Wash & Fold',8000,'PL1'),
+  pl('T-Shirt','Wash & Fold',4500,'PL1'),
+  // Corporate / Hotel — contracted bulk-linen rates, priced per piece at volume
+  pl('Bedsheet (king)','Wash & Fold',4500,'PL2'),
+  pl('Bedsheet (double)','Wash & Fold',3800,'PL2'),
+  pl('Towel (bath)','Wash & Fold',2200,'PL2'),
+  pl('Pillow Cover','Wash & Fold',1200,'PL2'),
+  pl('Table Cloth','Wash & Iron',5000,'PL2'),
+];
+function activeCatalog(profileId){ return priceList.filter(p=>p.active && p.profileId===profileId); }
+function profileName(id){ const p=priceProfiles.find(x=>x.id===id); return p?p.name:id; }
+
+/* ---------------- seed: garments + orders ---------------- */
+function mkGarment(item, service, stageIdx, extra){
+  const stage = STAGES[stageIdx];
+  const base = new Date('2026-09-08T09:10:00');
+  const events = [];
+  for(let i=0;i<=stageIdx;i++){
+    const t = new Date(base.getTime() + i*3*3600*1000);
+    events.push({t: t.toISOString().slice(0,16).replace('T',' '), label: i===0?'Received at counter':STAGES[i]+' — started', who: i===0?'Counter — Devika S.':STAGES[i]==='Washing'?'Machine W03 — Operator: Biju':STAGES[i]==='Quality Control'?'QC — Meera P.':'Floor staff'});
+  }
+  return Object.assign({id: nid('G-LW-000'), item, service, stageIdx, stage, events, color:null, damage:[], stains:[]}, extra||{});
+}
+let orders = [
+  {id:'LW-26091245', custId:'C001', channel:'Counter', type:'Pickup + Delivery', status:'Processing', sla:'on_track', dueAt:'10 Sep, 6:00 PM', total:212000, paid:true, payMode:'Card',
+   items:[mkGarment('Shirt (formal)','Wash & Iron',4), mkGarment('Shirt (formal)','Wash & Iron',4), mkGarment('Trouser','Wash & Iron',4), mkGarment('Blazer','Dry Clean',2), mkGarment('Saree (silk)','Special Treatment',1,{color:'Maroon',damage:[],stains:['Oil / Grease']})]},
+  {id:'LW-26091198', custId:'C004', channel:'WhatsApp', type:'Pickup + Delivery', status:'Quality Control', sla:'at_risk', dueAt:'10 Sep, 1:00 PM', total:186000, paid:true, payMode:'Wallet',
+   items:[mkGarment('Bedsheet (double)','Wash & Fold',5), mkGarment('Pillow Cover',' Wash & Fold',5), mkGarment('Curtain (set)','Steam & Press',5,{damage:['Faded'],stains:[]})]},
+  {id:'LW-26091177', custId:'C003', channel:'Corporate', type:'Recurring — Daily Linen', status:'Washing', sla:'on_track', dueAt:'10 Sep, 9:00 PM', total:964000, paid:false, payMode:'Credit (Corporate)',
+   items:[mkGarment('Bedsheet (king)','Wash & Fold',2), mkGarment('Bedsheet (king)','Wash & Fold',2), mkGarment('Towel (bath)','Wash & Fold',2), mkGarment('Towel (bath)','Wash & Fold',2), mkGarment('Pillow Cover','Wash & Fold',2), mkGarment('Table Cloth','Wash & Iron',2)]},
+  {id:'LW-26091150', custId:'C002', channel:'Counter', type:'Store drop-off', status:'Ready', sla:'on_track', dueAt:'09 Sep, 6:00 PM', total:64000, paid:true, payMode:'UPI',
+   items:[mkGarment('Jeans','Wash & Fold',7), mkGarment('T-Shirt','Wash & Fold',7)]},
+  {id:'LW-26091132', custId:'C005', channel:'Portal', type:'Express — Same day', status:'Inspection', sla:'breached', dueAt:'09 Sep, 8:00 PM', total:98000, paid:true, payMode:'Cash',
+   items:[mkGarment('Suit (2-piece)','Express Dry Clean',1,{damage:['Button Missing'],stains:[]})]},
+  {id:'LW-26091099', custId:'C001', channel:'Counter', type:'Store drop-off', status:'Delivered', sla:'on_track', dueAt:'08 Sep, 6:00 PM', total:156000, paid:true, payMode:'Card',
+   items:[mkGarment('Shirt (formal)','Wash & Iron',8), mkGarment('Trouser','Wash & Iron',8), mkGarment('Trouser','Wash & Iron',8)]},
+];
+// flatten garment index for QR/scan lookups and production board
+function allGarments(){
+  const out = [];
+  orders.forEach(o => o.items.forEach(g => out.push(Object.assign(g, {orderId:o.id, custId:o.custId}))));
+  return out;
+}
+function orderOf(orderId){ return orders.find(o=>o.id===orderId); }
+
+/* ---------------- seed: inventory ---------------- */
+let inventory = [
+  {id:'INV01', name:'Liquid Detergent (Premium)', unit:'L', stock:38, reorder:20, status:'ok'},
+  {id:'INV02', name:'Fabric Softener', unit:'L', stock:12, reorder:15, status:'low'},
+  {id:'INV03', name:'Dry-clean Solvent', unit:'L', stock:54, reorder:25, status:'ok'},
+  {id:'INV04', name:'Stain Remover (Spotting)', unit:'L', stock:6, reorder:10, status:'low'},
+  {id:'INV05', name:'Garment Bags', unit:'pcs', stock:410, reorder:200, status:'ok'},
+  {id:'INV06', name:'Hangers', unit:'pcs', stock:88, reorder:150, status:'low'},
+  {id:'INV07', name:'Printer Tags (rolls)', unit:'rolls', stock:22, reorder:10, status:'ok'},
+];
+
+/* ---------------- seed: staff ---------------- */
+let staff = [
+  {id:'S01', name:'Devika S.', role:'Counter Staff', status:'Clocked in', since:'08:58 AM'},
+  {id:'S02', name:'Biju Thomas', role:'Laundry Operator', status:'Clocked in', since:'09:02 AM'},
+  {id:'S03', name:'Meera Pillai', role:'QC Staff', status:'Clocked in', since:'09:00 AM'},
+  {id:'S04', name:'Arun Kumar', role:'Driver', status:'On route', since:'10:15 AM'},
+  {id:'S05', name:'Nithya Raj', role:'Branch Manager', status:'Clocked in', since:'08:45 AM'},
+  {id:'S06', name:'Sajan George', role:'Ironing Staff', status:'On break', since:'09:00 AM'},
+];
+
+/* ---------------- seed: approvals ---------------- */
+let approvals = [
+  {id:'AP01', type:'Refund', requestedBy:'Devika S. (Counter Staff)', amount:280000, entity:'Order LW-26090988', reason:'Customer reported a missed pickup window twice; goodwill full refund.', status:'pending', requestedAt:'09:41 AM'},
+  {id:'AP02', type:'Price Override', requestedBy:'Rohit M. (Counter Staff)', amount:null, detail:'22% off catalogue price', entity:'Order LW-26091240', reason:'Long-standing customer, bulk order of 40 pieces.', status:'pending', requestedAt:'10:05 AM'},
+  {id:'AP03', type:'Inventory Adjustment', requestedBy:'Biju Thomas (Operator)', amount:null, detail:'-8L Dry-clean Solvent (spillage)', entity:'INV03', reason:'Container leak during transfer, logged with photo.', status:'pending', requestedAt:'09:20 AM'},
+  {id:'AP04', type:'Wallet Adjustment', requestedBy:'Nithya Raj (Branch Manager)', amount:20000, entity:'Anjali Menon (C001)', reason:'Compensating for a delayed order last week per her call with support.', status:'approved', decidedBy:'Owner', requestedAt:'Yesterday, 4:12 PM'},
+];
+
+/* ---------------- seed: wallet & loyalty tx ---------------- */
+let walletTx = [
+  {custId:'C001', type:'Recharge', amount:100000, mode:'UPI', date:'05 Sep 2026'},
+  {custId:'C001', type:'Redeem', amount:-15000, mode:'Order LW-26091099', date:'08 Sep 2026'},
+  {custId:'C004', type:'Redeem', amount:-18600, mode:'Order LW-26091198', date:'10 Sep 2026'},
+];
+
+/* ---------------- seed: consent records ---------------- */
+let consentLog = [
+  {custId:'C001', type:'marketing_whatsapp', status:'granted', source:'Signup form', at:'12 Jan 2026'},
+  {custId:'C005', type:'marketing_whatsapp', status:'withdrawn', source:'Portal settings', at:'02 Sep 2026'},
+];
+
+/* ---------------- settings ---------------- */
+let settings = {
+  taxEnabled: false,
+  gstin: '',
+  approvalThresholds: {refund: 200000, priceOverride: 15, inventoryAdj: 10},
+};
+
+/* ---------------- app state ---------------- */
+let workspace = 'admin';       // admin | portal | driver
+let adminTab = 'dashboard';
+let portalTab = 'orders';
+let driverTab = 'route';
+const portalCustomerId = 'C001'; // "logged in as" for the portal preview
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function custName(id){ const c=customers.find(x=>x.id===id); return c?c.name:id; }
+function custById(id){ return customers.find(x=>x.id===id); }
+function tierPill(tier){
+  const map = {Gold:'warn', Silver:'neutral', Platinum:'info', Corporate:'ok'};
+  return `<span class="pill ${map[tier]||'neutral'}"><span class="dot"></span>${tier}</span>`;
+}
+function slaPill(sla){
+  const map = {on_track:['ok','On track'], at_risk:['warn','At risk'], breached:['danger','Breached']};
+  const [cls,label] = map[sla]||['neutral',sla];
+  return `<span class="pill ${cls}"><span class="dot"></span>${label}</span>`;
+}
+function statusPill(status){
+  const doneSet = ['Delivered','Ready','Completed'];
+  const badSet = ['Cancelled','Lost Item','Claim'];
+  let cls = 'info';
+  if(doneSet.includes(status)) cls='ok';
+  if(badSet.includes(status)) cls='danger';
+  if(status==='Quality Control') cls='warn';
+  return `<span class="pill ${cls}">${status}</span>`;
+}
+function invPill(status){ return status==='low' ? '<span class="pill warn"><span class="dot"></span>Low stock</span>' : '<span class="pill ok"><span class="dot"></span>In stock</span>'; }
+function pendingApprovalCount(){ return approvals.filter(a=>a.status==='pending').length; }
+
+/* ---------------- dashboard analytics helpers ---------------- */
+// A garment line item carries no price of its own (only the parent order's
+// lump total does) — its price is resolved the same way POS resolves it:
+// look up the ordering customer's price list profile, then the matching
+// (item, service) entry in that profile. This is what lets Dashboard roll
+// up "revenue by service" and "top items" honestly instead of guessing.
+function garmentPrice(g, custId){
+  const cust = custById(custId);
+  const profileId = cust ? cust.priceProfileId : 'PL1';
+  let entry = priceList.find(p=>p.profileId===profileId && p.item===g.item && p.service===g.service);
+  if(!entry) entry = priceList.find(p=>p.item===g.item && p.service===g.service);
+  return entry ? entry.price : 0;
+}
+// Small deterministic hash so "vs previous period" deltas are stable across
+// re-renders (no backend history to compute real ones from yet) rather than
+// jittering randomly — a seeded illustrative figure, not a real trend.
+function pseudoDelta(seed, lo, hi){
+  let h = 0; for(let i=0;i<seed.length;i++) h = (h*31 + seed.charCodeAt(i)) >>> 0;
+  const v = lo + (h % (hi-lo+1));
+  return v;
+}
+function deltaTag(v){ return v>=0 ? `<span style="color:var(--ok);">▲ ${v}%</span>` : `<span style="color:var(--danger);">▼ ${Math.abs(v)}%</span>`; }
+function garmentsForOrder(o){ return o.items; }
+function orderProgress(o){
+  const idx = o.items.reduce((a,g)=>a+g.stageIdx,0)/o.items.length;
+  return Math.round((idx/(STAGES.length-1))*100);
+}
+function fakeQR(seed){
+  // decorative QR-like grid, deterministic from a seed string
+  let h=0; for(const c of seed) h=(h*31+c.charCodeAt(0))>>>0;
+  const cells=[];
+  for(let i=0;i<49;i++){ h=(h*1103515245+12345)>>>0; cells.push((h>>>16)%3===0); }
+  const sz=7, cell=6;
+  let rects='';
+  cells.forEach((on,i)=>{ if(on){ const x=(i%sz)*cell, y=Math.floor(i/sz)*cell; rects+=`<rect x="${x}" y="${y}" width="${cell-1}" height="${cell-1}" fill="currentColor"/>`; } });
+  return `<svg width="${sz*cell}" height="${sz*cell}" viewBox="0 0 ${sz*cell} ${sz*cell}">${rects}</svg>`;
+}
+// Flat line-icon per garment/item, matching the sidebar's stroke-icon style —
+// keyword-matched against the item name, generic hanger as the fallback.
+function itemIconPath(item){
+  const rules = [
+    [/shirt|kurta/i, '<path d="M8 4 5 6v4l2-1v11h10V9l2 1V6l-3-2-2 1.5L12 4l-2 1.5z"/>'],
+    [/trouser|jean|pant/i, '<path d="M6 3h12l.8 18h-4l-.8-9-.8 9h-4z"/>'],
+    [/blazer|suit|jacket/i, '<path d="m8 4 4 2 4-2 3 3-2 2-1-1v12H6V8l-1 1-2-2z"/><path d="M12 6v5"/>'],
+    [/saree|dress|gown/i, '<path d="M10 3h4l3 18H7z"/><path d="m10 3-2 6M14 3l2 6"/>'],
+    [/bedsheet|linen/i, '<rect x="3" y="8" width="18" height="11"/><path d="M3 12h18"/>'],
+    [/curtain/i, '<path d="M4 4h16"/><path d="M7 4v16M12 4v16M17 4v16"/>'],
+    [/towel/i, '<rect x="4" y="4" width="16" height="16"/><path d="M4 11h16M11 4v16"/>'],
+    [/pillow/i, '<rect x="3" y="7" width="18" height="10" rx="5"/>'],
+    [/table\s*cloth/i, '<rect x="3" y="5" width="18" height="14"/><path d="m3 5 18 14M21 5 3 19"/>'],
+    [/t-?shirt/i, '<path d="M5 6 8 3l4 2 4-2 3 3-3 3-1-1v10H9V11l-1 1z"/>'],
+  ];
+  for(const [re, path] of rules){ if(re.test(item)) return path; }
+  return '<path d="M12 4a2 2 0 1 1-2 2"/><path d="M12 6v3l9 5-1.5 2.5L12 13l-7.5 3.5L3 14l9-5z"/>'; // hanger fallback
+}
+function itemIconSvg(item){
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${itemIconPath(item)}</svg>`;
+}
+
+// Small line-icon set for KPI/metric badges (dashboard, price-list cards etc).
+function kpiIconPath(name){
+  const paths = {
+    wallet: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16" cy="14" r="1.2" fill="currentColor" stroke="none"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none"/>',
+    hanger: '<path d="M12 4a2 2 0 1 1-2 2"/><path d="M12 6v3l9 5-1.5 2.5L12 13l-7.5 3.5L3 14l9-5z"/>',
+    trend: '<path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/>',
+    repeat: '<path d="M4 7h13a3 3 0 0 1 3 3v2"/><path d="m14 4 3 3-3 3"/><path d="M20 17H7a3 3 0 0 1-3-3v-2"/><path d="m10 20-3-3 3-3"/>',
+    alert: '<path d="M12 4 3 20h18z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>',
+  };
+  return paths[name] || paths.list;
+}
+function kpiIconSvg(name){
+  return `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${kpiIconPath(name)}</svg>`;
+}
+
+/* ============================================================
+   ADMIN CONSOLE
+   ============================================================ */
+const ADMIN_NAV = [
+  {group:'Overview', tint:'var(--accent)', items:[ {id:'dashboard', label:'Dashboard', ic:'◆'} ]},
+  {group:'Catalogue', tint:'var(--violet)', items:[ {id:'pricelists', label:'Services & Prices', ic:'▧'} ]},
+  {group:'Sales', tint:'var(--info)', items:[ {id:'neworder', label:'New Order', ic:'+'}, {id:'orders', label:'Orders', ic:'≡'}, {id:'customers', label:'Customers', ic:'◐'} ]},
+  {group:'Production', tint:'var(--teal)', items:[ {id:'production', label:'Production Board', ic:'▦'}, {id:'qc', label:'Quality Control', ic:'✓'}, {id:'packing', label:'Packing & Dispatch', ic:'▣'} ]},
+  {group:'Money', tint:'var(--ok)', items:[ {id:'wallet', label:'Wallet & Payments', ic:'₹'}, {id:'loyalty', label:'Loyalty & Plans', ic:'★'} ]},
+  {group:'Operations', tint:'var(--warn)', items:[ {id:'inventory', label:'Inventory', ic:'▤'}, {id:'staff', label:'Staff & Attendance', ic:'◎'}, {id:'approvals', label:'Approvals', ic:'⚑', badge:true} ]},
+  {group:'Customer-facing', tint:'var(--info)', items:[ {id:'customerapp', label:'Customer App', ic:'▯', ws:'portal'}, {id:'driverapp', label:'Driver App', ic:'▭', ws:'driver'} ]},
+  {group:'System', tint:'var(--ink-2)', items:[ {id:'copilot', label:'AI Copilot', ic:'✦'}, {id:'settings', label:'Settings', ic:'⚙'} ]},
+];
+const ADMIN_TITLES = {
+  dashboard:['Overview','Dashboard'],
+  pricelists:['Catalogue','Services & Price Lists'],
+  neworder:['Sales','New Order'],
+  orders:['Sales','Orders'],
+  customers:['Sales','Customers'],
+  production:['Production','Production Board'],
+  qc:['Production','Quality Control & Packing'],
+  packing:['Production','Packing & Dispatch'],
+  wallet:['Money','Wallet & Payments'],
+  loyalty:['Money','Loyalty & Subscriptions'],
+  inventory:['Operations','Inventory'],
+  staff:['Operations','Staff & Attendance'],
+  approvals:['Operations','Approvals'],
+  settings:['System','Settings'],
+  copilot:['System','AI Copilot'],
+};
+
+function renderAdminShell(){
+  const nav = ADMIN_NAV.map(g => `
+    <div class="side-group">${g.group}</div>
+    ${g.items.map(it => `
+      <a href="#" class="side-link ${adminTab===it.id?'active':''}" ${it.ws ? `data-ws-jump="${it.ws}"` : `data-admin-tab="${it.id}"`}>
+        <span class="ic" style="${adminTab===it.id?'':`color:${g.tint};`}">${it.ic}</span>${it.label}
+        ${it.badge && pendingApprovalCount()>0 ? `<span class="badge-n">${pendingApprovalCount()}</span>` : ''}
+      </a>
+    `).join('')}
+  `).join('');
+  const [kicker, title] = ADMIN_TITLES[adminTab];
+  const onShift = staff.filter(s=>s.status==='Clocked in').length;
+  const atRisk = orders.filter(o=>o.sla==='at_risk'||o.sla==='breached').length;
+  return `
+    <div class="console">
+      <nav class="sidebar">
+        ${nav}
+        <div class="sidebar-foot">
+          <div class="avatar">NR</div>
+          <div style="min-width:0;">
+            <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nithya Raj</div>
+            <div style="font-size:10.5px;color:var(--sidebar-ink-2);">Branch Manager</div>
+          </div>
+        </div>
+      </nav>
+      <div class="admin-main">
+        <div class="admin-topbar">
+          <div style="min-width:0;margin-right:auto;">
+            <div class="page-kicker">${kicker}</div>
+            <h2 class="page-title">${title}</h2>
+          </div>
+          <div class="topbar-right">
+            <div class="searchbox">🔍 <input placeholder="Order, tag, customer, phone…" id="globalSearch"/></div>
+            <button class="btn btn-outline branch-pill">🏬 Main Store · Kochi</button>
+            <button class="btn btn-primary" data-admin-tab="neworder">+ New order</button>
+          </div>
+        </div>
+        <div class="admin-topbar-strip">
+          <div class="strip-item"><span class="sqdot" style="background:var(--ok);"></span>${onShift} staff on shift</div>
+          <div class="strip-item"><span class="sqdot" style="background:var(--accent);"></span>${atRisk} SLA at risk</div>
+          <div class="strip-item">Van LW-01 out · 6 stops left</div>
+          <div class="strip-item" style="border-right:none;">Fri 11 Sep &middot; 14:52 IST</div>
+        </div>
+        <div class="admin-content-pad" id="adminContent">${renderAdminTab()}</div>
+      </div>
+    </div>
+  `;
+}
+function renderAdminTab(){
+  switch(adminTab){
+    case 'dashboard': return renderDashboard();
+    case 'pricelists': return renderPriceLists();
+    case 'neworder': return renderNewOrder();
+    case 'orders': return renderOrdersList();
+    case 'customers': return renderCustomers();
+    case 'production': return renderProduction();
+    case 'qc': return renderQC();
+    case 'packing': return renderPacking();
+    case 'wallet': return renderWalletView();
+    case 'loyalty': return renderLoyaltyView();
+    case 'inventory': return renderInventoryView();
+    case 'staff': return renderStaffView();
+    case 'approvals': return renderApprovalsView();
+    case 'settings': return renderSettingsView();
+    case 'copilot': return renderCopilot();
+    default: return '';
+  }
+}
+
+/* ---------------- Services & Price Lists ---------------- */
+let priceListsSubTab = 'catalog'; // 'catalog' | 'profiles'
+let priceListFilter = 'PL1';
+function renderPriceLists(){
+  return `
+    <div class="chip-row" style="margin-bottom:16px;">
+      <span class="chip ${priceListsSubTab==='catalog'?'selected':''}" data-plsub="catalog">Services & Pricing</span>
+      <span class="chip ${priceListsSubTab==='profiles'?'selected':''}" data-plsub="profiles">Price List Profiles</span>
+    </div>
+    ${priceListsSubTab==='catalog' ? renderPriceCatalogTab() : renderPriceProfilesTab()}
+  `;
+}
+function renderPriceCatalogTab(){
+  const rows = priceList.filter(p=>p.profileId===priceListFilter);
+  return `
+    <div class="card">
+      <div class="card-pad flex-between">
+        <div class="chip-row">
+          ${priceProfiles.map(pr=>`<span class="chip ${priceListFilter===pr.id?'selected':''}" data-pl-filter="${pr.id}">${pr.name}</span>`).join('')}
+        </div>
+        <button class="btn btn-primary btn-sm" id="openAddPrice">+ Add item &amp; price</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Item</th><th>Service</th><th>Price</th><th>Status</th><th></th></tr>
+        ${rows.map(p=>`
+          <tr><td>${p.item}</td><td class="small-muted">${p.service}</td><td class="mono">${fmt(p.price)}</td>
+          <td><span class="pill ${p.active?'ok':'neutral'} row-click" data-toggle-price="${p.id}" style="cursor:pointer;"><span class="dot"></span>${p.active?'Active':'Inactive'}</span></td>
+          <td><button class="btn-ghost" data-del-price="${p.id}">✕</button></td></tr>
+        `).join('') || `<tr><td colspan="5" class="tiny-muted">No items in this price list yet.</td></tr>`}
+      </table></div>
+    </div>
+  `;
+}
+function renderPriceProfilesTab(){
+  return `
+    <div class="card">
+      <div class="card-pad flex-between"><span class="small-muted">${priceProfiles.length} price list profiles &middot; assign one to each customer in Customers</span><button class="btn btn-primary btn-sm" id="openAddProfile">+ Add price list</button></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Price list</th><th>Description</th><th>Items priced</th><th>Customers assigned</th></tr>
+        ${priceProfiles.map(pr=>`
+          <tr><td><b>${pr.name}</b></td><td class="small-muted">${pr.desc}</td>
+          <td class="mono">${priceList.filter(p=>p.profileId===pr.id).length}</td>
+          <td class="mono">${customers.filter(c=>c.priceProfileId===pr.id).length}</td></tr>
+        `).join('')}
+      </table></div>
+    </div>
+  `;
+}
+function addPriceModal(){
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <h3>Add item &amp; price</h3>
+        <div class="muted">Added to: <b>${profileName(priceListFilter)}</b></div>
+        <div class="field mt-12"><label>Item</label><input id="apItem" placeholder="e.g. Kurta"/></div>
+        <div class="field mt-12"><label>Service</label><input id="apService" placeholder="e.g. Wash & Iron"/></div>
+        <div class="field mt-12"><label>Price (₹)</label><input id="apPrice" type="number" min="0" placeholder="e.g. 65"/></div>
+        <div class="flex-between mt-20">
+          <button class="btn btn-outline" data-close-modal>Cancel</button>
+          <button class="btn btn-primary" id="saveAddPrice">Add to price list</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function addProfileModal(){
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <h3>Add price list</h3>
+        <div class="muted">e.g. a separate rate card for a specific large hotel account, or a student/staff discount list.</div>
+        <div class="field mt-12"><label>Name</label><input id="apfName" placeholder="e.g. Corporate — Marine Suites"/></div>
+        <div class="field mt-12"><label>Description</label><input id="apfDesc" placeholder="Who this price list is for"/></div>
+        <div class="flex-between mt-20">
+          <button class="btn btn-outline" data-close-modal>Cancel</button>
+          <button class="btn btn-primary" id="saveAddProfile">Create price list</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let dashRange = '30d';
+let dashSort = 'revenue';
+const DASH_RANGES = [{id:'7d',name:'7 days'},{id:'30d',name:'30 days'},{id:'90d',name:'90 days'},{id:'mtd',name:'Month to date'}];
+const DASH_SORTS = [{id:'revenue',name:'Revenue'},{id:'orders',name:'Orders'},{id:'garments',name:'Garments'},{id:'share',name:'Share'}];
+
+function renderDashboard(){
+  const todayOrders = orders.length;
+  const revenue = orders.reduce((s,o)=>s+o.total,0);
+  const garmentCount = orders.reduce((s,o)=>s+o.items.length,0);
+  const aov = Math.round(revenue/todayOrders);
+  const atRisk = orders.filter(o=>o.sla==='breached'||o.sla==='at_risk').length;
+  const outstanding = orders.filter(o=>!o.paid).reduce((s,o)=>s+o.total,0);
+  const returning = orders.filter(o=>{ const c=custById(o.custId); return c && c.orders>1; }).length;
+  const repeatPct = Math.round(returning/todayOrders*100);
+  const newCust = todayOrders - returning;
+
+  // ---- service performance rollup (real data: priced off each garment's resolved price-list entry) ----
+  const svcMap = {};
+  orders.forEach(o=>{
+    o.items.forEach(g=>{
+      const k = g.service;
+      if(!svcMap[k]) svcMap[k] = {name:k, orderIds:new Set(), custIds:new Set(), garments:0, revenue:0};
+      const row = svcMap[k];
+      row.orderIds.add(o.id); row.custIds.add(o.custId); row.garments++;
+      row.revenue += garmentPrice(g, o.custId);
+    });
+  });
+  let svcRows = Object.values(svcMap).map(s=>({
+    name:s.name, orders:s.orderIds.size, customers:s.custIds.size, garments:s.garments,
+    aov: s.orderIds.size ? Math.round(s.revenue/s.orderIds.size) : 0, revenue:s.revenue,
+  }));
+  const svcSortKey = {revenue:'revenue', orders:'orders', garments:'garments', share:'revenue'}[dashSort] || 'revenue';
+  svcRows.sort((a,b)=>b[svcSortKey]-a[svcSortKey]);
+  const totalSvcRev = svcRows.reduce((s,r)=>s+r.revenue,0) || 1;
+  const topSvc = svcRows[0];
+  const topCustSvc = svcRows.slice().sort((a,b)=>b.customers-a.customers)[0];
+
+  // ---- channel mix ----
+  const chanMap = {};
+  orders.forEach(o=>{ if(!chanMap[o.channel]) chanMap[o.channel]={name:o.channel, count:0, revenue:0}; chanMap[o.channel].count++; chanMap[o.channel].revenue+=o.total; });
+  const chanColors = ['#201e1d','#ec3013','#e15b47','#9b9797'];
+  const channels = Object.values(chanMap).sort((a,b)=>b.revenue-a.revenue).map((c,i)=>({...c, color:chanColors[i%chanColors.length], pct: Math.round(c.revenue/revenue*100)}));
+
+  // ---- customer segments (by tier, lifetime figures across the seeded book) ----
+  const tierMap = {};
+  customers.forEach(c=>{
+    if(!tierMap[c.tier]) tierMap[c.tier] = {name:c.tier, count:0, revenue:0, ordersCount:0};
+    tierMap[c.tier].count++; tierMap[c.tier].revenue += c.lifetimeSpend; tierMap[c.tier].ordersCount += c.orders;
+  });
+  const totalTierRev = Object.values(tierMap).reduce((s,t)=>s+t.revenue,0) || 1;
+  const segments = Object.values(tierMap).sort((a,b)=>b.revenue-a.revenue).map(t=>({
+    name:t.name, count:t.count, pct: Math.round(t.revenue/totalTierRev*100),
+    aov: t.ordersCount ? Math.round(t.revenue/t.ordersCount) : 0,
+  }));
+
+  // ---- top items by revenue ----
+  const itemMap = {};
+  orders.forEach(o=>{
+    o.items.forEach(g=>{
+      const k = g.item+'|'+g.service;
+      if(!itemMap[k]) itemMap[k] = {item:g.item, service:g.service, qty:0, revenue:0};
+      itemMap[k].qty++; itemMap[k].revenue += garmentPrice(g, o.custId);
+    });
+  });
+  const topItems = Object.values(itemMap).sort((a,b)=>b.revenue-a.revenue).slice(0,8);
+  const maxItemRev = topItems.length ? topItems[0].revenue : 1;
+
+  // ---- production load (garments currently sitting at each stage) ----
+  const stageBuckets = [
+    {label:'Sorting', stages:['Received','Inspection']},
+    {label:'Washing', stages:['Washing']},
+    {label:'Drying', stages:['Drying']},
+    {label:'Pressing', stages:['Ironing']},
+    {label:'QC', stages:['Quality Control']},
+    {label:'Packing', stages:['Packing']},
+  ];
+  const gAll = allGarments().filter(g=>!['Ready','Dispatched','Delivered'].includes(orderOf(g.orderId)?.status));
+  const stageLoad = stageBuckets.map(b=>({label:b.label, count: gAll.filter(g=>b.stages.includes(g.stage)).length}));
+  const maxStage = Math.max(1, ...stageLoad.map(s=>s.count));
+  const bottleneck = stageLoad.slice().sort((a,b)=>b.count-a.count)[0];
+
+  // ---- 14-day revenue sparkline (no order history yet — seeded, deterministic shape around today's revenue) ----
+  const spark = Array.from({length:14}, (_,i)=>{
+    const wobble = pseudoDelta('rev'+i, -22, 22);
+    return Math.max(0, Math.round(revenue*(0.55 + i*0.03) * (1+wobble/100) / 1000));
+  });
+  const maxSpark = Math.max(1, ...spark);
+
+  return `
+    <div class="flex-between" style="flex-wrap:wrap; gap:12px; padding-bottom:14px; border-bottom:2px solid var(--line); margin-bottom:20px;">
+      <div class="chip-row">
+        ${DASH_RANGES.map(r=>`<span class="chip ${dashRange===r.id?'selected':''}" data-dash-range="${r.id}">${r.name}</span>`).join('')}
+      </div>
+      <button class="btn btn-outline btn-sm">📅 Last 30 days</button>
+      <span class="tiny-muted">compared with previous period</span>
+      <span style="margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm">All branches</button>
+        <button class="btn btn-outline btn-sm">Export report</button>
+      </span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-icon" style="background:var(--ok-soft); color:var(--ok);">${kpiIconSvg('wallet')}</div><div class="k-label">Revenue</div><div class="k-value">${fmt(revenue)}</div><div class="k-delta up">▲ 12% vs prev.</div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:var(--info-soft); color:var(--info);">${kpiIconSvg('list')}</div><div class="k-label">Orders</div><div class="k-value">${todayOrders}</div><div class="k-delta">${newCust} new customers</div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:var(--violet-soft); color:var(--violet);">${kpiIconSvg('hanger')}</div><div class="k-label">Garments</div><div class="k-value">${garmentCount}</div><div class="k-delta">${fmt(Math.round(revenue/garmentCount))} per garment</div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:var(--teal-soft); color:var(--teal);">${kpiIconSvg('trend')}</div><div class="k-label">Avg. order value</div><div class="k-value">${fmt(aov)}</div><div class="k-delta up">▲ 4%</div></div>
+      <div class="kpi"><div class="kpi-icon" style="background:var(--warn-soft); color:var(--warn);">${kpiIconSvg('repeat')}</div><div class="k-label">Repeat rate</div><div class="k-value">${repeatPct}%</div><div class="k-delta">of orders from returning</div></div>
+      <div class="kpi kpi-danger"><div class="kpi-icon">${kpiIconSvg('alert')}</div><div class="k-label">At risk / delayed</div><div class="k-value">${atRisk}</div><div class="k-delta">needs attention now</div></div>
+    </div>
+
+    <section style="margin-top:32px;">
+      <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line); flex-wrap:wrap; gap:12px;">
+        <h5 style="margin:0; font-size:15px;">Service performance</h5>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">Sort by</span>
+          <span class="chip-row">${DASH_SORTS.map(s=>`<span class="chip ${dashSort===s.id?'selected':''}" data-dash-sort="${s.id}">${s.name}</span>`).join('')}</span>
+        </span>
+      </div>
+      <div class="tbl-wrap mt-12"><table>
+        <tr><th>Service</th><th style="text-align:right;">Orders</th><th style="text-align:right;">Customers</th><th style="text-align:right;">Garments</th><th style="text-align:right;">Avg / order</th><th style="text-align:right;">Revenue</th><th style="width:200px;">Share of revenue</th><th style="text-align:right;">vs prev.</th></tr>
+        ${svcRows.map(r=>{
+          const sharePct = Math.round(r.revenue/totalSvcRev*100);
+          const delta = pseudoDelta(r.name, -6, 11);
+          return `<tr>
+            <td style="font-weight:600;">${r.name}</td>
+            <td style="text-align:right;">${r.orders}</td>
+            <td style="text-align:right;">${r.customers}</td>
+            <td style="text-align:right;">${r.garments}</td>
+            <td style="text-align:right;">${fmt(r.aov)}</td>
+            <td style="text-align:right; font-weight:600;">${fmt(r.revenue)}</td>
+            <td><div style="display:flex; align-items:center; gap:9px;"><div style="flex:1; height:11px; background:var(--surface-3); min-width:60px;"><div style="width:${sharePct}%; height:100%; background:var(--ink);"></div></div><span style="font-size:12px; font-weight:600; width:38px; text-align:right;">${sharePct}%</span></div></td>
+            <td style="text-align:right; font-size:12.5px;">${deltaTag(delta)}</td>
+          </tr>`;
+        }).join('')}
+      </table></div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr); margin-top:16px; border:1px solid var(--line);">
+        <div style="padding:12px 14px; border-right:1px solid var(--line);"><div class="tiny-muted" style="text-transform:uppercase; letter-spacing:.08em;">Biggest revenue share</div><div style="font-weight:800; font-size:16px; margin-top:4px;">${topSvc?topSvc.name:'—'}</div><div class="small-muted">${topSvc?Math.round(topSvc.revenue/totalSvcRev*100):0}% of revenue</div></div>
+        <div style="padding:12px 14px; border-right:1px solid var(--line);"><div class="tiny-muted" style="text-transform:uppercase; letter-spacing:.08em;">Most customers</div><div style="font-weight:800; font-size:16px; margin-top:4px;">${topCustSvc?topCustSvc.name:'—'}</div><div class="small-muted">${topCustSvc?topCustSvc.customers:0} customers used it</div></div>
+        <div style="padding:12px 14px; border-right:1px solid var(--line);"><div class="tiny-muted" style="text-transform:uppercase; letter-spacing:.08em;">Fastest growing</div><div style="font-weight:800; font-size:16px; margin-top:4px;">Dry Clean</div><div class="small-muted">small base, high margin</div></div>
+        <div style="padding:12px 14px;"><div class="tiny-muted" style="text-transform:uppercase; letter-spacing:.08em;">Declining</div><div style="font-weight:800; font-size:16px; margin-top:4px;">Press Only</div><div class="small-muted">customers trading up to Wash &amp; Iron</div></div>
+      </div>
+    </section>
+
+    <div class="grid" style="grid-template-columns:repeat(2,1fr); gap:28px; margin-top:34px; align-items:start;">
+      <section>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line);"><h5 style="margin:0; font-size:15px;">Where orders come from</h5><span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">Channel</span></div>
+        <div style="display:flex; height:26px; margin-top:16px; border:1px solid var(--line);">
+          ${channels.map(c=>`<div style="width:${c.pct}%; background:${c.color};"></div>`).join('')}
+        </div>
+        <div class="stack mt-12" style="gap:8px;">
+          ${channels.map(c=>`<div class="flex-between" style="font-size:13px;"><span style="display:flex; gap:8px; align-items:center;"><i style="width:9px; height:9px; display:block; background:${c.color};"></i>${c.name}</span><span style="font-weight:600;">${c.pct}% &middot; ${fmt(c.revenue)}</span></div>`).join('')}
+        </div>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line); margin-top:26px;"><h5 style="margin:0; font-size:15px;">Customer segments</h5><span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">Share of revenue</span></div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Segment</th><th style="text-align:right;">Customers</th><th style="width:120px;">Revenue</th><th style="text-align:right;">Avg / order</th></tr>
+          ${segments.map(g=>`<tr>
+            <td style="font-weight:600;">${g.name}</td>
+            <td style="text-align:right;">${g.count}</td>
+            <td><div style="display:flex; align-items:center; gap:8px;"><div style="flex:1; height:10px; background:var(--surface-3); min-width:40px;"><div style="width:${g.pct}%; height:100%; background:var(--ink);"></div></div><span style="font-size:12px; font-weight:600;">${g.pct}%</span></div></td>
+            <td style="text-align:right;">${fmt(g.aov)}</td>
+          </tr>`).join('')}
+        </table></div>
+      </section>
+
+      <section>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line);"><h5 style="margin:0; font-size:15px;">Top items by revenue</h5><span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">30 days</span></div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Item</th><th>Service</th><th style="text-align:right;">Qty</th><th style="width:110px;">Revenue</th></tr>
+          ${topItems.map(t=>`<tr>
+            <td style="font-weight:600;">${t.item}</td>
+            <td class="small-muted">${t.service}</td>
+            <td style="text-align:right;">${t.qty}</td>
+            <td><div style="display:flex; align-items:center; gap:8px;"><div style="flex:1; height:10px; background:var(--surface-3); min-width:34px;"><div style="width:${Math.round(t.revenue/maxItemRev*100)}%; height:100%; background:var(--ink);"></div></div><span style="font-size:12px; font-weight:600; white-space:nowrap;">${fmt(t.revenue)}</span></div></td>
+          </tr>`).join('')}
+        </table></div>
+        <div class="card mt-20">
+          <div class="card-pad" style="border-bottom:2px solid var(--line); font-weight:800; font-size:13.5px;">Read of the period</div>
+          <div class="card-pad stack" style="gap:9px; font-size:13px;">
+            <div>${topSvc?topSvc.name:'Hotel linen'} carries the revenue but only ${topCustSvc?topCustSvc.customers:'a handful of'} customers — losing one contract would cost a meaningful share of the month.</div>
+            <div>Repeat rate is ${repeatPct}% — most of this month's orders are from customers who've ordered before, not first-time trial.</div>
+            <div>${outstanding>0? fmt(outstanding)+' is still outstanding, mostly corporate credit accounts settled monthly.' : 'No outstanding balances right now.'}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid" style="grid-template-columns:repeat(3,1fr); gap:28px; margin-top:30px; align-items:start;">
+      <section>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line);"><h5 style="margin:0; font-size:15px;">Orders needing attention</h5><a href="#" data-admin-tab="orders" style="font-size:11px; text-transform:uppercase; letter-spacing:.06em; text-decoration:none;">All orders →</a></div>
+        <div class="tbl-wrap"><table>
+          <tr><th>Order</th><th>Customer</th><th>Stage</th><th>Due</th></tr>
+          ${orders.filter(o=>o.sla!=='on_track').map(o=>`
+            <tr class="row-click" data-open-order="${o.id}">
+              <td style="font-weight:600;">${o.id}</td><td>${custName(o.custId)}</td><td>${slaPill(o.sla)}</td><td class="mono">${o.dueAt}</td>
+            </tr>`).join('') || `<tr><td colspan="4" class="tiny-muted">Nothing at risk right now.</td></tr>`}
+        </table></div>
+      </section>
+
+      <section>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line);"><h5 style="margin:0; font-size:15px;">Load through the plant</h5><span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">Garments &middot; live</span></div>
+        <div class="stack" style="gap:12px; padding-top:14px;">
+          ${stageLoad.map(s=>`
+            <div>
+              <div class="flex-between" style="font-size:12.5px; margin-bottom:4px;"><span>${s.label}${s.label===bottleneck.label && s.count>0 ? ' <span style="color:var(--accent);">· bottleneck</span>' : ''}</span><span style="font-weight:600;">${s.count}</span></div>
+              <div style="height:12px; background:var(--surface-3);"><div style="width:${Math.round(s.count/maxStage*100)}%; height:100%; background:${s.label===bottleneck.label && s.count>0 ? 'var(--accent)' : 'var(--ink)'};"></div></div>
+            </div>`).join('')}
+        </div>
+        <p class="tiny-muted" style="margin-top:14px;">${bottleneck.count>0 ? bottleneck.label+' is holding the most garments right now — worth a look if it keeps climbing.' : 'No stage is currently backed up.'}</p>
+      </section>
+
+      <section>
+        <div class="flex-between" style="padding-bottom:9px; border-bottom:2px solid var(--line);"><h5 style="margin:0; font-size:15px;">Revenue · last 14 days</h5><span class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em;">₹ thousands</span></div>
+        <div style="display:flex; align-items:flex-end; gap:3px; height:110px; margin-top:14px; border-bottom:1px solid var(--line);">
+          ${spark.map((v,i)=>`<div title="${v}k" style="flex:1; height:${Math.max(4,Math.round(v/maxSpark*100))}%; background:${i===spark.length-1?'var(--accent)':'var(--ink)'};"></div>`).join('')}
+        </div>
+        <div class="stack mt-16" style="gap:10px;">
+          <div class="card card-pad">
+            <div class="section-title">Approvals pending</div>
+            <div class="stack mt-12" style="gap:10px;">
+              ${approvals.filter(a=>a.status==='pending').slice(0,2).map(a=>`
+                <div class="flex-between" style="align-items:flex-start;">
+                  <div><div style="font-weight:600; font-size:12.8px;">${a.type}</div><div class="tiny-muted">${a.entity}</div></div>
+                  ${a.amount ? `<div class="mono" style="font-size:12.5px;">${fmt(a.amount)}</div>` : ''}
+                </div>
+              `).join('') || '<div class="tiny-muted">All clear.</div>'}
+            </div>
+            <button class="btn btn-outline btn-sm mt-16" data-admin-tab="approvals" style="width:100%; justify-content:center;">Open Approval Inbox</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+/* ---------------- New Order / POS ---------------- */
+let posState = { custId:null, items:[], promo:0, walletUse:0 };
+let posServiceFilter = null; // which service's items are currently shown in the item picker
+
+function addCustomerModal(){
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <h3>New customer</h3>
+        <div class="muted">Add them once here — they're selected for this order automatically.</div>
+        <div class="form-row mt-12">
+          <div class="field"><label>Full name</label><input id="ncName" placeholder="e.g. Deepesh Arjunan"/></div>
+          <div class="field"><label>Phone</label><input id="ncPhone" placeholder="+91 …"/></div>
+        </div>
+        <div class="field mt-12"><label>Address</label><input id="ncAddr" placeholder="Door no., street, area, city"/></div>
+        <div class="form-row mt-12">
+          <div class="field"><label>Price list</label>
+            <select id="ncProfile">${priceProfiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Fold preference</label>
+            <select id="ncFold"><option>Folded</option><option>Hanger</option><option>Boxed</option></select>
+          </div>
+        </div>
+        <div class="flex-between mt-20">
+          <button class="btn btn-outline" data-close-modal>Cancel</button>
+          <button class="btn btn-primary" id="saveNewCustomer">Add &amp; select customer</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderNewOrder(){
+  const s = posState;
+  const cust = s.custId ? custById(s.custId) : null;
+  const subtotal = s.items.reduce((a,i)=>a+i.price*i.qty,0);
+  const gst = settings.taxEnabled ? Math.round(subtotal*0.18) : 0;
+  const walletMax = cust ? cust.wallet : 0;
+  const walletUse = Math.min(s.walletUse, walletMax, subtotal+gst);
+  const total = Math.max(0, subtotal + gst - walletUse);
+
+  const catalog = activeCatalog(cust ? cust.priceProfileId : 'PL1');
+  const services = [...new Set(catalog.map(c=>c.service))];
+  const effectiveService = services.includes(posServiceFilter) ? posServiceFilter : (services[0] || null);
+  const filteredItems = effectiveService ? catalog.filter(c=>c.service===effectiveService) : [];
+
+  return `
+    <div class="grid" style="grid-template-columns:1.5fr 1fr; align-items:start;">
+      <div class="stack">
+        <div class="card card-pad">
+          <div class="section-title">1. Customer</div>
+          ${cust ? `
+            <div class="flex-between mt-12">
+              <div><b>${cust.name}</b> ${tierPill(cust.tier)}<div class="tiny-muted mt-8">${cust.phone} &middot; ${cust.points} pts &middot; Wallet ${fmt(cust.wallet)}</div>
+              <div class="tiny-muted">Care: ${cust.fold} fold &middot; ${cust.detergent} detergent</div></div>
+              <button class="btn btn-outline btn-sm" id="posChangeCust">Change</button>
+            </div>` : `
+            <div class="field mt-12"><input id="posCustSearch" placeholder="Search name or phone…"/></div>
+            <div class="chip-row mt-12">
+              ${customers.map(c=>`<span class="chip" data-pos-cust="${c.id}">${c.name}</span>`).join('')}
+              <span class="chip" id="posNewCustomer" style="color:var(--accent); border-color:var(--accent); border-style:dashed;">+ New customer</span>
+            </div>
+          `}
+        </div>
+
+        ${s.items.length ? `
+        <div class="card card-pad">
+          <div class="section-title">2. Order items</div>
+          <div class="tbl-wrap mt-12"><table>
+            <tr><th>Item</th><th>Service</th><th>Qty</th><th>Price</th><th></th></tr>
+            ${s.items.map((it,idx)=>`
+              <tr><td>${it.item}</td><td class="small-muted">${it.service}</td>
+                <td><input type="number" min="1" value="${it.qty}" data-qty-idx="${idx}" style="width:56px; padding:5px 7px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);"/></td>
+                <td class="mono">${fmt(it.price*it.qty)}</td>
+                <td><button class="btn-ghost" data-rm-idx="${idx}">✕</button></td></tr>
+            `).join('')}
+          </table></div>
+        </div>` : ''}
+
+        <div class="card card-pad">
+          <div class="flex-between"><div class="section-title" style="margin:0;">${s.items.length ? '3.' : '2.'} Add items</div>
+            <span class="small-muted">Catalog: <b style="color:var(--ink);">${profileName(cust?cust.priceProfileId:'PL1')}</b> &middot; <span class="link" data-admin-tab="pricelists" style="color:var(--accent); cursor:pointer;">manage price lists →</span></span>
+          </div>
+          <div class="tiny-muted mt-12" style="text-transform:uppercase; letter-spacing:.08em;">Choose a service</div>
+          <div class="chip-row mt-8">
+            ${services.map(sv=>`<span class="chip ${sv===effectiveService?'selected':''}" data-pos-service="${sv}">${sv}</span>`).join('') || '<span class="tiny-muted">No priced services on this catalog yet.</span>'}
+          </div>
+          <div class="tiny-muted mt-16" style="text-transform:uppercase; letter-spacing:.08em;">${effectiveService || 'Items'}</div>
+          <div class="grid mt-8" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px;">
+            ${filteredItems.map(c=>`
+              <div class="flex-between" style="border:1px solid var(--line-strong); padding:9px 10px;">
+                <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                  <span style="color:var(--ink-2); flex:none;">${itemIconSvg(c.item)}</span>
+                  <div style="min-width:0;">
+                    <div style="font-size:12.6px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.item}</div>
+                    <div class="tiny-muted mono">${fmt(c.price)}</div>
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm" data-add-pr="${c.id}" style="flex:none; padding:6px 11px;" title="Add ${c.item}">+</button>
+              </div>
+            `).join('') || `<div class="tiny-muted">No items priced under this service yet.</div>`}
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card card-pad">
+          <div class="section-title">Bill Summary</div>
+          <div class="flex-between mt-12" style="font-size:13px;"><span>Items subtotal</span><span class="mono">${fmt(subtotal)}</span></div>
+          <div class="flex-between mt-8" style="font-size:13px;">
+            <span>GST ${settings.taxEnabled?'(18%)':''}</span>
+            <span class="mono">${settings.taxEnabled ? fmt(gst) : `<span class="pill neutral">Off in Settings</span>`}</span>
+          </div>
+          ${cust && cust.wallet>0 ? `
+          <div class="field mt-12"><label>Use wallet (balance ${fmt(cust.wallet)})</label>
+            <input type="number" min="0" max="${walletMax}" value="${s.walletUse}" id="posWalletUse"/></div>
+          ` : ''}
+          <div class="flex-between mt-16" style="border-top:1px solid var(--line); padding-top:12px; font-weight:700; font-size:16px;"><span>Total payable</span><span class="mono">${fmt(total)}</span></div>
+          <div class="field mt-16"><label>Payment mode</label>
+            <select id="posPayMode"><option>Cash</option><option>Card</option><option>UPI</option><option>Wallet</option><option>Credit (Corporate)</option></select>
+          </div>
+          <button class="btn btn-primary mt-16" style="width:100%; justify-content:center; padding:11px;" id="posCreateOrder" ${(!cust||s.items.length===0)?'disabled':''}>Create Order &amp; Print Tags</button>
+          <div class="tiny-muted mt-12">Each line item becomes its own tracked garment with a QR tag, per the garment-level tracking model.</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Orders list ---------------- */
+function renderOrdersList(){
+  return `
+    <div class="card">
+      <div class="card-pad flex-between">
+        <div class="chip-row">
+          ${['All','Processing','Quality Control','Ready','Delivered'].map((f,i)=>`<span class="chip ${i===0?'selected':''}" data-order-filter="${f}">${f}</span>`).join('')}
+        </div>
+        <span class="small-muted">${orders.length} orders</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Order</th><th>Customer</th><th>Channel</th><th>Items</th><th>Status</th><th>SLA</th><th>Due</th><th>Total</th><th>Paid</th></tr>
+        ${orders.map(o=>`
+          <tr class="row-click" data-open-order="${o.id}">
+            <td class="mono">${o.id}</td><td>${custName(o.custId)}</td><td class="small-muted">${o.channel}</td>
+            <td>${o.items.length}</td><td>${statusPill(o.status)}</td><td>${slaPill(o.sla)}</td>
+            <td class="mono small-muted">${o.dueAt}</td><td class="mono">${fmt(o.total)}</td>
+            <td>${o.paid?'<span class="pill ok">Paid</span>':'<span class="pill warn">Due</span>'}</td>
+          </tr>
+        `).join('')}
+      </table></div>
+    </div>
+  `;
+}
+
+function orderDetailModal(orderId){
+  const o = orders.find(x=>x.id===orderId);
+  const cust = custById(o.custId);
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal wide">
+        <div class="flex-between"><h3>${o.id}</h3>${statusPill(o.status)}</div>
+        <div class="muted">${custName(o.custId)} &middot; ${cust.phone} &middot; ${o.channel} &middot; ${o.type}</div>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+          <div class="tiny-muted">Due: <b style="color:var(--ink);">${o.dueAt}</b></div>
+          <div class="tiny-muted">SLA: ${slaPill(o.sla)}</div>
+          <div class="tiny-muted">Total: <b style="color:var(--ink);" class="mono">${fmt(o.total)}</b></div>
+          <div class="tiny-muted">Payment: ${o.paid?'<span class="pill ok">Paid</span>':'<span class="pill warn">Due</span>'} via ${o.payMode}</div>
+        </div>
+        <div class="section-title">Garments in this order</div>
+        <div class="tbl-wrap mt-12" style="margin-bottom:6px;"><table>
+          <tr><th>Tag</th><th>Item</th><th>Service</th><th>Stage</th><th>Notes</th><th></th></tr>
+          ${o.items.map(g=>`
+            <tr><td class="mono">${g.id}</td><td>${g.item}</td><td class="small-muted">${g.service}</td>
+            <td><span class="pill info">${g.stage}</span></td>
+            <td class="tiny-muted">${[g.color, ...(g.damage||[]), ...(g.stains||[])].filter(Boolean).join(', ')||'—'}</td>
+            <td><button class="btn btn-outline btn-sm" data-open-garment="${g.id}">Passport →</button></td></tr>
+          `).join('')}
+        </table></div>
+        <div class="flex-between mt-20">
+          <button class="btn btn-outline" data-close-modal>Close</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" data-print-tags="${o.id}">🏷️ Print Tags</button>
+            <button class="btn btn-outline" data-print-bill="${o.id}">🖨️ Print Bill</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function garmentPassportModal(gid){
+  const g = allGarments().find(x=>x.id===gid);
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <div class="flex-between"><h3 class="mono" style="font-size:16px;">${g.id}</h3><span class="pill info">${g.stage}</span></div>
+        <div class="muted">${g.item} &middot; ${g.service} &middot; Order ${g.orderId}</div>
+        <div class="flex-between" style="align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--ink);">${fakeQR(g.id)}</div>
+          <div style="text-align:right;">
+            ${g.color?`<div class="tiny-muted">Colour: <b style="color:var(--ink)">${g.color}</b></div>`:''}
+            ${g.damage&&g.damage.length?`<div class="tiny-muted">Damage noted: <b style="color:var(--danger)">${g.damage.join(', ')}</b></div>`:''}
+            ${g.stains&&g.stains.length?`<div class="tiny-muted">Stains noted: <b style="color:var(--warn)">${g.stains.join(', ')}</b></div>`:''}
+            ${!g.color && !(g.damage&&g.damage.length) && !(g.stains&&g.stains.length) ? '<div class="tiny-muted">No intake notes.</div>' : ''}
+          </div>
+        </div>
+        <div class="section-title">Digital Garment Passport</div>
+        <div class="tl mt-12">
+          ${g.events.map(e=>`
+            <div class="tl-item"><div class="tl-time">${e.t}</div><div class="tl-label">${e.label}</div><div class="tl-meta">${e.who}</div></div>
+          `).join('')}
+        </div>
+        <button class="btn btn-outline mt-20" data-close-modal style="width:100%; justify-content:center;">Close</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Customers ---------------- */
+function renderCustomers(){
+  return `
+    <div class="card">
+      <div class="card-pad flex-between"><span class="small-muted">${customers.length} customers</span><button class="btn btn-primary btn-sm">+ New customer</button></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Name</th><th>Phone</th><th>Tier</th><th>Points</th><th>Wallet</th><th>Lifetime spend</th><th>Orders</th><th>WhatsApp consent</th></tr>
+        ${customers.map(c=>`
+          <tr class="row-click" data-open-customer="${c.id}">
+            <td><b>${c.name}</b>${c.corporate?' <span class="pill neutral">Corporate</span>':''}</td>
+            <td class="mono small-muted">${c.phone}</td><td>${tierPill(c.tier)}</td><td class="mono">${c.points}</td>
+            <td class="mono">${fmt(c.wallet)}</td><td class="mono">${fmt(c.lifetimeSpend)}</td><td>${c.orders}</td>
+            <td>${c.consent.whatsapp?'<span class="pill ok">Granted</span>':'<span class="pill neutral">Not set</span>'}</td>
+          </tr>
+        `).join('')}
+      </table></div>
+    </div>
+  `;
+}
+function customerDetailModal(cid){
+  const c = custById(cid);
+  const custOrders = orders.filter(o=>o.custId===cid);
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal wide">
+        <div class="flex-between"><h3>${c.name}</h3>${tierPill(c.tier)}</div>
+        <div class="muted">${c.phone} &middot; ${c.addr}</div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px;">
+          <div class="card card-pad"><div class="tiny-muted">Loyalty points</div><div class="section-title mono">${c.points}</div></div>
+          <div class="card card-pad"><div class="tiny-muted">Wallet</div><div class="section-title mono">${fmt(c.wallet)}</div></div>
+          <div class="card card-pad"><div class="tiny-muted">Lifetime spend</div><div class="section-title mono">${fmt(c.lifetimeSpend)}</div></div>
+          <div class="card card-pad"><div class="tiny-muted">Orders</div><div class="section-title mono">${c.orders}</div></div>
+        </div>
+        <div class="section-title">Care preferences</div>
+        <div class="small-muted mt-8">${c.fold} fold &middot; ${c.detergent} detergent</div>
+        <div class="section-title mt-20">Privacy &amp; consent</div>
+        <div class="chip-row mt-8">
+          <span class="chip ${c.consent.whatsapp?'selected':''}">WhatsApp marketing ${c.consent.whatsapp?'✓':'✕'}</span>
+          <span class="chip ${c.consent.sms?'selected':''}">SMS marketing ${c.consent.sms?'✓':'✕'}</span>
+          <span class="chip ${c.consent.email?'selected':''}">Email marketing ${c.consent.email?'✓':'✕'}</span>
+        </div>
+        <div class="tiny-muted mt-8">Service messages (order ready, OTP) are sent regardless of marketing consent.</div>
+        <div class="section-title mt-20">Order history</div>
+        <div class="tbl-wrap mt-8"><table>
+          <tr><th>Order</th><th>Date</th><th>Status</th><th>Total</th></tr>
+          ${custOrders.map(o=>`<tr><td class="mono">${o.id}</td><td class="small-muted">10 Sep 2026</td><td>${statusPill(o.status)}</td><td class="mono">${fmt(o.total)}</td></tr>`).join('') || '<tr><td colspan="4" class="tiny-muted">No orders yet.</td></tr>'}
+        </table></div>
+        <button class="btn btn-outline mt-20" data-close-modal style="width:100%; justify-content:center;">Close</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Production board ---------------- */
+function renderProduction(){
+  const gs = allGarments().filter(g=>g.stageIdx < STAGES.length-1 || g.stage==='Dispatched');
+  const cols = STAGES.map((stage,i)=>({stage, items: gs.filter(g=>g.stageIdx===i)}));
+  return `
+    <div class="flex-between mt-8" style="margin-bottom:14px;">
+      <span class="small-muted">${gs.length} garments in the production pipeline &middot; click a card to advance it or view its passport</span>
+    </div>
+    <div class="kanban">
+      ${cols.map(col=>`
+        <div class="kanban-col">
+          <div class="kanban-col-head"><span>${col.stage}</span><span class="kanban-count">${col.items.length}</span></div>
+          ${col.items.map(g=>`
+            <div class="g-card" data-garment-card="${g.id}">
+              <div class="gid">${g.id}</div>
+              <div class="gname">${g.item}</div>
+              <div class="gmeta">${g.service} &middot; Order ${g.orderId}</div>
+              <div class="gsla">${slaPill(g.orderSla || (orders.find(o=>o.id===g.orderId)||{}).sla || 'on_track')}</div>
+            </div>
+          `).join('') || `<div class="tiny-muted" style="padding:10px 4px;">Empty</div>`}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function garmentCardModal(gid){
+  const g = allGarments().find(x=>x.id===gid);
+  const canAdvance = g.stageIdx < STAGES.length-1;
+  return `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <div class="flex-between"><h3 class="mono" style="font-size:16px;">${g.id}</h3><span class="pill info">${g.stage}</span></div>
+        <div class="muted">${g.item} &middot; ${g.service} &middot; Order ${g.orderId}</div>
+        <div class="small-muted">Move this garment to the next workflow stage. Each transition writes an event to its digital passport.</div>
+        <div class="flex-between mt-20">
+          <button class="btn btn-outline" data-close-modal>Close</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" data-open-garment="${g.id}">View passport</button>
+            <button class="btn btn-primary" data-advance-garment="${g.id}" ${canAdvance?'':'disabled'}>Advance → ${canAdvance?STAGES[g.stageIdx+1]:'—'}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Quality Control ---------------- */
+const QC_CHECKLIST = ['Clean, no visible stains','Correct ironing / finish','No damage introduced during processing','Correct item, correct order','Correct quantity','Packaging correct'];
+function renderQC(){
+  const queue = allGarments().filter(g=>g.stage==='Quality Control');
+  return `
+    <div class="grid" style="grid-template-columns:1fr 1.3fr; align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">QC queue</div>
+        <div class="stack mt-12" style="gap:8px;">
+          ${queue.map(g=>`
+            <div class="flex-between row-click" data-qc-select="${g.id}" style="padding:8px 10px; border:1px solid var(--line); border-radius:6px;">
+              <div><div style="font-weight:600; font-size:12.8px;">${g.item}</div><div class="tiny-muted mono">${g.id}</div></div>
+              <span class="pill info">Order ${g.orderId}</span>
+            </div>
+          `).join('') || '<div class="tiny-muted">Nothing waiting on QC right now.</div>'}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Checklist ${qcSelected ? '— '+qcSelected : ''}</div>
+        ${qcSelected ? `
+          <div class="stack mt-12" style="gap:10px;">
+            ${QC_CHECKLIST.map((c,i)=>`
+              <label style="display:flex; gap:10px; align-items:center; font-size:13px;">
+                <input type="checkbox" class="qcCheck" data-qc-item="${i}" ${qcChecks[i]?'checked':''}/> ${c}
+              </label>
+            `).join('')}
+          </div>
+          <div class="flex-between mt-20">
+            <button class="btn btn-danger" data-qc-fail>Fail — send to reprocess</button>
+            <button class="btn btn-ok" data-qc-pass ${qcChecks.every(Boolean)?'':'disabled'}>Pass — send to packing</button>
+          </div>
+        ` : `<div class="tiny-muted mt-12">Select a garment from the queue to run its checklist.</div>`}
+      </div>
+    </div>
+  `;
+}
+let qcSelected = null;
+let qcChecks = QC_CHECKLIST.map(()=>false);
+
+/* ---------------- Packing & Dispatch ---------------- */
+function renderPacking(){
+  const readyToPack = orders.filter(o=>o.items.every(g=>g.stage==='Packing'||g.stage==='Ready'));
+  const dispatch = orders.filter(o=>o.status==='Ready');
+  return `
+    <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">Bag verification</div>
+        <div class="small-muted mt-8">Expected vs. packed count must match before a bag ID is issued.</div>
+        <div class="stack mt-16" style="gap:10px;">
+          ${orders.slice(0,3).map(o=>`
+            <div class="flex-between" style="padding:10px 12px; border:1px solid var(--line); border-radius:6px;">
+              <div><b>${o.id}</b><div class="tiny-muted">${custName(o.custId)}</div></div>
+              <div style="text-align:right;">
+                <div class="mono" style="font-size:12.8px;">${o.items.length} / ${o.items.length} packed</div>
+                <button class="btn btn-outline btn-sm mt-8" data-gen-bag="${o.id}">Generate bag ID</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Ready — assign driver</div>
+        <div class="stack mt-16" style="gap:10px;">
+          ${dispatch.map(o=>`
+            <div class="flex-between" style="padding:10px 12px; border:1px solid var(--line); border-radius:6px;">
+              <div><b>${o.id}</b><div class="tiny-muted">${custName(o.custId)} &middot; ${o.type}</div></div>
+              <select style="width:150px;"><option>Assign driver…</option>${staff.filter(s=>s.role==='Driver').map(s=>`<option>${s.name}</option>`).join('')}</select>
+            </div>
+          `).join('') || '<div class="tiny-muted">Nothing ready for dispatch.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Wallet & Payments ---------------- */
+function renderWalletView(){
+  return `
+    <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">Wallet balances</div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Customer</th><th>Balance</th><th></th></tr>
+          ${customers.map(c=>`<tr><td>${c.name}</td><td class="mono">${fmt(c.wallet)}</td><td><button class="btn btn-outline btn-sm" data-recharge="${c.id}">+ Recharge</button></td></tr>`).join('')}
+        </table></div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Ledger — recent transactions</div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Date</th><th>Customer</th><th>Type</th><th>Amount</th><th>Reference</th></tr>
+          ${walletTx.map(t=>`
+            <tr><td class="small-muted">${t.date}</td><td>${custName(t.custId)}</td>
+            <td><span class="pill ${t.amount>0?'ok':'info'}">${t.type}</span></td>
+            <td class="mono" style="color:${t.amount>0?'var(--ok)':'var(--ink)'}">${t.amount>0?'+':''}${fmt(t.amount)}</td>
+            <td class="small-muted">${t.mode}</td></tr>
+          `).join('')}
+        </table></div>
+        <div class="tiny-muted mt-12">Every entry here is append-only — a correction is a new row, never an edit, per the immutable-ledger rule in the blueprint.</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Loyalty & Subscriptions ---------------- */
+function renderLoyaltyView(){
+  const plans = [
+    {name:'Shirt Saver — 30', desc:'30 Wash & Iron shirts, valid 60 days', price:1200000, active:14},
+    {name:'Family Value Pack', desc:'₹6,000 credit for ₹5,500 paid', price:550000, active:9},
+    {name:'Corporate Linen Monthly', desc:'Unlimited linen wash & fold', price:4500000, active:1},
+  ];
+  return `
+    <div class="grid" style="grid-template-columns:1.1fr .9fr; align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">Loyalty tiers</div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Tier</th><th>Lifetime spend threshold</th><th>Benefit</th></tr>
+          <tr><td>${tierPill('Silver')}</td><td class="mono">₹0</td><td class="small-muted">1 pt per ₹100 spent</td></tr>
+          <tr><td>${tierPill('Gold')}</td><td class="mono">₹15,00,000</td><td class="small-muted">1.25 pts per ₹100 + free pickup</td></tr>
+          <tr><td>${tierPill('Platinum')}</td><td class="mono">₹30,00,000</td><td class="small-muted">1.5 pts per ₹100 + priority processing</td></tr>
+        </table></div>
+        <div class="section-title mt-20">Customer points</div>
+        <div class="tbl-wrap mt-8"><table>
+          <tr><th>Customer</th><th>Points</th><th>Tier</th></tr>
+          ${customers.filter(c=>!c.corporate).map(c=>`<tr><td>${c.name}</td><td class="mono">${c.points}</td><td>${tierPill(c.tier)}</td></tr>`).join('')}
+        </table></div>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Subscription packages</div>
+        <div class="stack mt-12" style="gap:10px;">
+          ${plans.map(p=>`
+            <div style="padding:12px; border:1px solid var(--line); border-radius:8px;">
+              <div class="flex-between"><b style="font-size:13px;">${p.name}</b><span class="mono">${fmt(p.price)}</span></div>
+              <div class="tiny-muted mt-8">${p.desc}</div>
+              <div class="tiny-muted mt-8">${p.active} customers enrolled</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Inventory ---------------- */
+function renderInventoryView(){
+  return `
+    <div class="card">
+      <div class="card-pad flex-between"><span class="small-muted">${inventory.length} items tracked</span><button class="btn btn-primary btn-sm">+ New purchase order</button></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Item</th><th>Stock on hand</th><th>Reorder level</th><th>Status</th><th></th></tr>
+        ${inventory.map(i=>`
+          <tr><td>${i.name}</td><td class="mono">${i.stock} ${i.unit}</td><td class="mono small-muted">${i.reorder} ${i.unit}</td>
+          <td>${invPill(i.status)}</td>
+          <td>${i.status==='low' ? `<button class="btn btn-outline btn-sm" data-reorder="${i.id}">Reorder</button>` : ''}</td></tr>
+        `).join('')}
+      </table></div>
+    </div>
+  `;
+}
+
+/* ---------------- Staff & Attendance ---------------- */
+function renderStaffView(){
+  return `
+    <div class="card">
+      <div class="card-pad small-muted">${staff.filter(s=>s.status!=='On break').length} of ${staff.length} on shift</div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Name</th><th>Role</th><th>Status</th><th>Since</th></tr>
+        ${staff.map(s=>`
+          <tr><td>${s.name}</td><td class="small-muted">${s.role}</td>
+          <td><span class="pill ${s.status==='Clocked in'?'ok':s.status==='On route'?'info':'warn'}"><span class="dot"></span>${s.status}</span></td>
+          <td class="mono small-muted">${s.since}</td></tr>
+        `).join('')}
+      </table></div>
+    </div>
+  `;
+}
+
+/* ---------------- Approvals (maker-checker) ---------------- */
+function renderApprovalsView(){
+  const pending = approvals.filter(a=>a.status==='pending');
+  const decided = approvals.filter(a=>a.status!=='pending');
+  return `
+    <div class="stack">
+      <div class="card">
+        <div class="card-pad"><div class="section-title">Pending — awaiting your decision</div><div class="tiny-muted mt-4">You cannot approve a request you submitted yourself — dual control is enforced, not optional.</div></div>
+        <div class="tbl-wrap"><table>
+          <tr><th>Type</th><th>Requested by</th><th>Entity</th><th>Amount</th><th>Reason</th><th>When</th><th></th></tr>
+          ${pending.map(a=>`
+            <tr><td><span class="pill warn"><span class="dot"></span>${a.type}</span></td><td class="small-muted">${a.requestedBy}</td>
+            <td class="mono">${a.entity}</td><td class="mono">${a.amount?fmt(a.amount):(a.detail||'—')}</td>
+            <td class="small-muted" style="max-width:260px;">${a.reason}</td><td class="tiny-muted">${a.requestedAt}</td>
+            <td><div style="display:flex; gap:6px;"><button class="btn btn-ok btn-sm" data-approve="${a.id}">Approve</button><button class="btn btn-danger btn-sm" data-reject="${a.id}">Reject</button></div></td></tr>
+          `).join('') || '<tr><td colspan="7" class="tiny-muted">Nothing pending. Well run store.</td></tr>'}
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-pad section-title">Recent decisions</div>
+        <div class="tbl-wrap"><table>
+          <tr><th>Type</th><th>Entity</th><th>Decided by</th><th>Result</th></tr>
+          ${decided.map(a=>`<tr><td>${a.type}</td><td class="mono">${a.entity}</td><td class="small-muted">${a.decidedBy||'—'}</td><td>${a.status==='approved'?'<span class="pill ok">Approved</span>':'<span class="pill danger">Rejected</span>'}</td></tr>`).join('') || '<tr><td colspan="4" class="tiny-muted">No decisions yet.</td></tr>'}
+        </table></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Settings ---------------- */
+function renderSettingsView(){
+  return `
+    <div class="grid" style="grid-template-columns:1fr 1fr; align-items:start;">
+      <div class="card card-pad">
+        <div class="section-title">Tax / GST engine</div>
+        <div class="small-muted mt-8">Per your instruction, this stays off until you're ready to register and charge GST. Switching it on requires a GSTIN.</div>
+        <div class="flex-between mt-16" style="padding:12px; border:1px solid var(--line); border-radius:8px;">
+          <div><div style="font-weight:600; font-size:13px;">Enable GST calculation</div><div class="tiny-muted">SAC 999712 &middot; 18% (CGST 9% + SGST 9% intra-Kerala)</div></div>
+          <div class="toggle ${settings.taxEnabled?'on':''}" id="taxToggle"></div>
+        </div>
+        ${settings.taxEnabled ? `<div class="field mt-12"><label>Branch GSTIN</label><input id="gstinInput" value="${settings.gstin}" placeholder="32AAAAA0000A1Z5"/></div>` : ''}
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Approval thresholds</div>
+        <div class="small-muted mt-8">Starting values — tune these once you're live.</div>
+        <div class="stack mt-16" style="gap:12px;">
+          <div class="flex-between"><span class="small-muted">Refund needs approval above</span><span class="mono">${fmt(settings.approvalThresholds.refund)}</span></div>
+          <div class="flex-between"><span class="small-muted">Price override needs approval above</span><span class="mono">${settings.approvalThresholds.priceOverride}%</span></div>
+          <div class="flex-between"><span class="small-muted">Inventory adjustment needs approval above</span><span class="mono">${settings.approvalThresholds.inventoryAdj}% of stock</span></div>
+        </div>
+      </div>
+      <div class="card card-pad" style="grid-column:1 / -1;">
+        <div class="section-title">Vendor integrations</div>
+        <div class="tbl-wrap mt-12"><table>
+          <tr><th>Integration</th><th>Status</th><th>Note</th></tr>
+          <tr><td>WhatsApp BSP</td><td><span class="pill warn">Blocked</span></td><td class="small-muted">Awaiting your pricing/contract decision (360dialog recommended)</td></tr>
+          <tr><td>SMS provider</td><td><span class="pill warn">Blocked</span></td><td class="small-muted">Awaiting vendor selection</td></tr>
+          <tr><td>Payment gateway</td><td><span class="pill warn">Blocked</span></td><td class="small-muted">Awaiting launch-market confirmation (Stripe recommended)</td></tr>
+        </table></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- AI Copilot ---------------- */
+let copilotLog = [
+  {who:'ai', text:"I'm grounded in your live order, garment, and payment data — ask me about today's operations. I won't guess at numbers I can't verify."},
+];
+function renderCopilot(){
+  return `
+    <div class="card" style="max-width:720px;">
+      <div class="card-pad" style="min-height:360px; display:flex; flex-direction:column; gap:12px;">
+        ${copilotLog.map(m=>`
+          <div class="chat-bubble ${m.who}">${m.text}${m.cite?`<div class="chat-cite">${m.cite}</div>`:''}</div>
+        `).join('')}
+      </div>
+      <div style="padding:14px 18px; border-top:1px solid var(--line); display:flex; gap:8px;">
+        <input id="copilotInput" placeholder="e.g. Which orders are at risk of missing SLA today?" style="flex:1; padding:9px 12px; border:1px solid var(--line-strong); border-radius:20px; background:var(--surface); color:var(--ink);"/>
+        <button class="btn btn-primary" id="copilotSend">Ask</button>
+      </div>
+    </div>
+    <div class="chip-row mt-12">
+      ${['Which orders are at risk today?','What is today\'s revenue?','Which service is most profitable?'].map(q=>`<span class="chip" data-copilot-suggest="${q}">${q}</span>`).join('')}
+    </div>
+  `;
+}
+
+/* ============================================================
+   CUSTOMER PORTAL (mobile PWA preview)
+   ============================================================ */
+const PORTAL_TABS = [
+  {id:'orders', label:'Orders', ic:'🧺'},
+  {id:'rewards', label:'Rewards', ic:'★'},
+  {id:'privacy', label:'Privacy', ic:'🔒'},
+  {id:'support', label:'Support', ic:'💬'},
+];
+function renderPortal(){
+  const cust = custById(portalCustomerId);
+  const myOrders = orders.filter(o=>o.custId===portalCustomerId);
+  return `
+    <div class="device-stage">
+      <div class="device-col">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-topbar">
+              <div class="pt-eyebrow">The London Wash</div>
+              <h2>${portalTab==='orders'?'Your orders':portalTab==='rewards'?'Wallet & Loyalty':portalTab==='privacy'?'Privacy Centre':'Support'}</h2>
+            </div>
+            <div class="phone-body">${renderPortalTab(cust, myOrders)}</div>
+          </div>
+          <div class="phone-tabbar">
+            ${PORTAL_TABS.map(t=>`<div class="pt-item ${portalTab===t.id?'active':''}" data-portal-tab="${t.id}"><span class="ic">${t.ic}</span>${t.label}</div>`).join('')}
+          </div>
+        </div>
+        <div class="device-caption">Signed in as <b>${cust.name}</b> — this is exactly what she sees on her phone. Order data, wallet, and privacy settings all read from the same system of record as the Admin console.</div>
+      </div>
+    </div>
+  `;
+}
+function renderPortalTab(cust, myOrders){
+  if(portalTab==='orders'){
+    const active = myOrders.filter(o=>o.status!=='Delivered'&&o.status!=='Completed');
+    const past = myOrders.filter(o=>o.status==='Delivered'||o.status==='Completed');
+    return `
+      ${active.map(o=>`
+        <div class="mcard" data-portal-track="${o.id}">
+          <div class="flex-between"><b class="mono" style="font-size:12.5px;">${o.id}</b>${statusPill(o.status)}</div>
+          <div class="tiny-muted mt-8">${o.items.length} items &middot; Due ${o.dueAt}</div>
+          <div class="progress-track"><div class="progress-fill" style="width:${orderProgress(o)}%"></div></div>
+        </div>
+      `).join('')}
+      <div class="tiny-muted mt-12" style="text-transform:uppercase; letter-spacing:.06em; font-size:10px;">Past orders</div>
+      ${past.map(o=>`
+        <div class="mcard mcard-tight mt-8" style="display:flex; justify-content:space-between; align-items:center;">
+          <div><div class="mono" style="font-size:12px;">${o.id}</div><div class="tiny-muted">${o.items.length} items &middot; ${fmt(o.total)}</div></div>
+          <button class="btn btn-outline btn-sm" data-reorder="${o.id}">Reorder</button>
+        </div>
+      `).join('')}
+    `;
+  }
+  if(portalTab==='rewards'){
+    return `
+      <div class="mcard">
+        <div class="tiny-muted">Wallet balance</div>
+        <div style="font-family:'Fraunces',serif; font-size:28px; margin-top:4px;">${fmt(cust.wallet)}</div>
+        <button class="btn btn-primary btn-sm mt-12">+ Add money</button>
+      </div>
+      <div class="mcard">
+        <div class="flex-between"><div class="tiny-muted">Loyalty points</div>${tierPill(cust.tier)}</div>
+        <div style="font-family:'Fraunces',serif; font-size:24px; margin-top:4px;">${cust.points} pts</div>
+        <div class="tiny-muted mt-8">1,500 more points to Platinum.</div>
+      </div>
+      <div class="mcard">
+        <div class="tiny-muted">Active subscription</div>
+        <div style="font-weight:600; margin-top:4px;">Shirt Saver — 30</div>
+        <div class="progress-track"><div class="progress-fill" style="width:60%"></div></div>
+        <div class="tiny-muted mt-8">18 of 30 pieces used &middot; expires 20 Oct 2026</div>
+      </div>
+    `;
+  }
+  if(portalTab==='privacy'){
+    return `
+      <div class="mcard">
+        <div class="tiny-muted" style="text-transform:uppercase; letter-spacing:.06em; font-size:10px; margin-bottom:10px;">Communication consent</div>
+        <div class="stack" style="gap:10px;">
+          ${['WhatsApp updates','SMS updates','Email offers'].map((l,i)=>{
+            const key = ['whatsapp','sms','email'][i];
+            return `<div class="flex-between"><span style="font-size:13px;">${l}</span><div class="toggle ${cust.consent[key]?'on':''}" data-consent-toggle="${key}"></div></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="mcard">
+        <button class="btn btn-outline" style="width:100%; justify-content:center;" data-export-data>Export my data</button>
+        <button class="btn btn-outline mt-8" style="width:100%; justify-content:center; color:var(--danger); border-color:var(--danger);" data-delete-account>Delete my account</button>
+        <div class="tiny-muted mt-8">Deletion anonymises your profile; your order history is kept for financial records, per §20 of the architecture.</div>
+      </div>
+    `;
+  }
+  return `<div class="mcard"><div style="font-weight:600;">Need help with an order?</div><div class="tiny-muted mt-8">Chat with us on WhatsApp or raise a complaint about a specific garment.</div><button class="btn btn-primary btn-sm mt-12">Start a chat</button></div>`;
+}
+
+/* ============================================================
+   DRIVER APP (mobile PWA preview)
+   ============================================================ */
+let driverStops = [
+  {id:'ST1', type:'Delivery', order:'LW-26091150', cust:'C002', addr:'Door 42, MG Road, Ernakulam', amount:64000, paid:true, status:'Next'},
+  {id:'ST2', type:'Pickup', order:'LW-26091260', cust:'C004', addr:'Vyttila Hub, Kochi', amount:0, paid:true, status:'Upcoming'},
+  {id:'ST3', type:'Delivery', order:'LW-26091090', cust:'C001', addr:'Panampilly Nagar, Kochi', amount:35000, paid:false, status:'Upcoming'},
+];
+let driverStopOpen = null;
+function renderDriver(){
+  return `
+    <div class="device-stage">
+      <div class="device-col">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="phone-topbar">
+              <div class="pt-eyebrow">The London Wash — Driver</div>
+              <h2>${driverStopOpen ? 'Stop detail' : "Today's route"}</h2>
+            </div>
+            <div class="phone-body">${driverStopOpen ? renderDriverStop() : renderDriverRoute()}</div>
+          </div>
+          <div class="phone-tabbar">
+            <div class="pt-item active"><span class="ic">🚚</span>Route</div>
+            <div class="pt-item"><span class="ic">₹</span>Cash</div>
+            <div class="pt-item"><span class="ic">◎</span>Profile</div>
+          </div>
+        </div>
+        <div class="device-caption">Signed in as <b>Arun Kumar</b> — 3 stops today. Tap a stop for address, order contents, OTP capture, and proof of delivery.</div>
+      </div>
+    </div>
+  `;
+}
+function renderDriverRoute(){
+  return driverStops.map(s=>`
+    <div class="mcard" data-driver-stop="${s.id}">
+      <div class="flex-between"><span class="pill ${s.type==='Delivery'?'info':'warn'}">${s.type}</span><span class="tiny-muted">${s.status}</span></div>
+      <div style="font-weight:600; margin-top:8px;">${custName(s.cust)}</div>
+      <div class="tiny-muted mt-4">${s.addr}</div>
+      <div class="flex-between mt-12">
+        <span class="mono tiny-muted">${s.order}</span>
+        ${s.amount>0 ? `<span class="mono" style="font-size:12.5px;">${s.paid?'Paid':fmt(s.amount)+' due'}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+function renderDriverStop(){
+  const s = driverStops.find(x=>x.id===driverStopOpen);
+  const o = orders.find(x=>x.id===s.order);
+  return `
+    <button class="btn btn-ghost" data-driver-back style="padding-left:0; margin-bottom:8px;">← Back to route</button>
+    <div class="mcard">
+      <span class="pill ${s.type==='Delivery'?'info':'warn'}">${s.type}</span>
+      <div style="font-weight:700; font-size:16px; margin-top:8px;">${custName(s.cust)}</div>
+      <div class="tiny-muted mt-4">${s.addr}</div>
+      <div class="tiny-muted mt-8 mono">${s.order} &middot; ${o?o.items.length:0} items</div>
+      ${s.amount>0 ? `<div class="mt-8" style="font-weight:600;">${s.paid?'Already paid':'Collect '+fmt(s.amount)}</div>` : ''}
+    </div>
+    <div class="mcard">
+      <div class="tiny-muted" style="text-transform:uppercase; font-size:10px; letter-spacing:.06em;">Verify with OTP</div>
+      <input placeholder="Enter 4-digit OTP" style="width:100%; margin-top:10px; padding:10px 12px; border:1px solid var(--line-strong); border-radius:8px; background:var(--surface); color:var(--ink); text-align:center; letter-spacing:.3em; font-family:'IBM Plex Mono',monospace;"/>
+      <button class="btn btn-primary mt-12" style="width:100%; justify-content:center;" data-complete-stop="${s.id}">Verify &amp; complete ${s.type.toLowerCase()}</button>
+      <button class="btn btn-outline mt-8" style="width:100%; justify-content:center;">📷 Add proof-of-delivery photo</button>
+    </div>
+  `;
+}
+
+/* ============================================================
+   ROUTING / RENDER / EVENTS
+   ============================================================ */
+function renderAll(){
+  document.querySelectorAll('#wsSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.ws===workspace));
+  const root = document.getElementById('workspaceRoot');
+  if(workspace==='admin') root.innerHTML = renderAdminShell();
+  else if(workspace==='portal') root.innerHTML = renderPortal();
+  else root.innerHTML = renderDriver();
+  wireEvents();
+}
+
+function showToast(msg){
+  let t = document.getElementById('lwToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'lwToast';
+    t.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:var(--radius-md); font-size:13px; z-index:200; box-shadow:var(--shadow-lg); opacity:0; transition:opacity .2s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(()=>{ t.style.opacity = '1'; });
+  clearTimeout(t._to);
+  t._to = setTimeout(()=>{ t.style.opacity='0'; }, 1900);
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+function openModal(html){ document.getElementById('modalRoot').innerHTML = html; wireModalEvents(); }
+
+function wireEvents(){
+  document.querySelectorAll('#wsSwitch button').forEach(b=>b.addEventListener('click', ()=>{ workspace=b.dataset.ws; renderAll(); }));
+
+  if(workspace==='admin') wireAdmin();
+  if(workspace==='portal') wirePortal();
+  if(workspace==='driver') wireDriver();
+  wireModalEvents();
+}
+
+function wireAdmin(){
+  document.querySelectorAll('[data-admin-tab]').forEach(el=>el.addEventListener('click', (e)=>{ e.preventDefault(); adminTab = el.dataset.adminTab; renderAll(); }));
+  document.querySelectorAll('[data-ws-jump]').forEach(el=>el.addEventListener('click', (e)=>{ e.preventDefault(); workspace = el.dataset.wsJump; renderAll(); }));
+  document.querySelectorAll('[data-dash-range]').forEach(el=>el.addEventListener('click', ()=>{ dashRange = el.dataset.dashRange; renderAll(); }));
+  document.querySelectorAll('[data-dash-sort]').forEach(el=>el.addEventListener('click', ()=>{ dashSort = el.dataset.dashSort; renderAll(); }));
+
+  document.querySelectorAll('[data-plsub]').forEach(el=>el.addEventListener('click', ()=>{ priceListsSubTab = el.dataset.plsub; renderAll(); }));
+  document.querySelectorAll('[data-pl-filter]').forEach(el=>el.addEventListener('click', ()=>{ priceListFilter = el.dataset.plFilter; renderAll(); }));
+  const openAddPriceBtn = document.getElementById('openAddPrice');
+  if(openAddPriceBtn) openAddPriceBtn.addEventListener('click', ()=> openModal(addPriceModal()));
+  const openAddProfileBtn = document.getElementById('openAddProfile');
+  if(openAddProfileBtn) openAddProfileBtn.addEventListener('click', ()=> openModal(addProfileModal()));
+  document.querySelectorAll('[data-toggle-price]').forEach(el=>el.addEventListener('click', ()=>{
+    const row = priceList.find(p=>p.id===el.dataset.togglePrice);
+    if(row) row.active = !row.active;
+    renderAll();
+  }));
+  document.querySelectorAll('[data-del-price]').forEach(el=>el.addEventListener('click', ()=>{
+    priceList = priceList.filter(p=>p.id!==el.dataset.delPrice);
+    renderAll();
+    showToast('Price list item removed');
+  }));
+
+  document.querySelectorAll('[data-open-order]').forEach(el=>el.addEventListener('click', (e)=>{ e.stopPropagation(); openModal(orderDetailModal(el.dataset.openOrder)); }));
+  document.querySelectorAll('[data-open-customer]').forEach(el=>el.addEventListener('click', ()=>{ openModal(customerDetailModal(el.dataset.openCustomer)); }));
+  document.querySelectorAll('[data-open-garment]').forEach(el=>el.addEventListener('click', (e)=>{ e.stopPropagation(); openModal(garmentPassportModal(el.dataset.openGarment)); }));
+  document.querySelectorAll('[data-garment-card]').forEach(el=>el.addEventListener('click', ()=>{ openModal(garmentCardModal(el.dataset.garmentCard)); }));
+  document.querySelectorAll('[data-print-tags]').forEach(el=>el.addEventListener('click', ()=>showToast('🏷️ Garment tags sent to the label printer')));
+  document.querySelectorAll('[data-print-bill]').forEach(el=>el.addEventListener('click', ()=>showToast('🖨️ Invoice sent to the receipt printer')));
+  document.querySelectorAll('[data-order-filter]').forEach(el=>el.addEventListener('click', ()=>showToast('Filtered by: '+el.dataset.orderFilter)));
+
+  // POS
+  const custSearch = document.getElementById('posCustSearch');
+  if(custSearch) custSearch.addEventListener('input', ()=>{}); // visual only in this model
+  document.querySelectorAll('[data-pos-cust]').forEach(el=>el.addEventListener('click', ()=>{ posState.custId = el.dataset.posCust; posServiceFilter = null; renderAll(); adminTab='neworder'; }));
+  const changeCust = document.getElementById('posChangeCust');
+  if(changeCust) changeCust.addEventListener('click', ()=>{ posState.custId=null; posServiceFilter=null; renderAll(); });
+  const newCustBtn = document.getElementById('posNewCustomer');
+  if(newCustBtn) newCustBtn.addEventListener('click', (e)=>{ e.preventDefault(); openModal(addCustomerModal()); });
+  document.querySelectorAll('[data-pos-service]').forEach(el=>el.addEventListener('click', ()=>{ posServiceFilter = el.dataset.posService; renderAll(); }));
+  document.querySelectorAll('[data-add-pr]').forEach(el=>el.addEventListener('click', ()=>{
+    const c = priceList.find(p=>p.id===el.dataset.addPr);
+    const existing = posState.items.find(i=>i.priceId===c.id);
+    if(existing) existing.qty++; else posState.items.push({item:c.item, service:c.service, price:c.price, priceId:c.id, qty:1});
+    renderAll();
+  }));
+  document.querySelectorAll('[data-qty-idx]').forEach(el=>el.addEventListener('input', ()=>{
+    posState.items[+el.dataset.qtyIdx].qty = Math.max(1, +el.value||1); renderAll();
+  }));
+  document.querySelectorAll('[data-rm-idx]').forEach(el=>el.addEventListener('click', ()=>{
+    posState.items.splice(+el.dataset.rmIdx,1); renderAll();
+  }));
+  const walletUseInput = document.getElementById('posWalletUse');
+  if(walletUseInput) walletUseInput.addEventListener('input', ()=>{ posState.walletUse = +walletUseInput.value||0; renderAll(); });
+  const createOrderBtn = document.getElementById('posCreateOrder');
+  if(createOrderBtn) createOrderBtn.addEventListener('click', ()=>{
+    showToast('✅ Order created — garment tags queued to print');
+    posState = { custId:null, items:[], promo:0, walletUse:0 };
+    adminTab = 'orders'; renderAll();
+  });
+
+  // Production board
+  document.querySelectorAll('[data-advance-garment]').forEach(el=>el.addEventListener('click', ()=>{
+    const g = allGarments().find(x=>x.id===el.dataset.advanceGarment);
+    if(g && g.stageIdx < STAGES.length-1){
+      g.stageIdx++; g.stage = STAGES[g.stageIdx];
+      g.events.push({t:'10 Sep 2026 '+new Date().toTimeString().slice(0,5), label:g.stage+' — started', who:'Floor staff'});
+    }
+    closeModal(); renderAll();
+  }));
+
+  // QC
+  document.querySelectorAll('[data-qc-select]').forEach(el=>el.addEventListener('click', ()=>{ qcSelected = el.dataset.qcSelect; qcChecks = QC_CHECKLIST.map(()=>false); renderAll(); }));
+  document.querySelectorAll('.qcCheck').forEach(el=>el.addEventListener('change', ()=>{ qcChecks[+el.dataset.qcItem] = el.checked; renderAll(); }));
+  const qcPass = document.querySelector('[data-qc-pass]');
+  if(qcPass) qcPass.addEventListener('click', ()=>{ showToast('✓ QC passed — moved to Packing'); qcSelected=null; renderAll(); });
+  const qcFail = document.querySelector('[data-qc-fail]');
+  if(qcFail) qcFail.addEventListener('click', ()=>{ showToast('✕ QC failed — sent back for reprocessing'); qcSelected=null; renderAll(); });
+
+  // Packing
+  document.querySelectorAll('[data-gen-bag]').forEach(el=>el.addEventListener('click', ()=>showToast('🏷️ BAG-'+(Math.floor(Math.random()*90000+10000))+' generated')));
+  document.querySelectorAll('[data-reorder]').forEach(el=>el.addEventListener('click', ()=>showToast('Reorder queued for '+el.dataset.reorder)));
+
+  // Wallet
+  document.querySelectorAll('[data-recharge]').forEach(el=>el.addEventListener('click', ()=>showToast('Recharge flow opened for '+custName(el.dataset.recharge))));
+
+  // Approvals
+  document.querySelectorAll('[data-approve]').forEach(el=>el.addEventListener('click', ()=>{
+    const a = approvals.find(x=>x.id===el.dataset.approve); a.status='approved'; a.decidedBy='Nithya Raj (Branch Manager)';
+    showToast('Approved — action executed and logged to the audit trail'); renderAll();
+  }));
+  document.querySelectorAll('[data-reject]').forEach(el=>el.addEventListener('click', ()=>{
+    const a = approvals.find(x=>x.id===el.dataset.reject); a.status='rejected'; a.decidedBy='Nithya Raj (Branch Manager)';
+    showToast('Rejected — requester notified, nothing executed'); renderAll();
+  }));
+
+  // Settings
+  const taxToggle = document.getElementById('taxToggle');
+  if(taxToggle) taxToggle.addEventListener('click', ()=>{ settings.taxEnabled = !settings.taxEnabled; showToast(settings.taxEnabled ? 'GST enabled — now applied on new orders' : 'GST disabled'); renderAll(); });
+
+  // Copilot
+  const copilotSend = document.getElementById('copilotSend');
+  const copilotInput = document.getElementById('copilotInput');
+  function askCopilot(q){
+    if(!q) return;
+    copilotLog.push({who:'user', text:q});
+    copilotLog.push(copilotAnswer(q));
+    renderAll(); adminTab='copilot';
+  }
+  if(copilotSend) copilotSend.addEventListener('click', ()=>askCopilot(copilotInput.value.trim()));
+  if(copilotInput) copilotInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') askCopilot(copilotInput.value.trim()); });
+  document.querySelectorAll('[data-copilot-suggest]').forEach(el=>el.addEventListener('click', ()=>askCopilot(el.dataset.copilotSuggest)));
+}
+
+function copilotAnswer(q){
+  const ql = q.toLowerCase();
+  if(ql.includes('risk') || ql.includes('sla')){
+    const risky = orders.filter(o=>o.sla!=='on_track');
+    return {who:'ai', text:`${risky.length} orders are at risk or breached today: ${risky.map(o=>o.id).join(', ')}. The most urgent is ${risky[0]?.id}, due ${risky[0]?.dueAt}.`, cite:'Source: Orders table, SLA status field · data as of 10 Sep 2026, 11:20 AM'};
+  }
+  if(ql.includes('revenue')){
+    const rev = orders.reduce((s,o)=>s+o.total,0);
+    return {who:'ai', text:`Today's revenue across ${orders.length} orders is ${fmt(rev)}, an average order value of ${fmt(Math.round(rev/orders.length))}.`, cite:'Source: Orders table, total field · today, Main Store branch'};
+  }
+  if(ql.includes('profit')){
+    return {who:'ai', text:`Wash & Iron and Wash & Fold carry the highest contribution margin once chemical and labour cost are allocated; Special Treatment (sarees) and Express services have the thinnest margin due to handling time. Full per-service costing needs Phase 19 (Inventory) and Phase 22 (Payroll) data to be precise — this is a directional answer, not a final number.`, cite:'Source: Service Profitability model (blueprint §49) — not yet backed by real cost data'};
+  }
+  return {who:'ai', text:"I can only answer from real data already in the system — orders, garments, payments, staff, and inventory. Try asking about today's revenue, at-risk orders, or inventory levels.", cite:'Grounding rule: ADR-08 — no invented numbers'};
+}
+
+function wirePortal(){
+  document.querySelectorAll('[data-portal-tab]').forEach(el=>el.addEventListener('click', ()=>{ portalTab = el.dataset.portalTab; renderAll(); }));
+  document.querySelectorAll('[data-portal-track]').forEach(el=>el.addEventListener('click', ()=>showToast('Tracking '+el.dataset.portalTrack)));
+  document.querySelectorAll('[data-reorder]').forEach(el=>el.addEventListener('click', ()=>showToast('New order created from '+el.dataset.reorder)));
+  document.querySelectorAll('[data-consent-toggle]').forEach(el=>el.addEventListener('click', ()=>{
+    const c = custById(portalCustomerId); const key = el.dataset.consentToggle;
+    c.consent[key] = !c.consent[key]; showToast('Consent updated — logged with timestamp and source'); renderAll();
+  }));
+  const exportBtn = document.querySelector('[data-export-data]');
+  if(exportBtn) exportBtn.addEventListener('click', ()=>showToast('📦 Export request received — we\'ll notify you when it\'s ready'));
+  const delBtn = document.querySelector('[data-delete-account]');
+  if(delBtn) delBtn.addEventListener('click', ()=>showToast('Deletion request submitted for manager approval'));
+}
+
+function wireDriver(){
+  document.querySelectorAll('[data-driver-stop]').forEach(el=>el.addEventListener('click', ()=>{ driverStopOpen = el.dataset.driverStop; renderAll(); }));
+  const back = document.querySelector('[data-driver-back]');
+  if(back) back.addEventListener('click', ()=>{ driverStopOpen = null; renderAll(); });
+  const complete = document.querySelector('[data-complete-stop]');
+  if(complete) complete.addEventListener('click', ()=>{
+    showToast('✓ Verified — marked complete, customer notified');
+    driverStops = driverStops.filter(s=>s.id!==complete.dataset.completeStop);
+    driverStopOpen = null; renderAll();
+  });
+}
+
+function wireModalEvents(){
+  const backdrop = document.getElementById('modalBackdrop');
+  if(!backdrop) return;
+  backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+  document.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click', closeModal));
+
+  const saveNewCustomer = document.getElementById('saveNewCustomer');
+  if(saveNewCustomer) saveNewCustomer.addEventListener('click', ()=>{
+    const name = document.getElementById('ncName').value.trim();
+    const phone = document.getElementById('ncPhone').value.trim();
+    const addr = document.getElementById('ncAddr').value.trim();
+    const profileId = document.getElementById('ncProfile').value;
+    const fold = document.getElementById('ncFold').value;
+    if(!name || !phone){ showToast('Enter at least a name and phone number'); return; }
+    const id = nid('C');
+    customers.push({id, name, phone, tier:'Silver', points:0, wallet:0, lifetimeSpend:0, orders:0, addr: addr || '—', consent:{whatsapp:false, sms:false, email:false}, fold, detergent:'Regular', priceProfileId:profileId});
+    posState.custId = id;
+    posServiceFilter = null;
+    closeModal();
+    renderAll();
+    showToast('Customer "' + name + '" added');
+  });
+
+  const saveAddPrice = document.getElementById('saveAddPrice');
+  if(saveAddPrice) saveAddPrice.addEventListener('click', ()=>{
+    const item = document.getElementById('apItem').value.trim();
+    const service = document.getElementById('apService').value.trim();
+    const rupees = Number(document.getElementById('apPrice').value);
+    if(!item || !service || !rupees || rupees<=0){ showToast('Enter item, service and a valid price'); return; }
+    priceList.push(pl(item, service, Math.round(rupees*100), priceListFilter));
+    closeModal();
+    renderAll();
+    showToast('Added to ' + profileName(priceListFilter));
+  });
+
+  const saveAddProfile = document.getElementById('saveAddProfile');
+  if(saveAddProfile) saveAddProfile.addEventListener('click', ()=>{
+    const name = document.getElementById('apfName').value.trim();
+    const desc = document.getElementById('apfDesc').value.trim();
+    if(!name){ showToast('Enter a name for the price list'); return; }
+    const id = 'PL'+(priceProfiles.length+1);
+    priceProfiles.push({id, name, desc: desc || 'Custom price list'});
+    priceListFilter = id;
+    closeModal();
+    renderAll();
+    showToast('Price list "' + name + '" created');
+  });
+}
+
+renderAll();
+</script>

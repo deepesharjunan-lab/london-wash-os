@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/london_wash_ui.html" },
+    { "source": "/blueprint", "destination": "/london_wash_blueprint.html" }
+  ]
+}
