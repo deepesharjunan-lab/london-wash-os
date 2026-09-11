@@ -1,16 +1,32 @@
 # The London Wash OS
 
-Working prototype and architecture for The London Wash's laundry operating system (The Art of Laundry, Kerala).
+Laundry operating system for The Art of Laundry, Kerala. A single Next.js 14 app (App Router) with Server Actions, talking directly to Supabase (Postgres + Auth).
 
-## In this repo
+## Stack
 
-- `london_wash_ui.html` — interactive UI working model (admin console, customer portal, driver app). In-memory demo data, no backend. Served at `/` on the live site.
-- `london_wash_blueprint.html` — Technical Architecture Blueprint (Rev 1.2): tech stack, system architecture, database design, ADRs. Served at `/blueprint` on the live site.
-- `london_wash_schema.sql` — Phase 2 database DDL: full PostgreSQL 16 schema (91 tables, 16 domains) generated from the blueprint. Applied to the project's Supabase database.
+- Next.js 14, React 18, TypeScript
+- Tailwind CSS (custom Modernist theme)
+- Supabase Postgres + Supabase Auth (@supabase/ssr, cookie-based sessions)
+- Row Level Security on every table (branch-scoped policies, fail-closed elsewhere)
+- Hosted on Vercel, deployed from this repo
+
+## Project layout
+
+- app/login - staff sign-in page (email + password against Supabase Auth)
+- app/(app) - authenticated shell (sidebar, header, sign-out) wrapping every internal page
+- app/(app)/dashboard - live KPI dashboard (revenue, orders, garments, AOV over the last 30 days)
+- lib/supabase - browser and server Supabase client factories
+- middleware.ts - session refresh and auth gate
+- london_wash_schema.sql - full Phase 2 database DDL (91 tables across 16 domains)
+- london_wash_blueprint.html - the approved technical architecture blueprint
+
+## Environment variables
+
+Copy .env.example to .env.local and fill in:
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY (publishable key)
 
 ## Status
 
-- Phase 0 (architecture blueprint) — approved
-- UI working model — built, in review
-- Phase 2 (database architecture) — schema live on Supabase
-- Phase 1 (project foundation) and Phase 3 (auth/RBAC) — not started
+This is a live, in-progress build. Stage 1 (auth + dashboard shell) is complete. Remaining admin pages (Orders, Customers, POS, Production, QC, Packing & Dispatch, Inventory, Staff, Approvals, Settings, Wallet, Loyalty, Price Lists), the Customer Portal, and the Driver App are being added incrementally.
