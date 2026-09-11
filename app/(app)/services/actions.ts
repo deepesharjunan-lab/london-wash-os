@@ -1,5 +1,4 @@
 "use server";
-
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,7 +19,8 @@ export async function createServiceCategory(formData: FormData) {
   if (!name) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  await supabase.from("service_category").insert({ branch_id: branchId, name });
+  const { error } = await supabase.from("service_category").insert({ branch_id: branchId, name });
+  if (error) console.error("createServiceCategory error:", error.message);
   revalidatePath("/services");
 }
 
@@ -31,9 +31,8 @@ export async function createService(formData: FormData) {
   if (!name || !service_category_id) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  await supabase
-    .from("service")
-    .insert({ branch_id: branchId, name, service_category_id, default_unit });
+  const { error } = await supabase.from("service").insert({ branch_id: branchId, name, service_category_id, default_unit });
+  if (error) console.error("createService error:", error.message);
   revalidatePath("/services");
 }
 
@@ -43,7 +42,8 @@ export async function createItem(formData: FormData) {
   if (!name) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  await supabase.from("item").insert({ branch_id: branchId, name, category: category || null });
+  const { error } = await supabase.from("item").insert({ branch_id: branchId, name, category: category || null });
+  if (error) console.error("createItem error:", error.message);
   revalidatePath("/services");
 }
 
@@ -54,9 +54,8 @@ export async function createPriceListProfile(formData: FormData) {
   if (!name) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  await supabase
-    .from("price_list_profile")
-    .insert({ branch_id: branchId, name, description: description || null, is_default });
+  const { error } = await supabase.from("price_list_profile").insert({ branch_id: branchId, name, description: description || null, is_default });
+  if (error) console.error("createPriceListProfile error:", error.message);
   revalidatePath("/services");
 }
 
@@ -65,15 +64,14 @@ export async function createPriceListEntry(formData: FormData) {
   const service_id = String(formData.get("service_id") || "");
   const item_id = String(formData.get("item_id") || "") || null;
   const priceRupees = Number(formData.get("price") || 0);
-  const unit = String(formData.get("unit") || "piece");
+  const unit = String(formData.get("unit") || "per_piece");
   if (!price_list_profile_id || !service_id || !priceRupees) return;
   const { supabase } = await getMyBranch();
-  await supabase.from("price_list_entry").insert({
-    price_list_profile_id,
-    service_id,
-    item_id,
+  const { error } = await supabase.from("price_list_entry").insert({
+    price_list_profile_id, service_id, item_id,
     price_minor: Math.round(priceRupees * 100),
     unit,
   });
+  if (error) console.error("createPriceListEntry error:", error.message);
   revalidatePath("/services");
 }
