@@ -28,6 +28,7 @@ const NAV = [
   { href: "/messages", label: "Messages & Notifications" },
   { href: "/workflows", label: "Workflow & Stages" },
   { href: "/system-settings", label: "System Settings" },
+  { href: "/claims", label: "Claims & Collection Points" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
