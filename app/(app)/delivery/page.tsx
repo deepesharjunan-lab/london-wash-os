@@ -11,7 +11,7 @@ import {
   updateDeliveryStatus,
 } from "./actions";
 
-function formatMinor(minor) {
+function formatMinor(minor: number | null) {
   if (minor === null || minor === undefined) return "-";
   return "₹" + (minor / 100).toFixed(2);
 }
