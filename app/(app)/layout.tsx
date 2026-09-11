@@ -27,6 +27,7 @@ const NAV = [
   { href: "/family", label: "Family & Workstations" },
   { href: "/messages", label: "Messages & Notifications" },
   { href: "/workflows", label: "Workflow & Stages" },
+  { href: "/system-settings", label: "System Settings" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
