@@ -121,9 +121,13 @@ export default async function ServicesPage() {
           />
           <select
             name="service_category_id"
+            required
+            defaultValue=""
             className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
           >
-            <option value="">No category</option>
+            <option value="" disabled>
+              Category...
+            </option>
             {(categories ?? []).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -288,9 +292,12 @@ export default async function ServicesPage() {
           <select
             name="price_list_profile_id"
             required
+            defaultValue=""
             className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
           >
-            <option value="">Price list...</option>
+            <option value="" disabled>
+              Price list...
+            </option>
             {(profiles ?? []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -300,9 +307,12 @@ export default async function ServicesPage() {
           <select
             name="service_id"
             required
+            defaultValue=""
             className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
           >
-            <option value="">Service...</option>
+            <option value="" disabled>
+              Service...
+            </option>
             {(services ?? []).map((s: any) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -311,6 +321,7 @@ export default async function ServicesPage() {
           </select>
           <select
             name="item_id"
+            defaultValue=""
             className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
           >
             <option value="">Any item</option>
