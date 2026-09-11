@@ -341,12 +341,12 @@ export default async function ServicesPage() {
           />
           <select
             name="unit"
-            defaultValue="piece"
+            defaultValue="per_piece"
             className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
           >
-            <option value="piece">Per piece</option>
-            <option value="kg">Per kg</option>
-            <option value="set">Per set</option>
+            <option value="per_piece">Per piece</option>
+            <option value="per_kg">Per kg</option>
+            <option value="per_set">Per set</option>
           </select>
           <button
             type="submit"
