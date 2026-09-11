@@ -16,7 +16,7 @@ export async function signIn(_prevState: { error?: string } | undefined, formDat
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "Incorrect email or password." };
+    return { error: "DEBUG " + error.status + " " + error.name + " " + error.message };
   }
 
   redirect(next || "/dashboard");
