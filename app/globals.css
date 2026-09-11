@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #ec3013;
+  --ok: #189a5b;
+  --warn: #dd9a0c;
+  --danger: #d1373f;
+  --info: #3d6fe0;
+}
+
+body {
+  font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+}
