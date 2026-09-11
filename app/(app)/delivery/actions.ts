@@ -2,14 +2,14 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-async function getBranchId(supabase) {
+async function getBranchId(supabase: ReturnType<typeof createClient>) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return null;
   const { data: me } = await supabase.from("user").select("branch_id").eq("auth_user_id", auth.user.id).single();
   return me?.branch_id ?? null;
 }
 
-export async function addDriver(formData) {
+export async function addDriver(formData: FormData) {
   const full_name = String(formData.get("full_name") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
   if (!full_name || !phone) return;
@@ -29,7 +29,7 @@ export async function addDriver(formData) {
   revalidatePath("/delivery");
 }
 
-export async function toggleDriverActive(formData) {
+export async function toggleDriverActive(formData: FormData) {
   const id = String(formData.get("id") || "");
   if (!id) return;
   const nextActive = String(formData.get("next_active") || "true") === "true";
@@ -39,7 +39,7 @@ export async function toggleDriverActive(formData) {
   revalidatePath("/delivery");
 }
 
-export async function addDeliveryZone(formData) {
+export async function addDeliveryZone(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   if (!name) return;
   const prefixesRaw = String(formData.get("pincode_prefixes") || "").trim();
@@ -59,7 +59,7 @@ export async function addDeliveryZone(formData) {
   revalidatePath("/delivery");
 }
 
-export async function addRoute(formData) {
+export async function addRoute(formData: FormData) {
   const driver_id = String(formData.get("driver_id") || "") || null;
   const delivery_zone_id = String(formData.get("delivery_zone_id") || "") || null;
   const route_date = String(formData.get("route_date") || "").trim();
@@ -79,7 +79,7 @@ export async function addRoute(formData) {
   revalidatePath("/delivery");
 }
 
-export async function updateRouteStatus(formData) {
+export async function updateRouteStatus(formData: FormData) {
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
   if (!id || !status) return;
@@ -89,7 +89,7 @@ export async function updateRouteStatus(formData) {
   revalidatePath("/delivery");
 }
 
-export async function createPickup(formData) {
+export async function createPickup(formData: FormData) {
   const order_id = String(formData.get("order_id") || "");
   if (!order_id) return;
   const route_id = String(formData.get("route_id") || "") || null;
@@ -114,7 +114,7 @@ export async function createPickup(formData) {
   revalidatePath("/delivery");
 }
 
-export async function updatePickupStatus(formData) {
+export async function updatePickupStatus(formData: FormData) {
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
   if (!id || !status) return;
@@ -124,7 +124,7 @@ export async function updatePickupStatus(formData) {
   revalidatePath("/delivery");
 }
 
-export async function createDelivery(formData) {
+export async function createDelivery(formData: FormData) {
   const order_id = String(formData.get("order_id") || "");
   if (!order_id) return;
   const route_id = String(formData.get("route_id") || "") || null;
@@ -145,12 +145,12 @@ export async function createDelivery(formData) {
   revalidatePath("/delivery");
 }
 
-export async function updateDeliveryStatus(formData) {
+export async function updateDeliveryStatus(formData: FormData) {
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
   if (!id || !status) return;
   const cashRaw = String(formData.get("cash_collected") || "").trim();
-  const patch = { status };
+  const patch: { status: string; cash_collected_minor?: number } = { status };
   if (cashRaw) patch.cash_collected_minor = Math.round(Number(cashRaw) * 100);
   const supabase = createClient();
   const { error } = await supabase.from("delivery").update(patch).eq("id", id);
