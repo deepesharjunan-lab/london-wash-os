@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateOrderStatus } from "./actions";
+import { updateOrderStatus, recordPayment } from "./actions";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-black/5 text-ink/60",
@@ -22,6 +22,15 @@ const STATUS_OPTIONS = [
   "delivered",
   "cancelled",
 ];
+
+const PAYMENT_METHODS = ["cash", "card", "upi", "bank_transfer", "wallet"];
+
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  captured: "bg-ok/10 text-ok",
+  failed: "bg-danger/10 text-danger",
+  refunded: "bg-black/5 text-ink/60",
+  partially_refunded: "bg-warn/10 text-warn",
+};
 
 function formatMinor(minor: number) {
   return `₹${(minor / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
@@ -54,16 +63,35 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     .eq("order_id", params.id)
     .order("created_at", { ascending: true });
 
+  const { data: payments } = await supabase
+    .from("payment")
+    .select("id, method, amount_minor, status, created_at")
+    .eq("order_id", params.id)
+    .order("created_at", { ascending: true });
+
   const customer: any = Array.isArray(order.customer) ? order.customer[0] : order.customer;
   const priceListProfile: any = Array.isArray(order.price_list_profile)
     ? order.price_list_profile[0]
     : order.price_list_profile;
+
+  const paidMinor = (payments ?? [])
+    .filter((p: any) => p.status !== "failed" && p.status !== "refunded")
+    .reduce((sum: number, p: any) => sum + Number(p.amount_minor), 0);
+  const balanceMinor = Number(order.total_minor) - paidMinor;
 
   async function updateStatus(formData: FormData) {
     "use server";
     const status = String(formData.get("status") || "");
     if (!status) return;
     await updateOrderStatus(params.id, status);
+  }
+
+  async function addPayment(formData: FormData) {
+    "use server";
+    const method = String(formData.get("method") || "");
+    const amount = Number(formData.get("amount") || 0);
+    if (!method || !amount) return;
+    await recordPayment(params.id, method, amount);
   }
 
   return (
@@ -148,6 +176,101 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <span>{formatMinor(Number(order.total_minor))}</span>
               </div>
             </div>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
+              <span className="text-sm font-bold text-ink">Payments</span>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  balanceMinor > 0 ? "bg-warn/10 text-warn" : "bg-ok/10 text-ok"
+                }`}
+              >
+                {balanceMinor > 0 ? `${formatMinor(balanceMinor)} due` : "Fully paid"}
+              </span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                  <th className="px-4 py-2">Method</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2">Date</th>
+                  <th className="px-4 py-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(payments ?? []).map((p: any) => (
+                  <tr key={p.id} className="border-b border-black/5 last:border-0">
+                    <td className="px-4 py-2.5 font-medium capitalize text-ink">
+                      {String(p.method).replace(/_/g, " ")}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${
+                          PAYMENT_STATUS_STYLES[p.status as string] ?? "bg-black/5 text-ink/60"
+                        }`}
+                      >
+                        {formatStatus(p.status as string)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-ink/60">
+                      {new Date(p.created_at as string).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-medium text-ink">
+                      {formatMinor(Number(p.amount_minor))}
+                    </td>
+                  </tr>
+                ))}
+                {(payments ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-ink/40">
+                      No payments recorded yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            <form action={addPayment} className="flex flex-wrap items-end gap-3 border-t border-black/5 px-4 py-3">
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                  Method
+                </label>
+                <select
+                  name="method"
+                  defaultValue="cash"
+                  className="rounded-md border border-black/10 px-3 py-2 text-sm capitalize outline-none focus:border-accent"
+                >
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m} className="capitalize">
+                      {m.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  min="1"
+                  step="1"
+                  defaultValue={balanceMinor > 0 ? Math.round(balanceMinor / 100) : undefined}
+                  className="w-28 rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
+              >
+                Record payment
+              </button>
+            </form>
           </div>
         </div>
 
