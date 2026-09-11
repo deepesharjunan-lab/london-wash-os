@@ -30,3 +30,5 @@ Copy .env.example to .env.local and fill in:
 ## Status
 
 This is a live, in-progress build. Stage 1 (auth + dashboard shell) is complete. Remaining admin pages (Orders, Customers, POS, Production, QC, Packing & Dispatch, Inventory, Staff, Approvals, Settings, Wallet, Loyalty, Price Lists), the Customer Portal, and the Driver App are being added incrementally.
+
+<!-- trigger first Vercel build from connected Git repo -->
