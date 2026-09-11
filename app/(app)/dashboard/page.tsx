@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 function formatMinor(minor: number) {
-  return \`₹\${(minor / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}\`;
+  return `₹${(minor / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 }
 
 export default async function DashboardPage() {
