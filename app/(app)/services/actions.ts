@@ -26,9 +26,9 @@ export async function createServiceCategory(formData: FormData) {
 
 export async function createService(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  const service_category_id = String(formData.get("service_category_id") || "") || null;
+  const service_category_id = String(formData.get("service_category_id") || "");
   const default_unit = String(formData.get("default_unit") || "piece");
-  if (!name) return;
+  if (!name || !service_category_id) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
   await supabase
