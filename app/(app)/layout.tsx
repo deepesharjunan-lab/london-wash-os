@@ -21,6 +21,7 @@ const NAV = [
   { href: "/wallet", label: "Membership & Wallet" },
   { href: "/corporate", label: "Corporate Accounts" },
   { href: "/garments", label: "Garment Tracking" },
+  { href: "/crm", label: "Customer CRM" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
