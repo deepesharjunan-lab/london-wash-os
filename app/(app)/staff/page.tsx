@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { checkInStaff, checkOutStaff } from "./actions";
+import { addEmployee, checkInStaff, checkOutStaff } from "./actions";
 
 function formatTime(iso: string | null) {
   if (!iso) return "—";
@@ -10,90 +10,139 @@ function formatTime(iso: string | null) {
 export default async function StaffPage() {
   const supabase = createClient();
 
-  const { data: staff, error } = await supabase
-    .from("user")
-    .select("id, full_name, phone, email, is_active")
+  const { data: employees } = await supabase
+    .from("employee")
+    .select("id, full_name, role_title, phone, date_joined, is_active")
+    .eq("is_active", true)
     .is("deleted_at", null)
     .order("full_name", { ascending: true });
 
   const today = new Date().toISOString().slice(0, 10);
   const { data: attendanceRows } = await supabase
     .from("attendance")
-    .select("id, employee_id, check_in, check_out, status")
+    .select("employee_id, check_in, check_out, status")
     .eq("work_date", today);
 
   const attendanceByEmployee = new Map<string, any>();
   (attendanceRows ?? []).forEach((a: any) => attendanceByEmployee.set(a.employee_id, a));
 
-  const presentCount = (attendanceRows ?? []).filter((a: any) => a.check_in && !a.check_out).length;
-  const totalStaff = (staff ?? []).length;
+  const staff = employees ?? [];
+  const checkedInCount = staff.filter((e: any) => {
+    const a = attendanceByEmployee.get(e.id);
+    return a && a.check_in && !a.check_out;
+  }).length;
 
   return (
-    <div>
-      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Staff</div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-archivo text-2xl font-extrabold text-ink">Staff &amp; Attendance</h1>
-        <p className="text-sm text-ink/60">{presentCount} checked in of {totalStaff} staff · Today</p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="font-archivo text-[11px] font-semibold uppercase tracking-wide text-accent">
+            Staff
+          </div>
+          <h1 className="mt-1 text-2xl font-semibold text-ink">Staff &amp; Attendance</h1>
+        </div>
+        <div className="text-right text-[13px] text-ink/60">
+          {checkedInCount} checked in of {staff.length} staff &middot; Today
+        </div>
       </div>
 
-      {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-          Could not load staff: {error.message}
-        </p>
-      )}
+      <details className="rounded-lg border border-black/5 bg-white">
+        <summary className="cursor-pointer select-none px-5 py-3 text-[13px] font-semibold text-ink">
+          + Add Employee
+        </summary>
+        <form
+          action={addEmployee}
+          className="grid grid-cols-1 gap-3 border-t border-black/5 px-5 py-4 sm:grid-cols-2 lg:grid-cols-5"
+        >
+          <input
+            name="full_name"
+            placeholder="Full name"
+            required
+            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+          />
+          <input
+            name="role_title"
+            placeholder="Role (e.g. Presser)"
+            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+          />
+          <input
+            name="phone"
+            placeholder="Phone"
+            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+          />
+          <input
+            name="date_joined"
+            type="date"
+            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+          />
+          <input
+            name="monthly_salary"
+            type="number"
+            step="0.01"
+            placeholder="Monthly salary (₹)"
+            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+          />
+          <button
+            type="submit"
+            className="rounded-md bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:brightness-110 sm:col-span-2 lg:col-span-1"
+          >
+            Add
+          </button>
+        </form>
+      </details>
 
-      <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Contact</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Check-in</th>
-              <th className="px-4 py-3">Check-out</th>
-              <th className="px-4 py-3"></th>
+      <div className="overflow-hidden rounded-lg border border-black/5 bg-white">
+        <table className="w-full text-left text-[13px]">
+          <thead className="bg-black/[0.02] text-[11px] uppercase tracking-wide text-ink/50">
+            <tr>
+              <th className="px-5 py-3 font-medium">Name</th>
+              <th className="px-5 py-3 font-medium">Role</th>
+              <th className="px-5 py-3 font-medium">Contact</th>
+              <th className="px-5 py-3 font-medium">Status</th>
+              <th className="px-5 py-3 font-medium">Check-in</th>
+              <th className="px-5 py-3 font-medium">Check-out</th>
+              <th className="px-5 py-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
-            {(staff ?? []).map((s: any) => {
-              const att = attendanceByEmployee.get(s.id);
-              const checkedIn = att && att.check_in && !att.check_out;
-              const checkedOut = att && att.check_out;
+            {staff.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-5 py-8 text-center text-ink/40">
+                  No staff yet. Add your first employee above.
+                </td>
+              </tr>
+            )}
+            {staff.map((e: any) => {
+              const a = attendanceByEmployee.get(e.id);
+              const checkedIn = a && a.check_in && !a.check_out;
+              const checkedOut = a && a.check_out;
               return (
-                <tr key={s.id} className="border-b border-black/5 last:border-0">
-                  <td className="px-4 py-3 font-medium text-ink">
-                    {s.full_name}
-                    {!s.is_active && (
-                      <span className="ml-2 inline-flex rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-ink/50">
-                        Inactive
-                      </span>
-                    )}
+                <tr key={e.id} className="border-t border-black/5">
+                  <td className="px-5 py-3 font-medium text-ink">{e.full_name}</td>
+                  <td className="px-5 py-3 text-ink/70">{e.role_title || "—"}</td>
+                  <td className="px-5 py-3 text-ink/70">{e.phone || "—"}</td>
+                  <td className="px-5 py-3">
+                    <span
+                      className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                        checkedIn
+                          ? "bg-green-100 text-green-700"
+                          : checkedOut
+                          ? "bg-black/5 text-ink/60"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {checkedIn ? "Checked in" : checkedOut ? "Checked out" : "Not checked in"}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-ink/70">{s.phone || s.email || "—"}</td>
-                  <td className="px-4 py-3">
-                    {checkedOut ? (
-                      <span className="inline-flex rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold text-ink/50">
-                        Checked out
-                      </span>
-                    ) : checkedIn ? (
-                      <span className="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-                        Present
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        Not checked in
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-ink/70">{formatTime(att?.check_in ?? null)}</td>
-                  <td className="px-4 py-3 text-ink/70">{formatTime(att?.check_out ?? null)}</td>
-                  <td className="px-4 py-3">
-                    {!att && (
+                  <td className="px-5 py-3 text-ink/70">{formatTime(a?.check_in ?? null)}</td>
+                  <td className="px-5 py-3 text-ink/70">{formatTime(a?.check_out ?? null)}</td>
+                  <td className="px-5 py-3 text-right">
+                    {!checkedIn && !checkedOut && (
                       <form action={checkInStaff}>
-                        <input type="hidden" name="employee_id" value={s.id} />
+                        <input type="hidden" name="employee_id" value={e.id} />
                         <button
                           type="submit"
-                          className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110"
+                          className="rounded-md bg-accent px-3 py-1.5 text-[12px] font-semibold text-white hover:brightness-110"
                         >
                           Check in
                         </button>
@@ -101,10 +150,10 @@ export default async function StaffPage() {
                     )}
                     {checkedIn && (
                       <form action={checkOutStaff}>
-                        <input type="hidden" name="employee_id" value={s.id} />
+                        <input type="hidden" name="employee_id" value={e.id} />
                         <button
                           type="submit"
-                          className="rounded-md border border-black/10 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-black/[0.03]"
+                          className="rounded-md border border-black/10 px-3 py-1.5 text-[12px] font-semibold text-ink hover:bg-black/[0.03]"
                         >
                           Check out
                         </button>
@@ -114,13 +163,6 @@ export default async function StaffPage() {
                 </tr>
               );
             })}
-            {(staff ?? []).length === 0 && !error && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-ink/50">
-                  No staff found for this branch.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
