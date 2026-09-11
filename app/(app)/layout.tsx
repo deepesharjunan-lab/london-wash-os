@@ -14,6 +14,7 @@ const NAV = [
   { href: "/approvals", label: "Approvals" },
   { href: "/loyalty", label: "Loyalty" },
   { href: "/delivery", label: "Delivery" },
+  { href: "/purchasing", label: "Purchasing" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
