@@ -31,8 +31,18 @@ export default async function PayrollPage() {
       .from("payroll")
       .select("*, employee:employee_id(full_name)")
       .order("created_at", { ascending: false })
-      .limit(100),
+      .limit(500),
   ]);
+
+  // payroll is an append-only ledger: each status transition (draft -> approved
+  // -> paid) is a new row for the same run. Collapse to the latest row per
+  // (employee, period) so the UI shows one line per run with its current status.
+  const latestByRun = new Map<string, any>();
+  for (const row of payrolls || []) {
+    const key = row.employee_id + "|" + row.period_start + "|" + row.period_end;
+    if (!latestByRun.has(key)) latestByRun.set(key, row);
+  }
+  const payrollRuns = Array.from(latestByRun.values()).slice(0, 100);
 
   return (
     <div className="space-y-8">
@@ -202,7 +212,7 @@ export default async function PayrollPage() {
             </tr>
           </thead>
           <tbody>
-            {(payrolls || []).map((p: any) => (
+            {payrollRuns.map((p: any) => (
               <tr key={p.id} className="border-b border-slate-100">
                 <td className="py-2 font-medium">{p.employee?.full_name || "-"}</td>
                 <td className="py-2 text-slate-600">
@@ -236,7 +246,7 @@ export default async function PayrollPage() {
                 </td>
               </tr>
             ))}
-            {(!payrolls || payrolls.length === 0) && (
+            {payrollRuns.length === 0 && (
               <tr>
                 <td colSpan={7} className="py-4 text-center text-slate-400">
                   No payroll runs yet.
