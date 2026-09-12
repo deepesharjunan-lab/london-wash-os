@@ -3,14 +3,14 @@ import { createIncentive, deleteIncentive } from "./actions";
 
 function formatAmount(minor: number, currency: string) {
   const value = (minor / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${currency} ${value}`;
+  return currency + " " + value;
 }
 
 export default async function IncentivesPage() {
   const supabase = createClient();
 
   const [{ data: staff }, { data: incentives }] = await Promise.all([
-    supabase.from("user").select("id, full_name").order("full_name").limit(500),
+    supabase.from("employee").select("id, full_name").order("full_name").limit(500),
     supabase
       .from("incentive")
       .select("*, employee:employee_id(full_name)")
