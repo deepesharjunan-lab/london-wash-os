@@ -29,6 +29,7 @@ const NAV = [
   { href: "/workflows", label: "Workflow & Stages" },
   { href: "/system-settings", label: "System Settings" },
   { href: "/claims", label: "Claims & Collection Points" },
+  { href: "/roles", label: "Roles & Permissions" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
