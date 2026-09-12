@@ -78,7 +78,25 @@ export async function updatePayrollStatus(formData: FormData) {
   const status = String(formData.get("status") || "");
   if (!id || !status) return;
   const supabase = createClient();
-  const { error } = await supabase.from("payroll").update({ status }).eq("id", id);
+  const { data: current, error: fetchError } = await supabase
+    .from("payroll")
+    .select("employee_id, period_start, period_end, gross_minor, deductions_minor, net_minor, currency")
+    .eq("id", id)
+    .single();
+  if (fetchError || !current) {
+    console.error(fetchError);
+    return;
+  }
+  const { error } = await supabase.from("payroll").insert({
+    employee_id: current.employee_id,
+    period_start: current.period_start,
+    period_end: current.period_end,
+    gross_minor: current.gross_minor,
+    deductions_minor: current.deductions_minor,
+    net_minor: current.net_minor,
+    currency: current.currency,
+    status,
+  });
   if (error) console.error(error);
   revalidatePath("/payroll");
 }
