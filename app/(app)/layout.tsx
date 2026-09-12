@@ -33,6 +33,7 @@ const NAV = [
   { href: "/sysops", label: "System Operations" },
   { href: "/privacy", label: "Consent & Data Rights" },
   { href: "/incentives", label: "Staff Incentives" },
+  { href: "/payroll", label: "Payroll & Leave" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
