@@ -34,6 +34,7 @@ const NAV = [
   { href: "/privacy", label: "Consent & Data Rights" },
   { href: "/incentives", label: "Staff Incentives" },
   { href: "/payroll", label: "Payroll & Leave" },
+  { href: "/quality", label: "Quality Control" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
