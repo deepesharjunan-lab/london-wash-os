@@ -30,6 +30,7 @@ const NAV = [
   { href: "/system-settings", label: "System Settings" },
   { href: "/claims", label: "Claims & Collection Points" },
   { href: "/roles", label: "Roles & Permissions" },
+  { href: "/sysops", label: "System Operations" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
