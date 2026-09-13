@@ -105,7 +105,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">{order.order_number}</h1>
         <span
-          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
+          className={`inline-flex px-3 py-1.5 text-xs font-semibold uppercase tracking-wide capitalize ${
             STATUS_STYLES[order.status as string] ?? "bg-black/5 text-ink/60"
           }`}
         >
@@ -115,11 +115,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
-            <div className="border-b border-black/5 px-4 py-3 text-sm font-bold text-ink">Items</div>
+          <div className="overflow-hidden border-2 border-black/10 bg-white">
+            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Items</div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
                   <th className="px-4 py-2">Service</th>
                   <th className="px-4 py-2">Item</th>
                   <th className="px-4 py-2">Qty</th>
@@ -156,7 +156,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </table>
           </div>
 
-          <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <div className="border-2 border-black/10 bg-white p-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Totals</div>
             <div className="space-y-1.5 text-sm">
               <div className="flex items-center justify-between text-ink/60">
@@ -178,11 +178,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
-              <span className="text-sm font-bold text-ink">Payments</span>
+          <div className="overflow-hidden border-2 border-black/10 bg-white">
+            <div className="flex items-center justify-between border-b-2 border-black/10 px-4 py-3">
+              <span className="font-archivo text-[13.5px] font-bold text-ink">Payments</span>
               <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                className={`inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                   balanceMinor > 0 ? "bg-warn/10 text-warn" : "bg-ok/10 text-ok"
                 }`}
               >
@@ -191,7 +191,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
                   <th className="px-4 py-2">Method</th>
                   <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2">Date</th>
@@ -206,7 +206,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                     </td>
                     <td className="px-4 py-2.5">
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${
+                        className={`inline-flex px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide capitalize ${
                           PAYMENT_STATUS_STYLES[p.status as string] ?? "bg-black/5 text-ink/60"
                         }`}
                       >
@@ -242,7 +242,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <select
                   name="method"
                   defaultValue="cash"
-                  className="rounded-md border border-black/10 px-3 py-2 text-sm capitalize outline-none focus:border-accent"
+                  className="border border-black/10 px-3 py-2 text-sm capitalize outline-none focus:border-accent"
                 >
                   {PAYMENT_METHODS.map((m) => (
                     <option key={m} value={m} className="capitalize">
@@ -261,7 +261,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   min="1"
                   step="1"
                   defaultValue={balanceMinor > 0 ? Math.round(balanceMinor / 100) : undefined}
-                  className="w-28 rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                  className="w-28 border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
                 />
               </div>
               <button
@@ -275,7 +275,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <div className="border-2 border-black/10 bg-white p-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Customer</div>
             {customer ? (
               <>
@@ -293,7 +293,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             )}
           </div>
 
-          <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <div className="border-2 border-black/10 bg-white p-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Order info</div>
             <dl className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -317,14 +317,14 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </dl>
           </div>
 
-          <form action={updateStatus} className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <form action={updateStatus} className="border-2 border-black/10 bg-white p-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">
               Update status
             </div>
             <select
               name="status"
               defaultValue={order.status as string}
-              className="mb-3 w-full rounded-md border border-black/10 px-3 py-2 text-sm capitalize outline-none focus:border-accent"
+              className="mb-3 w-full border border-black/10 px-3 py-2 text-sm capitalize outline-none focus:border-accent"
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s} className="capitalize">
