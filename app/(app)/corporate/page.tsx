@@ -15,11 +15,12 @@ export default async function CorporatePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Corporate Accounts</h1>
-        <p className="text-slate-500">B2B customer accounts, billing addresses, and contacts.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Corporate Accounts</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">B2B customer accounts, billing addresses, and contacts.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Accounts</h2>
           <details className="relative">
@@ -28,7 +29,7 @@ export default async function CorporatePage() {
             </summary>
             <form
               action={createCorporateAccount}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Company name</label>
@@ -36,19 +37,19 @@ export default async function CorporatePage() {
                   name="name"
                   required
                   placeholder="e.g. Taj Hotels Kochi"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">GSTIN (optional)</label>
-                <input name="gstin" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="gstin" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Billing cycle (optional)</label>
                 <input
                   name="billing_cycle"
                   placeholder="e.g. weekly, monthly"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -59,7 +60,7 @@ export default async function CorporatePage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">GSTIN</th>
               <th className="py-2">Billing Cycle</th>
@@ -69,14 +70,14 @@ export default async function CorporatePage() {
           </thead>
           <tbody>
             {(accounts || []).map((a: any) => (
-              <tr key={a.id} className="border-b border-slate-100">
+              <tr key={a.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{a.name}</td>
                 <td className="py-2 text-slate-600">{a.gstin || "-"}</td>
                 <td className="py-2 text-slate-600">{a.billing_cycle || "-"}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (a.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
@@ -105,7 +106,7 @@ export default async function CorporatePage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Billing Addresses</h2>
           <details className="relative">
@@ -114,11 +115,11 @@ export default async function CorporatePage() {
             </summary>
             <form
               action={createCorporateAddress}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Account</label>
-                <select name="corporate_account_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="corporate_account_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select account</option>
                   {(accounts || []).map((a: any) => (
                     <option key={a.id} value={a.id}>
@@ -129,25 +130,25 @@ export default async function CorporatePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Label (optional)</label>
-                <input name="label" placeholder="e.g. Head Office" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="label" placeholder="e.g. Head Office" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Address line</label>
-                <textarea name="address_line" required rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="address_line" required rows={2} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-slate-500">City</label>
-                  <input name="city" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input name="city" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500">State</label>
-                  <input name="state" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input name="state" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Pincode</label>
-                <input name="pincode" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="pincode" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Address
@@ -157,7 +158,7 @@ export default async function CorporatePage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Account</th>
               <th className="py-2">Label</th>
               <th className="py-2">Address</th>
@@ -168,7 +169,7 @@ export default async function CorporatePage() {
           </thead>
           <tbody>
             {(addresses || []).map((ad: any) => (
-              <tr key={ad.id} className="border-b border-slate-100">
+              <tr key={ad.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{accountName.get(ad.corporate_account_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{ad.label || "-"}</td>
                 <td className="py-2 text-slate-600">{ad.address_line}</td>
@@ -188,7 +189,7 @@ export default async function CorporatePage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Contacts</h2>
           <details className="relative">
@@ -197,11 +198,11 @@ export default async function CorporatePage() {
             </summary>
             <form
               action={createCorporateContact}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Account</label>
-                <select name="corporate_account_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="corporate_account_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select account</option>
                   {(accounts || []).map((a: any) => (
                     <option key={a.id} value={a.id}>
@@ -212,15 +213,15 @@ export default async function CorporatePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Full name</label>
-                <input name="full_name" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="full_name" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Phone</label>
-                <input name="phone" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="phone" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Email</label>
-                <input type="email" name="email" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input type="email" name="email" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" name="is_primary" value="true" id="is_primary" className="rounded" />
@@ -236,7 +237,7 @@ export default async function CorporatePage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Account</th>
               <th className="py-2">Name</th>
               <th className="py-2">Phone</th>
@@ -246,7 +247,7 @@ export default async function CorporatePage() {
           </thead>
           <tbody>
             {(contacts || []).map((c: any) => (
-              <tr key={c.id} className="border-b border-slate-100">
+              <tr key={c.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{accountName.get(c.corporate_account_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{c.full_name}</td>
                 <td className="py-2 text-slate-600">{c.phone || "-"}</td>
