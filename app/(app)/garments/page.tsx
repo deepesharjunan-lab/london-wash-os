@@ -22,24 +22,25 @@ export default async function GarmentsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Garment Tracking</h1>
-        <p className="text-slate-500">Individual garments, condition notes, and processing events.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Production</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Garment Tracking</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Individual garments, condition notes, and processing events.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Garments</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Garments</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Garment
             </summary>
             <form
               action={createGarment}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Order item</label>
-                <select name="order_item_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Order item</label>
+                <select name="order_item_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select order item</option>
                   {(orderItems || []).map((oi: any) => (
                     <option key={oi.id} value={oi.id}>
@@ -49,8 +50,8 @@ export default async function GarmentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Tag code (optional)</label>
-                <input name="tag_code" placeholder="e.g. G-0001" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <label className="block text-xs font-medium text-ink/50">Tag code (optional)</label>
+                <input name="tag_code" placeholder="e.g. G-0001" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Garment
@@ -60,7 +61,7 @@ export default async function GarmentsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Tag Code</th>
               <th className="py-2">Order Item</th>
               <th className="py-2">Created</th>
@@ -68,15 +69,15 @@ export default async function GarmentsPage() {
           </thead>
           <tbody>
             {(garments || []).map((g: any) => (
-              <tr key={g.id} className="border-b border-slate-100">
+              <tr key={g.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{g.tag_code || g.id.slice(0, 8)}</td>
-                <td className="py-2 text-slate-600">{orderItemLabel.get(g.order_item_id) || "-"}</td>
-                <td className="py-2 text-slate-500">{new Date(g.created_at).toLocaleDateString()}</td>
+                <td className="py-2 text-ink/70">{orderItemLabel.get(g.order_item_id) || "-"}</td>
+                <td className="py-2 text-ink/50">{new Date(g.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
             {(!garments || garments.length === 0) && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="py-4 text-center text-ink/30">
                   No garments registered yet.
                 </td>
               </tr>
@@ -85,20 +86,20 @@ export default async function GarmentsPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Condition Log</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Condition Log</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log Condition
             </summary>
             <form
               action={createGarmentCondition}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Garment</label>
-                <select name="garment_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Garment</label>
+                <select name="garment_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select garment</option>
                   {(garments || []).map((g: any) => (
                     <option key={g.id} value={g.id}>
@@ -108,8 +109,8 @@ export default async function GarmentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Condition</label>
-                <select name="tag" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Condition</label>
+                <select name="tag" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   {conditionTags.map((t) => (
                     <option key={t} value={t}>
                       {t.replace("_", " ")}
@@ -118,8 +119,8 @@ export default async function GarmentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Note</label>
-                <textarea name="note" rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <label className="block text-xs font-medium text-ink/50">Note</label>
+                <textarea name="note" rows={2} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Condition
@@ -129,7 +130,7 @@ export default async function GarmentsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Garment</th>
               <th className="py-2">Condition</th>
               <th className="py-2">Note</th>
@@ -139,26 +140,26 @@ export default async function GarmentsPage() {
           </thead>
           <tbody>
             {(conditions || []).map((c: any) => (
-              <tr key={c.id} className="border-b border-slate-100">
+              <tr key={c.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{garmentLabel.get(c.garment_id) || "-"}</td>
-                <td className="py-2 text-slate-600">
+                <td className="py-2 text-ink/70">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " +
                       (c.tag === "good" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")
                     }
                   >
                     {String(c.tag).replace("_", " ")}
                   </span>
                 </td>
-                <td className="py-2 text-slate-600">{c.note || "-"}</td>
-                <td className="py-2 text-slate-600">{c.recorded_by ? userName.get(c.recorded_by) : "-"}</td>
-                <td className="py-2 text-slate-500">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td className="py-2 text-ink/70">{c.note || "-"}</td>
+                <td className="py-2 text-ink/70">{c.recorded_by ? userName.get(c.recorded_by) : "-"}</td>
+                <td className="py-2 text-ink/50">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
             {(!conditions || conditions.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={5} className="py-4 text-center text-ink/30">
                   No condition notes yet.
                 </td>
               </tr>
@@ -167,20 +168,20 @@ export default async function GarmentsPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Processing Events</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Processing Events</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log Event
             </summary>
             <form
               action={createGarmentEvent}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Garment</label>
-                <select name="garment_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Garment</label>
+                <select name="garment_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select garment</option>
                   {(garments || []).map((g: any) => (
                     <option key={g.id} value={g.id}>
@@ -190,12 +191,12 @@ export default async function GarmentsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Event type</label>
+                <label className="block text-xs font-medium text-ink/50">Event type</label>
                 <input
                   name="event_type"
                   required
                   placeholder="e.g. received, washed, dried, pressed, packed, delivered"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -206,7 +207,7 @@ export default async function GarmentsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Garment</th>
               <th className="py-2">Event</th>
               <th className="py-2">Date</th>
@@ -214,15 +215,15 @@ export default async function GarmentsPage() {
           </thead>
           <tbody>
             {(events || []).map((e: any) => (
-              <tr key={e.id} className="border-b border-slate-100">
+              <tr key={e.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{garmentLabel.get(e.garment_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{e.event_type}</td>
-                <td className="py-2 text-slate-500">{new Date(e.created_at).toLocaleDateString()}</td>
+                <td className="py-2 text-ink/70">{e.event_type}</td>
+                <td className="py-2 text-ink/50">{new Date(e.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
             {(!events || events.length === 0) && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="py-4 text-center text-ink/30">
                   No events logged yet.
                 </td>
               </tr>
