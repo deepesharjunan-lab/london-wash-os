@@ -42,10 +42,10 @@ export default async function ProductionBoardPage() {
         {COLUMNS.map((col) => {
           const columnOrders = (orders ?? []).filter((o) => o.status === col.status);
           return (
-            <div key={col.status} className="rounded-lg border border-black/5 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
+            <div key={col.status} className="border-2 border-black/10 bg-white">
+              <div className="flex items-center justify-between border-b-2 border-black/10 px-4 py-3">
                 <span className="text-sm font-bold text-ink">{col.label}</span>
-                <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-semibold text-ink/50">
+                <span className="border border-black/10 px-2 py-0.5 text-xs font-semibold text-ink/50">
                   {columnOrders.length}
                 </span>
               </div>
@@ -53,7 +53,7 @@ export default async function ProductionBoardPage() {
                 {columnOrders.map((o: any) => {
                   const customer = Array.isArray(o.customer) ? o.customer[0] : o.customer;
                   return (
-                    <div key={o.id} className="rounded-md border border-black/5 p-3 text-sm shadow-sm">
+                    <div key={o.id} className="border border-black/10 p-3 text-sm">
                       <Link href={`/orders/${o.id}`} className="font-semibold text-ink hover:text-accent">
                         {o.order_number}
                       </Link>
