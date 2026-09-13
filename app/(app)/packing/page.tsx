@@ -27,24 +27,25 @@ export default async function PackingPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Packed Bags / Dispatch Packing</h1>
-        <p className="text-slate-500">Pack finished garments into bags before delivery.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Production</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Packed Bags / Dispatch Packing</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Pack finished garments into bags before delivery.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Packed Bags</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Packed Bags</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Bag
             </summary>
             <form
               action={createPackedBag}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Order</label>
-                <select name="order_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Order</label>
+                <select name="order_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select order</option>
                   {(orders || []).map((o: any) => (
                     <option key={o.id} value={o.id}>
@@ -54,12 +55,12 @@ export default async function PackingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Bag code</label>
+                <label className="block text-xs font-medium text-ink/50">Bag code</label>
                 <input
                   name="bag_code"
                   required
                   placeholder="e.g. BAG-0001"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -70,7 +71,7 @@ export default async function PackingPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Bag Code</th>
               <th className="py-2">Order</th>
               <th className="py-2">Garments</th>
@@ -80,17 +81,17 @@ export default async function PackingPage() {
           </thead>
           <tbody>
             {(bags || []).map((b: any) => (
-              <tr key={b.id} className="border-b border-slate-100">
+              <tr key={b.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{b.bag_code}</td>
-                <td className="py-2 text-slate-600">{orderNumber.get(b.order_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{(contentsByBag.get(b.id) || []).length}</td>
-                <td className="py-2 text-slate-600">{b.packed_by ? userName.get(b.packed_by) : "-"}</td>
-                <td className="py-2 text-slate-500">{new Date(b.created_at).toLocaleDateString()}</td>
+                <td className="py-2 text-ink/70">{orderNumber.get(b.order_id) || "-"}</td>
+                <td className="py-2 text-ink/70">{(contentsByBag.get(b.id) || []).length}</td>
+                <td className="py-2 text-ink/70">{b.packed_by ? userName.get(b.packed_by) : "-"}</td>
+                <td className="py-2 text-ink/50">{new Date(b.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
             {(!bags || bags.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={5} className="py-4 text-center text-ink/30">
                   No bags packed yet.
                 </td>
               </tr>
@@ -99,20 +100,20 @@ export default async function PackingPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Bag Contents</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Bag Contents</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Garment to Bag
             </summary>
             <form
               action={addGarmentToBag}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Bag</label>
-                <select name="packed_bag_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Bag</label>
+                <select name="packed_bag_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select bag</option>
                   {(bags || []).map((b: any) => (
                     <option key={b.id} value={b.id}>
@@ -122,8 +123,8 @@ export default async function PackingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Garment</label>
-                <select name="garment_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Garment</label>
+                <select name="garment_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select garment</option>
                   {(garments || []).map((g: any) => (
                     <option key={g.id} value={g.id}>
@@ -140,7 +141,7 @@ export default async function PackingPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Bag</th>
               <th className="py-2">Garment</th>
               <th className="py-2"></th>
@@ -148,9 +149,9 @@ export default async function PackingPage() {
           </thead>
           <tbody>
             {(contents || []).map((c: any) => (
-              <tr key={c.packed_bag_id + c.garment_id} className="border-b border-slate-100">
+              <tr key={c.packed_bag_id + c.garment_id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{bagLabel.get(c.packed_bag_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{garmentLabel.get(c.garment_id) || "-"}</td>
+                <td className="py-2 text-ink/70">{garmentLabel.get(c.garment_id) || "-"}</td>
                 <td className="py-2">
                   <form action={removeGarmentFromBag}>
                     <input type="hidden" name="packed_bag_id" value={c.packed_bag_id} />
@@ -164,7 +165,7 @@ export default async function PackingPage() {
             ))}
             {(!contents || contents.length === 0) && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="py-4 text-center text-ink/30">
                   No garments packed yet.
                 </td>
               </tr>
