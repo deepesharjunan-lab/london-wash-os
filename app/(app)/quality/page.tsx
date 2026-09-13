@@ -43,24 +43,25 @@ export default async function QualityControlPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Quality Control</h1>
-        <p className="text-slate-500">Log inspection results for production jobs and track reprocessing.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Production</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Quality Control</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Log inspection results for production jobs and track reprocessing.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">QC Log</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">QC Log</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log QC Result
             </summary>
             <form
               action={createQualityCheck}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Production job</label>
-                <select name="production_job_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Production job</label>
+                <select name="production_job_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select job</option>
                   {(jobs || []).map((j: any) => (
                     <option key={j.id} value={j.id}>
@@ -70,8 +71,8 @@ export default async function QualityControlPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Result</label>
-                <select name="result" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Result</label>
+                <select name="result" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select result</option>
                   <option value="pass">Pass</option>
                   <option value="fail">Fail</option>
@@ -79,8 +80,8 @@ export default async function QualityControlPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Notes</label>
-                <textarea name="notes" rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" placeholder="e.g. Stain remains on collar" />
+                <label className="block text-xs font-medium text-ink/50">Notes</label>
+                <textarea name="notes" rows={3} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" placeholder="e.g. Stain remains on collar" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Log Result
@@ -90,7 +91,7 @@ export default async function QualityControlPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Job</th>
               <th className="py-2">Result</th>
               <th className="py-2">Notes</th>
@@ -101,26 +102,26 @@ export default async function QualityControlPage() {
           </thead>
           <tbody>
             {(checks || []).map((c: any) => (
-              <tr key={c.id} className="border-b border-slate-100">
+              <tr key={c.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{jobLabel(c.production_job)}</td>
                 <td className="py-2">
-                  <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + resultBadge(c.result)}>{c.result}</span>
+                  <span className={"px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " + resultBadge(c.result)}>{c.result}</span>
                 </td>
-                <td className="py-2 text-slate-600">{c.notes || "-"}</td>
-                <td className="py-2 text-slate-600">{c.checked_by_user?.full_name || "-"}</td>
-                <td className="py-2 text-slate-600">{new Date(c.created_at).toLocaleString("en-IN")}</td>
+                <td className="py-2 text-ink/70">{c.notes || "-"}</td>
+                <td className="py-2 text-ink/70">{c.checked_by_user?.full_name || "-"}</td>
+                <td className="py-2 text-ink/70">{new Date(c.created_at).toLocaleString("en-IN")}</td>
                 <td className="py-2">
                   {(c.result === "fail" || c.result === "reprocess") && (
                     <details className="relative">
                       <summary className="cursor-pointer list-none text-xs font-medium text-blue-600">+ Reprocess</summary>
                       <form
                         action={createReprocess}
-                        className="absolute right-0 z-10 mt-2 w-72 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+                        className="absolute right-0 z-10 mt-2 w-72 space-y-3 border-2 border-black/10 bg-white p-4"
                       >
                         <input type="hidden" name="quality_check_id" value={c.id} />
                         <div>
-                          <label className="block text-xs font-medium text-slate-500">Reason</label>
-                          <textarea name="reason" required rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" placeholder="e.g. Re-wash required for stain" />
+                          <label className="block text-xs font-medium text-ink/50">Reason</label>
+                          <textarea name="reason" required rows={2} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" placeholder="e.g. Re-wash required for stain" />
                         </div>
                         <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                           Create Reprocess Entry
@@ -133,7 +134,7 @@ export default async function QualityControlPage() {
             ))}
             {(!checks || checks.length === 0) && (
               <tr>
-                <td colSpan={6} className="py-4 text-center text-slate-400">
+                <td colSpan={6} className="py-4 text-center text-ink/30">
                   No QC entries yet.
                 </td>
               </tr>
@@ -142,11 +143,11 @@ export default async function QualityControlPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold">Reprocess Log</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <h2 className="mb-4 border-b-2 border-black/10 pb-3 font-archivo text-[13.5px] font-bold text-ink">Reprocess Log</h2>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Job</th>
               <th className="py-2">Reason</th>
               <th className="py-2">Logged</th>
@@ -154,15 +155,15 @@ export default async function QualityControlPage() {
           </thead>
           <tbody>
             {(reprocesses || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{jobLabel(r.quality_check?.production_job)}</td>
-                <td className="py-2 text-slate-600">{r.reason}</td>
-                <td className="py-2 text-slate-600">{new Date(r.created_at).toLocaleString("en-IN")}</td>
+                <td className="py-2 text-ink/70">{r.reason}</td>
+                <td className="py-2 text-ink/70">{new Date(r.created_at).toLocaleString("en-IN")}</td>
               </tr>
             ))}
             {(!reprocesses || reprocesses.length === 0) && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="py-4 text-center text-ink/30">
                   No reprocess entries yet.
                 </td>
               </tr>
