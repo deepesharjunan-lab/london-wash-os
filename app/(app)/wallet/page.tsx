@@ -3,7 +3,7 @@ import { createMembership, toggleMembershipActive, createWallet, createWalletTra
 
 function formatMinor(minor: number | null) {
   if (minor === null || minor === undefined) return "-";
-  return "₹" + (minor / 100).toFixed(2);
+  return "\u20B9" + (minor / 100).toFixed(2);
 }
 
 const txnTypes = ["credit", "debit", "refund_credit", "adjustment"];
@@ -28,25 +28,24 @@ export default async function WalletPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Memberships & Wallet</h1>
-        <p className="text-slate-500">Membership plans and customer store-credit wallets.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Money</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Memberships &amp; Wallet</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Membership plans and customer store-credit wallets.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Memberships</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Memberships</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Membership
             </summary>
             <form
               action={createMembership}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -61,17 +60,17 @@ export default async function WalletPage() {
                   name="plan_name"
                   required
                   placeholder="e.g. Gold Membership"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-slate-500">Starts</label>
-                  <input type="date" name="starts_at" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="starts_at" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500">Ends (optional)</label>
-                  <input type="date" name="ends_at" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="ends_at" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -82,7 +81,7 @@ export default async function WalletPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Plan</th>
               <th className="py-2">Starts</th>
@@ -93,7 +92,7 @@ export default async function WalletPage() {
           </thead>
           <tbody>
             {(memberships || []).map((m: any) => (
-              <tr key={m.id} className="border-b border-slate-100">
+              <tr key={m.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(m.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{m.plan_name}</td>
                 <td className="py-2 text-slate-600">{m.starts_at ? new Date(m.starts_at).toLocaleDateString() : "-"}</td>
@@ -101,7 +100,7 @@ export default async function WalletPage() {
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " +
                       (m.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
@@ -130,20 +129,20 @@ export default async function WalletPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Customer Wallets</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Customer Wallets</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Open Wallet
             </summary>
             <form
               action={createWallet}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -160,14 +159,14 @@ export default async function WalletPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Balance</th>
             </tr>
           </thead>
           <tbody>
             {(wallets || []).map((w: any) => (
-              <tr key={w.id} className="border-b border-slate-100">
+              <tr key={w.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(w.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{formatMinor(w.balance_minor)}</td>
               </tr>
@@ -183,20 +182,20 @@ export default async function WalletPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Wallet Transactions</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Wallet Transactions</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Transaction
             </summary>
             <form
               action={createWalletTransaction}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Wallet</label>
-                <select name="wallet_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="wallet_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select wallet</option>
                   {(wallets || []).map((w: any) => (
                     <option key={w.id} value={w.id}>
@@ -207,7 +206,7 @@ export default async function WalletPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Type</label>
-                <select name="type" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="type" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   {txnTypes.map((t) => (
                     <option key={t} value={t}>
                       {t}
@@ -216,12 +215,12 @@ export default async function WalletPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Amount (₹)</label>
-                <input type="number" name="amount" step="0.01" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <label className="block text-xs font-medium text-slate-500">Amount (\u20B9)</label>
+                <input type="number" name="amount" step="0.01" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Note</label>
-                <textarea name="note" rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="note" rows={2} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Transaction
@@ -231,7 +230,7 @@ export default async function WalletPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Type</th>
               <th className="py-2">Amount</th>
@@ -242,7 +241,7 @@ export default async function WalletPage() {
           </thead>
           <tbody>
             {(transactions || []).map((t: any) => (
-              <tr key={t.id} className="border-b border-slate-100">
+              <tr key={t.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(walletCustomer.get(t.wallet_id) || "") || "-"}</td>
                 <td className="py-2 text-slate-600">{t.type}</td>
                 <td className="py-2 text-slate-600">{formatMinor(t.amount_minor)}</td>
