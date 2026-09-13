@@ -30,7 +30,7 @@ export default async function OrdersPage() {
 
   return (
     <div>
-      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Orders</div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">Orders</h1>
         <Link
@@ -47,10 +47,10 @@ export default async function OrdersPage() {
         </p>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
+      <div className="overflow-hidden border-2 border-black/10 bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Channel</th>
@@ -73,7 +73,7 @@ export default async function OrdersPage() {
                   <td className="px-4 py-3 capitalize text-ink/70">{String(o.channel).replace(/_/g, " ")}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
+                      className={`inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide capitalize ${
                         STATUS_STYLES[o.status as string] ?? "bg-black/5 text-ink/60"
                       }`}
                     >
