@@ -22,33 +22,34 @@ export default async function WorkflowsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Workflow & Stages</h1>
-        <p className="text-slate-500">Define production workflows and their processing stages.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Production</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Workflow & Stages</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Define production workflows and their processing stages.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Workflows</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Workflows</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Workflow
             </summary>
             <form
               action={createWorkflow}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Workflow name</label>
+                <label className="block text-xs font-medium text-ink/50">Workflow name</label>
                 <input
                   name="name"
                   required
                   placeholder="e.g. Standard Wash & Fold"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Service (optional)</label>
-                <select name="service_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Service (optional)</label>
+                <select name="service_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Not linked</option>
                   {(services || []).map((s: any) => (
                     <option key={s.id} value={s.id}>
@@ -65,7 +66,7 @@ export default async function WorkflowsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Service</th>
               <th className="py-2">Stages</th>
@@ -75,14 +76,14 @@ export default async function WorkflowsPage() {
           </thead>
           <tbody>
             {(workflows || []).map((w: any) => (
-              <tr key={w.id} className="border-b border-slate-100">
+              <tr key={w.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{w.name}</td>
-                <td className="py-2 text-slate-600">{w.service_id ? serviceName.get(w.service_id) : "-"}</td>
-                <td className="py-2 text-slate-600">{(stagesByWorkflow.get(w.id) || []).length}</td>
-                <td className="py-2 text-slate-600">
+                <td className="py-2 text-ink/70">{w.service_id ? serviceName.get(w.service_id) : "-"}</td>
+                <td className="py-2 text-ink/70">{(stagesByWorkflow.get(w.id) || []).length}</td>
+                <td className="py-2 text-ink/70">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " +
                       (w.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
@@ -102,7 +103,7 @@ export default async function WorkflowsPage() {
             ))}
             {(!workflows || workflows.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={5} className="py-4 text-center text-ink/30">
                   No workflows yet.
                 </td>
               </tr>
@@ -111,20 +112,20 @@ export default async function WorkflowsPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Workflow Stages</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Workflow Stages</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Stage
             </summary>
             <form
               action={createWorkflowStage}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-500">Workflow</label>
-                <select name="workflow_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <label className="block text-xs font-medium text-ink/50">Workflow</label>
+                <select name="workflow_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select workflow</option>
                   {(workflows || []).map((w: any) => (
                     <option key={w.id} value={w.id}>
@@ -134,31 +135,31 @@ export default async function WorkflowsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Stage name</label>
+                <label className="block text-xs font-medium text-ink/50">Stage name</label>
                 <input
                   name="name"
                   required
                   placeholder="e.g. Sorting, Washing, Pressing"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">Sort order</label>
+                  <label className="block text-xs font-medium text-ink/50">Sort order</label>
                   <input
                     type="number"
                     name="sort_order"
                     defaultValue={0}
-                    className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                    className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">SLA (minutes)</label>
+                  <label className="block text-xs font-medium text-ink/50">SLA (minutes)</label>
                   <input
                     type="number"
                     name="sla_minutes"
                     placeholder="optional"
-                    className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                    className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                   />
                 </div>
               </div>
@@ -170,7 +171,7 @@ export default async function WorkflowsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Workflow</th>
               <th className="py-2">Stage</th>
               <th className="py-2">Order</th>
@@ -180,11 +181,11 @@ export default async function WorkflowsPage() {
           </thead>
           <tbody>
             {(stages || []).map((s: any) => (
-              <tr key={s.id} className="border-b border-slate-100">
+              <tr key={s.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{workflowName.get(s.workflow_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{s.name}</td>
-                <td className="py-2 text-slate-600">{s.sort_order}</td>
-                <td className="py-2 text-slate-600">{s.sla_minutes ? s.sla_minutes + " min" : "-"}</td>
+                <td className="py-2 text-ink/70">{s.name}</td>
+                <td className="py-2 text-ink/70">{s.sort_order}</td>
+                <td className="py-2 text-ink/70">{s.sla_minutes ? s.sla_minutes + " min" : "-"}</td>
                 <td className="py-2">
                   <form action={deleteWorkflowStage}>
                     <input type="hidden" name="id" value={s.id} />
@@ -197,7 +198,7 @@ export default async function WorkflowsPage() {
             ))}
             {(!stages || stages.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={5} className="py-4 text-center text-ink/30">
                   No stages defined yet.
                 </td>
               </tr>
