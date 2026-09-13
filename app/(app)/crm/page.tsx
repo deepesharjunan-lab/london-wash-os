@@ -25,11 +25,12 @@ export default async function CrmPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Customer Notes, Preferences & Tags</h1>
-        <p className="text-slate-500">CRM details for personalized customer care.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Customer Notes, Preferences & Tags</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">CRM details for personalized customer care.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Notes</h2>
           <details className="relative">
@@ -38,11 +39,11 @@ export default async function CrmPage() {
             </summary>
             <form
               action={createCustomerNote}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -53,7 +54,7 @@ export default async function CrmPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Note</label>
-                <textarea name="note" required rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="note" required rows={3} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Note
@@ -63,7 +64,7 @@ export default async function CrmPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Note</th>
               <th className="py-2">Author</th>
@@ -72,7 +73,7 @@ export default async function CrmPage() {
           </thead>
           <tbody>
             {(notes || []).map((n: any) => (
-              <tr key={n.id} className="border-b border-slate-100">
+              <tr key={n.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(n.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{n.note}</td>
                 <td className="py-2 text-slate-600">{n.author_user_id ? userName.get(n.author_user_id) : "-"}</td>
@@ -90,7 +91,7 @@ export default async function CrmPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Care Preferences</h2>
           <details className="relative">
@@ -99,11 +100,11 @@ export default async function CrmPage() {
             </summary>
             <form
               action={createCustomerPreference}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -118,7 +119,7 @@ export default async function CrmPage() {
                   name="pref_key"
                   required
                   placeholder="e.g. detergent, starch, fold_style"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
@@ -127,7 +128,7 @@ export default async function CrmPage() {
                   name="pref_value"
                   required
                   placeholder="e.g. hypoallergenic, no starch"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -138,7 +139,7 @@ export default async function CrmPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Key</th>
               <th className="py-2">Value</th>
@@ -147,7 +148,7 @@ export default async function CrmPage() {
           </thead>
           <tbody>
             {(preferences || []).map((p: any) => (
-              <tr key={p.id} className="border-b border-slate-100">
+              <tr key={p.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(p.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{p.pref_key}</td>
                 <td className="py-2 text-slate-600">{p.pref_value}</td>
@@ -172,7 +173,7 @@ export default async function CrmPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Tags</h2>
           <details className="relative">
@@ -181,11 +182,11 @@ export default async function CrmPage() {
             </summary>
             <form
               action={createCustomerTag}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -200,7 +201,7 @@ export default async function CrmPage() {
                   name="tag"
                   required
                   placeholder="e.g. VIP, frequent, sensitive skin"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -213,7 +214,7 @@ export default async function CrmPage() {
           {(tags || []).map((t: any) => (
             <span
               key={t.id}
-              className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+              className="flex items-center gap-2 bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-wide text-slate-700"
             >
               {customerName.get(t.customer_id) || "-"}: {t.tag}
               <form action={deleteCustomerTag} className="inline">
