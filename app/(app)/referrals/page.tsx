@@ -18,11 +18,12 @@ export default async function ReferralsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Referrals & Rewards</h1>
-        <p className="text-slate-500">Reward catalog and customer referral tracking.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Referrals &amp; Rewards</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Reward catalog and customer referral tracking.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Reward Catalog</h2>
           <details className="relative">
@@ -31,7 +32,7 @@ export default async function ReferralsPage() {
             </summary>
             <form
               action={createReward}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Reward name</label>
@@ -39,7 +40,7 @@ export default async function ReferralsPage() {
                   name="name"
                   required
                   placeholder="e.g. Free Wash & Fold"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
@@ -49,7 +50,7 @@ export default async function ReferralsPage() {
                   name="points_cost"
                   required
                   min={1}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -60,7 +61,7 @@ export default async function ReferralsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Points Cost</th>
               <th className="py-2">Status</th>
@@ -69,13 +70,13 @@ export default async function ReferralsPage() {
           </thead>
           <tbody>
             {(rewards || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{r.name}</td>
                 <td className="py-2 text-slate-600">{r.points_cost}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
@@ -104,7 +105,7 @@ export default async function ReferralsPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Referrals</h2>
           <details className="relative">
@@ -113,11 +114,11 @@ export default async function ReferralsPage() {
             </summary>
             <form
               action={createReferral}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Referrer</label>
-                <select name="referrer_customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="referrer_customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -128,7 +129,7 @@ export default async function ReferralsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Referred (optional)</label>
-                <select name="referred_customer_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="referred_customer_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Not yet known</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -145,7 +146,7 @@ export default async function ReferralsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Referrer</th>
               <th className="py-2">Referred</th>
               <th className="py-2">Status</th>
@@ -155,13 +156,13 @@ export default async function ReferralsPage() {
           </thead>
           <tbody>
             {(referrals || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(r.referrer_customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{r.referred_customer_id ? customerName.get(r.referred_customer_id) : "-"}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (r.status === "rewarded"
                         ? "bg-emerald-100 text-emerald-700"
                         : r.status === "expired"
@@ -176,14 +177,14 @@ export default async function ReferralsPage() {
                 <td className="py-2">
                   <form action={updateReferralStatus} className="flex items-center gap-1">
                     <input type="hidden" name="id" value={r.id} />
-                    <select name="status" defaultValue={r.status} className="rounded-md border border-slate-300 px-1 py-1 text-xs">
+                    <select name="status" defaultValue={r.status} className="border border-black/10 px-1 py-1 text-xs">
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>
                           {s}
                         </option>
                       ))}
                     </select>
-                    <select name="reward_id" defaultValue={r.reward_id || ""} className="rounded-md border border-slate-300 px-1 py-1 text-xs">
+                    <select name="reward_id" defaultValue={r.reward_id || ""} className="border border-black/10 px-1 py-1 text-xs">
                       <option value="">No reward</option>
                       {(rewards || []).map((rw: any) => (
                         <option key={rw.id} value={rw.id}>
