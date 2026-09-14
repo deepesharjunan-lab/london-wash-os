@@ -12,12 +12,12 @@ const ACTION_TYPES = [
 ];
 
 function formatMinor(minor: number | null) {
-  if (minor === null || minor === undefined) return "—";
-  return `₹${(minor / 100).toLocaleString("en-IN")}`;
+  if (minor === null || minor === undefined) return "\u2014";
+  return `\u20B9${(minor / 100).toLocaleString("en-IN")}`;
 }
 
 function formatDateTime(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "\u2014";
   const d = new Date(iso);
   return d.toLocaleString("en-IN", {
     day: "2-digit",
@@ -58,15 +58,11 @@ export default async function ApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="font-archivo text-[11px] font-semibold uppercase tracking-wide text-accent">
-          Approvals
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">Approval Rules &amp; Requests</h1>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Approvals</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Approval Rules &amp; Requests</h1>
 
-      <div className="rounded-lg border border-black/5 bg-white">
-        <div className="border-b border-black/5 px-5 py-3 text-[13px] font-semibold text-ink">
+      <div className="border-2 border-black/10 bg-white">
+        <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           Approval Rules
         </div>
         <details className="border-b border-black/5">
@@ -81,7 +77,7 @@ export default async function ApprovalsPage() {
               name="action_type"
               required
               defaultValue=""
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+              className="border border-black/10 px-3 py-2 text-[13px] text-ink"
             >
               <option value="">Action type</option>
               {ACTION_TYPES.map((a) => (
@@ -94,27 +90,27 @@ export default async function ApprovalsPage() {
               name="threshold_amount"
               type="number"
               step="0.01"
-              placeholder="Amount above (₹)"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              placeholder="Amount above (\u20B9)"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="threshold_percent"
               type="number"
               step="1"
               placeholder="Percent above (%)"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="escalate_after_minutes"
               type="number"
               step="1"
               placeholder="Escalate after (min)"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <select
               name="scope"
               defaultValue="branch"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+              className="border border-black/10 px-3 py-2 text-[13px] text-ink"
             >
               <option value="branch">This branch only</option>
               <option value="all">All branches</option>
@@ -128,7 +124,7 @@ export default async function ApprovalsPage() {
           </form>
         </details>
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-black/[0.02] text-[11px] uppercase tracking-wide text-ink/50">
+          <thead className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
             <tr>
               <th className="px-5 py-3 font-medium">Action</th>
               <th className="px-5 py-3 font-medium">Threshold amount</th>
@@ -154,17 +150,17 @@ export default async function ApprovalsPage() {
                 </td>
                 <td className="px-5 py-3 text-ink/70">{formatMinor(r.threshold_amount_minor)}</td>
                 <td className="px-5 py-3 text-ink/70">
-                  {r.threshold_percent !== null ? `${r.threshold_percent}%` : "—"}
+                  {r.threshold_percent !== null ? `${r.threshold_percent}%` : "\u2014"}
                 </td>
                 <td className="px-5 py-3 text-ink/70">
-                  {r.escalate_after_minutes ? `${r.escalate_after_minutes} min` : "—"}
+                  {r.escalate_after_minutes ? `${r.escalate_after_minutes} min` : "\u2014"}
                 </td>
                 <td className="px-5 py-3 text-ink/70">
                   {r.branch_id ? "This branch" : "All branches"}
                 </td>
                 <td className="px-5 py-3">
                   <span
-                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                    className={`px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                       r.is_active ? "bg-green-100 text-green-700" : "bg-black/5 text-ink/60"
                     }`}
                   >
@@ -193,12 +189,12 @@ export default async function ApprovalsPage() {
         </table>
       </div>
 
-      <div className="rounded-lg border border-black/5 bg-white">
-        <div className="border-b border-black/5 px-5 py-3 text-[13px] font-semibold text-ink">
+      <div className="border-2 border-black/10 bg-white">
+        <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           My Requests
         </div>
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-black/[0.02] text-[11px] uppercase tracking-wide text-ink/50">
+          <thead className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
             <tr>
               <th className="px-5 py-3 font-medium">Entity</th>
               <th className="px-5 py-3 font-medium">Status</th>
@@ -223,7 +219,7 @@ export default async function ApprovalsPage() {
                 </td>
                 <td className="px-5 py-3">
                   <span
-                    className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                    className={`px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                       r.status === "approved"
                         ? "bg-green-100 text-green-700"
                         : r.status === "rejected"
@@ -236,7 +232,7 @@ export default async function ApprovalsPage() {
                 </td>
                 <td className="px-5 py-3 text-ink/70">{formatDateTime(r.created_at)}</td>
                 <td className="px-5 py-3 text-ink/70">{formatDateTime(r.decided_at)}</td>
-                <td className="px-5 py-3 text-ink/70">{r.decision_note || "—"}</td>
+                <td className="px-5 py-3 text-ink/70">{r.decision_note || "\u2014"}</td>
               </tr>
             ))}
           </tbody>
