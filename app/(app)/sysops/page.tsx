@@ -53,21 +53,20 @@ export default async function SysOpsPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">System Operations</h1>
-        <p className="text-slate-500">Audit trail, automation rules, and financial accounts.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">System</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">System Operations</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Audit trail, automation rules, and financial accounts.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Audit Log</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Audit Log</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log Entry
             </summary>
             <form
               action={createAuditLogEntry}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Action</label>
@@ -75,7 +74,7 @@ export default async function SysOpsPage({
                   name="action"
                   required
                   placeholder="e.g. manual_price_override"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
@@ -84,7 +83,7 @@ export default async function SysOpsPage({
                   name="entity_type"
                   required
                   placeholder="e.g. order, customer, price_list"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -94,14 +93,14 @@ export default async function SysOpsPage({
           </details>
         </div>
 
-        <form method="get" className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-slate-100 bg-slate-50 p-3">
+        <form method="get" className="mb-4 flex flex-wrap items-end gap-3 border border-slate-100 bg-slate-50 p-3">
           <div>
             <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">From</label>
             <input
               type="date"
               name="from"
               defaultValue={fromStr}
-              className="mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 border border-black/10 px-3 py-2 text-[13px]"
             />
           </div>
           <div>
@@ -110,12 +109,12 @@ export default async function SysOpsPage({
               type="date"
               name="to"
               defaultValue={toStr}
-              className="mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 border border-black/10 px-3 py-2 text-[13px]"
             />
           </div>
           <div>
             <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Entity type</label>
-            <select name="entity_type" defaultValue={entityType} className="mt-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+            <select name="entity_type" defaultValue={entityType} className="mt-1 border border-black/10 px-3 py-2 text-[13px]">
               <option value="">All types</option>
               {distinctEntityTypes.map((t: any) => (
                 <option key={t} value={t}>
@@ -134,7 +133,7 @@ export default async function SysOpsPage({
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Action</th>
               <th className="py-2">Entity Type</th>
               <th className="py-2">When</th>
@@ -142,7 +141,7 @@ export default async function SysOpsPage({
           </thead>
           <tbody>
             {(auditLogs || []).map((a: any) => (
-              <tr key={a.id} className="border-b border-slate-100">
+              <tr key={a.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{a.action}</td>
                 <td className="py-2 text-slate-600">{a.entity_type}</td>
                 <td className="py-2 text-slate-600">{new Date(a.created_at).toLocaleString("en-IN")}</td>
@@ -158,16 +157,16 @@ export default async function SysOpsPage({
           </tbody>
         </table>
       </section>
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Automation Rules</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Automation Rules</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Rule
             </summary>
             <form
               action={createAutomationRule}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Rule name</label>
@@ -175,7 +174,7 @@ export default async function SysOpsPage({
                   name="name"
                   required
                   placeholder="e.g. Notify on order delay"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
@@ -184,7 +183,7 @@ export default async function SysOpsPage({
                   name="trigger_event"
                   required
                   placeholder="e.g. order.sla_breached"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
@@ -192,7 +191,7 @@ export default async function SysOpsPage({
                 <input
                   name="condition"
                   placeholder='e.g. {"minutes_late": 30}'
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
@@ -200,7 +199,7 @@ export default async function SysOpsPage({
                 <input
                   name="action"
                   placeholder='e.g. {"notify": "branch_manager"}'
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -211,7 +210,7 @@ export default async function SysOpsPage({
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Trigger</th>
               <th className="py-2">Status</th>
@@ -220,13 +219,13 @@ export default async function SysOpsPage({
           </thead>
           <tbody>
             {(automationRules || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{r.name}</td>
                 <td className="py-2 text-slate-600">{r.trigger_event}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (r.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
@@ -263,16 +262,16 @@ export default async function SysOpsPage({
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Financial Accounts</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Financial Accounts</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Account
             </summary>
             <form
               action={createFinancialAccount}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Account name</label>
@@ -280,12 +279,12 @@ export default async function SysOpsPage({
                   name="name"
                   required
                   placeholder="e.g. HDFC Current Account"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Account type</label>
-                <select name="account_type" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="account_type" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select type</option>
                   <option value="cash">Cash</option>
                   <option value="bank">Bank</option>
@@ -302,7 +301,7 @@ export default async function SysOpsPage({
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Type</th>
               <th className="py-2"></th>
@@ -310,7 +309,7 @@ export default async function SysOpsPage({
           </thead>
           <tbody>
             {(financialAccounts || []).map((f: any) => (
-              <tr key={f.id} className="border-b border-slate-100">
+              <tr key={f.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{f.name}</td>
                 <td className="py-2 text-slate-600 capitalize">{f.account_type}</td>
                 <td className="py-2">
