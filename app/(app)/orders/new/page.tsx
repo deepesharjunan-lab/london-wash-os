@@ -40,7 +40,7 @@ export default async function NewOrderPage({
       <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">New order</h1>
 
       {(profiles ?? []).length === 0 || priceEntries.length === 0 ? (
-        <div className="rounded-lg border border-black/5 bg-white p-6 text-sm text-ink/60 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-6 text-sm text-ink/60">
           You need at least one price list with prices set before you can create an order.{" "}
           <a href="/services" className="font-semibold text-accent hover:underline">
             Set up services &amp; prices
