@@ -45,21 +45,20 @@ export default async function RolesPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Roles & Permissions</h1>
-        <p className="text-slate-500">Role-based access control: roles, permissions, and user assignments.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">System</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Roles &amp; Permissions</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Role-based access control: roles, permissions, and user assignments.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Roles</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Roles</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Role
             </summary>
             <form
               action={createRole}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Role name</label>
@@ -67,14 +66,14 @@ export default async function RolesPage() {
                   name="name"
                   required
                   placeholder="e.g. Cashier"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Description</label>
                 <input
                   name="description"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -85,7 +84,7 @@ export default async function RolesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Description</th>
               <th className="py-2">Type</th>
@@ -94,13 +93,13 @@ export default async function RolesPage() {
           </thead>
           <tbody>
             {(roles || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{r.name}</td>
                 <td className="py-2 text-slate-600">{r.description || "-"}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (r.is_system ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700")
                     }
                   >
@@ -121,16 +120,16 @@ export default async function RolesPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Permissions</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Permissions</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Permission
             </summary>
             <form
               action={createPermission}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Code</label>
@@ -138,7 +137,7 @@ export default async function RolesPage() {
                   name="code"
                   required
                   placeholder="e.g. orders.manage"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
@@ -147,14 +146,14 @@ export default async function RolesPage() {
                   name="module"
                   required
                   placeholder="e.g. Orders"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Description</label>
                 <input
                   name="description"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -165,7 +164,7 @@ export default async function RolesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Code</th>
               <th className="py-2">Module</th>
               <th className="py-2">Description</th>
@@ -173,7 +172,7 @@ export default async function RolesPage() {
           </thead>
           <tbody>
             {(permissions || []).map((p: any) => (
-              <tr key={p.id} className="border-b border-slate-100">
+              <tr key={p.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{p.code}</td>
                 <td className="py-2 text-slate-600">{p.module}</td>
                 <td className="py-2 text-slate-600">{p.description || "-"}</td>
@@ -189,20 +188,20 @@ export default async function RolesPage() {
           </tbody>
         </table>
       </section>
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Role Permission Assignments</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Role Permission Assignments</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Assign Permission
             </summary>
             <form
               action={assignRolePermission}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Role</label>
-                <select name="role_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="role_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select role</option>
                   {(roles || []).map((r: any) => (
                     <option key={r.id} value={r.id}>
@@ -213,7 +212,7 @@ export default async function RolesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Permission</label>
-                <select name="permission_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="permission_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select permission</option>
                   {(permissions || []).map((p: any) => (
                     <option key={p.id} value={p.id}>
@@ -230,7 +229,7 @@ export default async function RolesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Role</th>
               <th className="py-2">Permission</th>
               <th className="py-2"></th>
@@ -238,7 +237,7 @@ export default async function RolesPage() {
           </thead>
           <tbody>
             {(rolePermissions || []).map((rp: any) => (
-              <tr key={rp.role_id + rp.permission_id} className="border-b border-slate-100">
+              <tr key={rp.role_id + rp.permission_id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{roleName.get(rp.role_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{permissionCode.get(rp.permission_id) || "-"}</td>
                 <td className="py-2">
@@ -263,20 +262,20 @@ export default async function RolesPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">User Roles</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">User Roles</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Assign Role
             </summary>
             <form
               action={assignUserRole}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">User</label>
-                <select name="user_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="user_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select user</option>
                   {(users || []).map((u: any) => (
                     <option key={u.id} value={u.id}>
@@ -287,7 +286,7 @@ export default async function RolesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Role</label>
-                <select name="role_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="role_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select role</option>
                   {(roles || []).map((r: any) => (
                     <option key={r.id} value={r.id}>
@@ -304,7 +303,7 @@ export default async function RolesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">User</th>
               <th className="py-2">Role</th>
               <th className="py-2"></th>
@@ -312,7 +311,7 @@ export default async function RolesPage() {
           </thead>
           <tbody>
             {(userRoles || []).map((ur: any) => (
-              <tr key={ur.user_id + ur.role_id} className="border-b border-slate-100">
+              <tr key={ur.user_id + ur.role_id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{userName.get(ur.user_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{roleName.get(ur.role_id) || "-"}</td>
                 <td className="py-2">
@@ -336,20 +335,20 @@ export default async function RolesPage() {
           </tbody>
         </table>
       </section>
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">User Branch Access</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">User Branch Access</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Grant Branch Access
             </summary>
             <form
               action={assignUserBranch}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">User</label>
-                <select name="user_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="user_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select user</option>
                   {(users || []).map((u: any) => (
                     <option key={u.id} value={u.id}>
@@ -360,7 +359,7 @@ export default async function RolesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Branch</label>
-                <select name="branch_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="branch_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select branch</option>
                   {(branches || []).map((b: any) => (
                     <option key={b.id} value={b.id}>
@@ -377,7 +376,7 @@ export default async function RolesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">User</th>
               <th className="py-2">Branch</th>
               <th className="py-2"></th>
@@ -385,7 +384,7 @@ export default async function RolesPage() {
           </thead>
           <tbody>
             {(userBranches || []).map((ub: any) => (
-              <tr key={ub.user_id + ub.branch_id} className="border-b border-slate-100">
+              <tr key={ub.user_id + ub.branch_id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{userName.get(ub.user_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{branchName.get(ub.branch_id) || "-"}</td>
                 <td className="py-2">
