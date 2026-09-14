@@ -22,24 +22,25 @@ export default async function MessagesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Messages & Notifications</h1>
-        <p className="text-slate-500">Customer conversation log and system notification queue.</p>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Customer-facing</div>
+        <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Messages & Notifications</h1>
+        <p className="mb-6 -mt-4 text-sm text-ink/60">Customer conversation log and system notification queue.</p>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Messages</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Messages</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log Message
             </summary>
             <form
               action={logMessage}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -51,7 +52,7 @@ export default async function MessagesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-slate-500">Channel</label>
-                  <select name="channel" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                  <select name="channel" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                     {channels.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -61,7 +62,7 @@ export default async function MessagesPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500">Direction</label>
-                  <select name="direction" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                  <select name="direction" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                     {directions.map((d) => (
                       <option key={d} value={d}>
                         {d}
@@ -72,7 +73,7 @@ export default async function MessagesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Message</label>
-                <textarea name="body" required rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="body" required rows={3} className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Message
@@ -82,7 +83,7 @@ export default async function MessagesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Channel</th>
               <th className="py-2">Direction</th>
@@ -92,7 +93,7 @@ export default async function MessagesPage() {
           </thead>
           <tbody>
             {(messages || []).map((m: any) => (
-              <tr key={m.id} className="border-b border-slate-100">
+              <tr key={m.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(m.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600 capitalize">{m.channel}</td>
                 <td className="py-2 text-slate-600 capitalize">{m.direction}</td>
@@ -111,20 +112,20 @@ export default async function MessagesPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Notifications</h2>
+      <section className="border-2 border-black/10 bg-white p-5">
+        <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+          <h2 className="font-archivo text-[13.5px] font-bold text-ink">Notifications</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Send Notification
             </summary>
             <form
               action={sendNotification}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer (optional)</label>
-                <select name="customer_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">None</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -135,7 +136,7 @@ export default async function MessagesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Staff user (optional)</label>
-                <select name="user_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="user_id" className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   <option value="">None</option>
                   {(users || []).map((u: any) => (
                     <option key={u.id} value={u.id}>
@@ -146,7 +147,7 @@ export default async function MessagesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Channel</label>
-                <select name="channel" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="channel" required className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]">
                   {channels.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -160,7 +161,7 @@ export default async function MessagesPage() {
                   name="template_code"
                   required
                   placeholder="e.g. order_ready, pickup_reminder"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-3 py-2 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -171,7 +172,7 @@ export default async function MessagesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Recipient</th>
               <th className="py-2">Channel</th>
               <th className="py-2">Template</th>
@@ -181,7 +182,7 @@ export default async function MessagesPage() {
           </thead>
           <tbody>
             {(notifications || []).map((n: any) => (
-              <tr key={n.id} className="border-b border-slate-100">
+              <tr key={n.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">
                   {n.customer_id ? customerName.get(n.customer_id) : n.user_id ? userName.get(n.user_id) : "-"}
                 </td>
@@ -190,7 +191,7 @@ export default async function MessagesPage() {
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide " +
                       (n.status === "delivered"
                         ? "bg-emerald-100 text-emerald-700"
                         : n.status === "failed"
@@ -206,7 +207,7 @@ export default async function MessagesPage() {
                 <td className="py-2">
                   <form action={updateNotificationStatus} className="flex items-center gap-1">
                     <input type="hidden" name="id" value={n.id} />
-                    <select name="status" defaultValue={n.status} className="rounded-md border border-slate-300 px-1 py-1 text-xs">
+                    <select name="status" defaultValue={n.status} className="border border-black/10 px-1 py-1 text-xs">
                       {statuses.map((s) => (
                         <option key={s} value={s}>
                           {s}
