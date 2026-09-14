@@ -22,15 +22,14 @@ export default async function IncentivesPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Staff Incentives</h1>
-        <p className="text-slate-500">Bonus and incentive payments awarded to staff.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Money</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Staff Incentives</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Bonus and incentive payments awarded to staff.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Incentive Log</h2>
+            <h2 className="font-archivo text-lg font-bold text-ink">Incentive Log</h2>
             <p className="text-sm text-slate-500">
               Total awarded: {formatAmount(totalMinor, "INR")} across {(incentives || []).length} entries
             </p>
@@ -41,11 +40,11 @@ export default async function IncentivesPage() {
             </summary>
             <form
               action={createIncentive}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Employee</label>
-                <select name="employee_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="employee_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select employee</option>
                   {(staff || []).map((s: any) => (
                     <option key={s.id} value={s.id}>
@@ -63,7 +62,7 @@ export default async function IncentivesPage() {
                   min="0.01"
                   required
                   placeholder="e.g. 500"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
@@ -71,7 +70,7 @@ export default async function IncentivesPage() {
                 <input
                   name="currency"
                   defaultValue="INR"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
@@ -79,7 +78,7 @@ export default async function IncentivesPage() {
                 <input
                   name="reason"
                   placeholder="e.g. Top performer this month"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -90,7 +89,7 @@ export default async function IncentivesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Employee</th>
               <th className="py-2">Amount</th>
               <th className="py-2">Reason</th>
@@ -100,7 +99,7 @@ export default async function IncentivesPage() {
           </thead>
           <tbody>
             {(incentives || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{r.employee?.full_name || "-"}</td>
                 <td className="py-2 text-slate-600">{formatAmount(r.amount_minor, r.currency)}</td>
                 <td className="py-2 text-slate-600">{r.reason || "-"}</td>
