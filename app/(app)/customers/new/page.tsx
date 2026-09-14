@@ -32,7 +32,7 @@ export default function NewCustomerPage() {
 
       <form
         action={formAction}
-        className="max-w-xl space-y-4 rounded-lg border border-black/5 bg-white p-6 shadow-sm"
+        className="max-w-xl space-y-4 border-2 border-black/10 bg-white p-6"
       >
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -42,7 +42,7 @@ export default function NewCustomerPage() {
             <input
               name="full_name"
               required
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="e.g. Anjali Menon"
             />
           </div>
@@ -53,7 +53,7 @@ export default function NewCustomerPage() {
             <input
               name="phone"
               required
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="+91 98765 43210"
             />
           </div>
@@ -64,7 +64,7 @@ export default function NewCustomerPage() {
             <input
               name="email"
               type="email"
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="name@example.com"
             />
           </div>
@@ -75,7 +75,7 @@ export default function NewCustomerPage() {
             <select
               name="tier"
               defaultValue="Silver"
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
             >
               <option value="Silver">Silver</option>
               <option value="Gold">Gold</option>
@@ -88,7 +88,7 @@ export default function NewCustomerPage() {
             </label>
             <input
               name="fold_preference"
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="e.g. Standard fold"
             />
           </div>
@@ -98,14 +98,14 @@ export default function NewCustomerPage() {
             </label>
             <input
               name="detergent_preference"
-              className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="e.g. Fragrance-free"
             />
           </div>
         </div>
 
         {state?.error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{state.error}</p>
+          <p className="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{state.error}</p>
         )}
 
         <div className="flex items-center gap-3 pt-2">
