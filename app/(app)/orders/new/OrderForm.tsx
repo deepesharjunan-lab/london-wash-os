@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createOrder } from "./actions";
+import { createOrder, createCustomerQuick } from "./actions";
 
 type Customer = { id: string; full_name: string; phone: string };
 type PriceListProfile = { id: string; name: string; is_default: boolean | null };
@@ -46,10 +46,12 @@ export default function OrderForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isCreatingCustomer, startCustomerTransition] = useTransition();
 
   const defaultProfileId =
     priceListProfiles.find((p) => p.is_default)?.id ?? priceListProfiles[0]?.id ?? "";
 
+  const [customersList, setCustomersList] = useState<Customer[]>(customers);
   const [customerId, setCustomerId] = useState(defaultCustomerId ?? "");
   const [priceListProfileId, setPriceListProfileId] = useState(defaultProfileId);
   const [channel, setChannel] = useState("pos_counter");
@@ -58,6 +60,11 @@ export default function OrderForm({
   const [lineItemId, setLineItemId] = useState("");
   const [lineQty, setLineQty] = useState("1");
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerError, setNewCustomerError] = useState<string | null>(null);
 
   const entriesForProfile = useMemo(
     () => priceEntries.filter((e) => e.price_list_profile_id === priceListProfileId),
@@ -132,6 +139,31 @@ export default function OrderForm({
     setCart((prev) => prev.filter((l) => l.key !== key));
   }
 
+  function handleCreateCustomer() {
+    setNewCustomerError(null);
+    if (!newCustomerName.trim() || !newCustomerPhone.trim()) {
+      setNewCustomerError("Name and phone are required.");
+      return;
+    }
+    startCustomerTransition(async () => {
+      const result = await createCustomerQuick({
+        full_name: newCustomerName,
+        phone: newCustomerPhone,
+      });
+      if (result && "error" in result && result.error) {
+        setNewCustomerError(result.error);
+        return;
+      }
+      if (result && "customer" in result && result.customer) {
+        setCustomersList((prev) => [result.customer as Customer, ...prev]);
+        setCustomerId(result.customer.id);
+        setShowNewCustomer(false);
+        setNewCustomerName("");
+        setNewCustomerPhone("");
+      }
+    });
+  }
+
   function handleSubmit() {
     setFormError(null);
     if (!customerId) {
@@ -169,19 +201,59 @@ export default function OrderForm({
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Order details</div>
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink/60">Customer</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-xs font-medium text-ink/60">Customer</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewCustomer((v) => !v);
+                    setNewCustomerError(null);
+                  }}
+                  className="text-xs font-semibold text-accent hover:underline"
+                >
+                  {showNewCustomer ? "Cancel" : "+ New customer"}
+                </button>
+              </div>
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               >
                 <option value="">Select customer...</option>
-                {customers.map((c) => (
+                {customersList.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.full_name} — {c.phone}
                   </option>
                 ))}
               </select>
+
+              {showNewCustomer && (
+                <div className="mt-2 space-y-2 rounded-md border border-black/10 bg-black/[0.015] p-3">
+                  <input
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                    placeholder="Full name"
+                    className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                  />
+                  <input
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    placeholder="Phone"
+                    className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                  />
+                  {newCustomerError && (
+                    <p className="text-xs text-danger">{newCustomerError}</p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={isCreatingCustomer}
+                    onClick={handleCreateCustomer}
+                    className="w-full rounded-md bg-accent px-3 py-2 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-60"
+                  >
+                    {isCreatingCustomer ? "Saving..." : "Save & select customer"}
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink/60">Price list</label>
