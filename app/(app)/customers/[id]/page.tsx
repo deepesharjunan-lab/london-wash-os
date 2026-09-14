@@ -41,7 +41,7 @@ export default async function CustomerDetailPage({
 
   if (!customer) {
     return (
-      <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+      <p className="border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
         Could not load customer{error ? `: ${error.message}` : "."}
       </p>
     );
@@ -60,7 +60,7 @@ export default async function CustomerDetailPage({
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-archivo text-2xl font-extrabold text-ink">{customer.full_name}</h1>
-          <p className="mt-1 text-sm text-ink/50">{customer.phone}{customer.email ? ` · ${customer.email}` : ""}</p>
+          <p className="mt-1 text-sm text-ink/60">{customer.phone}{customer.email ? ` · ${customer.email}` : ""}</p>
         </div>
         <Link href="/customers" className="text-sm font-medium text-ink/60 hover:text-accent">
           &larr; Back to customers
@@ -68,28 +68,28 @@ export default async function CustomerDetailPage({
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Tier</div>
           <span
-            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+            className={`mt-2 inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
               TIER_STYLES[customer.tier as string] ?? "bg-black/5 text-ink/60"
             }`}
           >
             {customer.tier}
           </span>
         </div>
-        <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Wallet balance</div>
           <div className="mt-1 text-lg font-bold text-ink">{formatMinor(Number(customer.wallet_balance_minor))}</div>
         </div>
-        <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Lifetime spend</div>
           <div className="mt-1 text-lg font-bold text-ink">{formatMinor(Number(customer.lifetime_spend_minor))}</div>
         </div>
-        <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-ink/40">Status</div>
           <span
-            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+            className={`mt-2 inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
               customer.is_active ? "bg-ok/10 text-ok" : "bg-black/5 text-ink/40"
             }`}
           >
@@ -99,7 +99,7 @@ export default async function CustomerDetailPage({
       </div>
 
       {(customer.fold_preference || customer.detergent_preference) && (
-        <div className="mb-6 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="mb-6 border-2 border-black/10 bg-white p-4">
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink/40">Care preferences</div>
           <div className="flex flex-wrap gap-4 text-sm text-ink/70">
             {customer.fold_preference && <span>Fold: {customer.fold_preference}</span>}
@@ -118,10 +118,10 @@ export default async function CustomerDetailPage({
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
+      <div className="border-2 border-black/10 bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Total</th>
@@ -138,7 +138,7 @@ export default async function CustomerDetailPage({
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    className={`inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                       STATUS_STYLES[o.status as string] ?? "bg-black/5 text-ink/60"
                     }`}
                   >
