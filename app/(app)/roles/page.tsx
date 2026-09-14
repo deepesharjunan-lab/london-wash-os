@@ -518,5 +518,4 @@ export default async function RolesPage() {
   </div>
 );
 }
-
-);parenrightsemicolon
+}
