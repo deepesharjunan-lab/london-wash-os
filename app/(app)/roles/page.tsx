@@ -154,8 +154,7 @@ export default async function RolesPage() {
                                 </tbody>
                       </table>
               </section>
-        </div>
-
+        
     <section className="border-2 border-black/10 bg-white p-5">
     <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
     <h2 className="font-archivo text-[13.5px] font-bold text-ink">Roles</h2>
@@ -295,8 +294,7 @@ export default async function RolesPage() {
   </tbody>
   </table>
   </section>
-  </div>
-
+  
 <section className="border-2 border-black/10 bg-white p-5">
   <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
   <h2 className="font-archivo text-[13.5px] font-bold text-ink">Role Permission Assignments</h2>
@@ -444,9 +442,8 @@ export default async function RolesPage() {
   </tbody>
   </table>
   </section>
-  </div>
       <section className="border-2 border-black/10 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
+         <div className="mb-4 flex items-center justify-between border-b-2 border-black/10 pb-3">
                     <h2 className="font-archivo text-[13.5px] font-bold text-ink">User Branch Access</h2>
                     <details className="relative">
                                 <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
@@ -519,6 +516,7 @@ export default async function RolesPage() {
 </table>
   </section>
   </div>
-  );
-    }
-  </div>
+);
+}
+
+);parenrightsemicolon
