@@ -34,15 +34,11 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="font-archivo text-[11px] font-semibold uppercase tracking-wide text-accent">
-          Settings
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">Branch, Organization &amp; Tax</h1>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Settings</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Branch, Organization &amp; Tax</h1>
 
-      <div className="rounded-lg border border-black/5 bg-white">
-        <div className="border-b border-black/5 px-5 py-3 text-[13px] font-semibold text-ink">
+      <div className="border-2 border-black/10 bg-white">
+        <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           Branch Details
         </div>
         {branch ? (
@@ -57,7 +53,7 @@ export default async function SettingsPage() {
                 name="name"
                 defaultValue={branch.name}
                 required
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -66,7 +62,7 @@ export default async function SettingsPage() {
                 name="code"
                 defaultValue={branch.code}
                 required
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -74,7 +70,7 @@ export default async function SettingsPage() {
               <input
                 name="phone"
                 defaultValue={branch.phone ?? ""}
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60 lg:col-span-2">
@@ -82,7 +78,7 @@ export default async function SettingsPage() {
               <input
                 name="address"
                 defaultValue={branch.address ?? ""}
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -90,7 +86,7 @@ export default async function SettingsPage() {
               <input
                 name="city"
                 defaultValue={branch.city ?? ""}
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -98,7 +94,7 @@ export default async function SettingsPage() {
               <input
                 name="state"
                 defaultValue={branch.state ?? ""}
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <div className="flex items-end lg:col-span-3">
@@ -115,8 +111,8 @@ export default async function SettingsPage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-black/5 bg-white">
-        <div className="border-b border-black/5 px-5 py-3 text-[13px] font-semibold text-ink">
+      <div className="border-2 border-black/10 bg-white">
+        <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           Organization Details
         </div>
         {organization ? (
@@ -131,7 +127,7 @@ export default async function SettingsPage() {
                 name="name"
                 defaultValue={organization.name}
                 required
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -139,7 +135,7 @@ export default async function SettingsPage() {
               <input
                 name="legal_name"
                 defaultValue={organization.legal_name ?? ""}
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <label className="flex flex-col gap-1 text-[12px] text-ink/60">
@@ -148,7 +144,7 @@ export default async function SettingsPage() {
                 name="gstin"
                 defaultValue={organization.gstin ?? ""}
                 placeholder="e.g. 32AAAAA0000A1Z5"
-                className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+                className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               />
             </label>
             <div className="flex items-end">
@@ -165,11 +161,11 @@ export default async function SettingsPage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-black/5 bg-white">
-        <div className="border-b border-black/5 px-5 py-3 text-[13px] font-semibold text-ink">
+      <div className="border-2 border-black/10 bg-white">
+        <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           GST / Tax Rules
         </div>
-        <details className="border-b border-black/5">
+        <details className="border-b-2 border-black/10">
           <summary className="cursor-pointer select-none px-5 py-3 text-[13px] font-semibold text-accent">
             + Add Tax Rule
           </summary>
@@ -180,7 +176,7 @@ export default async function SettingsPage() {
             <select
               name="service_category_id"
               required
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px] text-ink"
+              className="border border-black/10 px-3 py-2 text-[13px] text-ink"
               defaultValue=""
             >
               <option value="">Service category</option>
@@ -193,33 +189,33 @@ export default async function SettingsPage() {
             <input
               name="sac_code"
               placeholder="SAC code"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="cgst_percent"
               type="number"
               step="0.01"
               placeholder="CGST %"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="sgst_percent"
               type="number"
               step="0.01"
               placeholder="SGST %"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="igst_percent"
               type="number"
               step="0.01"
               placeholder="IGST %"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <input
               name="effective_from"
               type="date"
-              className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+              className="border border-black/10 px-3 py-2 text-[13px]"
             />
             <button
               type="submit"
@@ -230,8 +226,8 @@ export default async function SettingsPage() {
           </form>
         </details>
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-black/[0.02] text-[11px] uppercase tracking-wide text-ink/50">
-            <tr>
+          <thead className="text-[11px] uppercase tracking-wide text-ink/50">
+            <tr className="border-b-2 border-black/10">
               <th className="px-5 py-3 font-medium">Category</th>
               <th className="px-5 py-3 font-medium">SAC</th>
               <th className="px-5 py-3 font-medium">CGST%</th>
