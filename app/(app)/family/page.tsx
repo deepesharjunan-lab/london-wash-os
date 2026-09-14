@@ -24,21 +24,22 @@ export default async function FamilyPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Family Accounts & Workstations</h1>
-        <p className="text-slate-500">Group household customers together and manage production workstations.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Operations</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Family Accounts & Workstations</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">
+        Group household customers together and manage production workstations.
+      </p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Family Accounts</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Family Accounts</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Family Account
             </summary>
             <form
               action={createFamilyAccount}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Family name</label>
@@ -46,12 +47,12 @@ export default async function FamilyPage() {
                   name="name"
                   required
                   placeholder="e.g. The Menon Family"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Primary customer</label>
-                <select name="primary_customer_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="primary_customer_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Not set</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -68,7 +69,7 @@ export default async function FamilyPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Family</th>
               <th className="py-2">Primary Customer</th>
               <th className="py-2">Members</th>
@@ -77,7 +78,7 @@ export default async function FamilyPage() {
           </thead>
           <tbody>
             {(families || []).map((f: any) => (
-              <tr key={f.id} className="border-b border-slate-100">
+              <tr key={f.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{f.name}</td>
                 <td className="py-2 text-slate-600">{f.primary_customer_id ? customerName.get(f.primary_customer_id) : "-"}</td>
                 <td className="py-2 text-slate-600">
@@ -97,20 +98,20 @@ export default async function FamilyPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Assign Customer to Family</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Assign Customer to Family</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Assign
             </summary>
             <form
               action={assignCustomerToFamily}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -121,7 +122,7 @@ export default async function FamilyPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Family account</label>
-                <select name="family_account_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="family_account_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Select family</option>
                   {(families || []).map((f: any) => (
                     <option key={f.id} value={f.id}>
@@ -139,16 +140,16 @@ export default async function FamilyPage() {
         <p className="text-sm text-slate-400">Members currently shown per family account above.</p>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Workstations</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Workstations</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Workstation
             </summary>
             <form
               action={createWorkstation}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Workstation name</label>
@@ -156,12 +157,12 @@ export default async function FamilyPage() {
                   name="name"
                   required
                   placeholder="e.g. Press Station 1"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Workflow stage (optional)</label>
-                <select name="workflow_stage_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="workflow_stage_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
                   <option value="">Not linked</option>
                   {(stages || []).map((s: any) => (
                     <option key={s.id} value={s.id}>
@@ -178,7 +179,7 @@ export default async function FamilyPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Workflow Stage</th>
               <th className="py-2">Status</th>
@@ -187,13 +188,13 @@ export default async function FamilyPage() {
           </thead>
           <tbody>
             {(workstations || []).map((w: any) => (
-              <tr key={w.id} className="border-b border-slate-100">
+              <tr key={w.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{w.name}</td>
                 <td className="py-2 text-slate-600">{w.workflow_stage_id ? stageName.get(w.workflow_stage_id) : "-"}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-0.5 text-xs font-semibold uppercase tracking-wide " +
                       (w.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
