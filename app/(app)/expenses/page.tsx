@@ -3,7 +3,7 @@ import { createExpense, createMachine, toggleMachineActive } from "./actions";
 
 function formatMinor(minor: number | null) {
   if (minor === null || minor === undefined) return "-";
-  return "₹" + (minor / 100).toFixed(2);
+  return "\u20B9" + (minor / 100).toFixed(2);
 }
 
 export default async function ExpensesPage() {
@@ -31,15 +31,14 @@ export default async function ExpensesPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Expenses & Machines</h1>
-        <p className="text-slate-500">Business expenses and washing/drying equipment.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Money</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Expenses &amp; Machines</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Business expenses and washing/drying equipment.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Expenses</h2>
+            <h2 className="font-archivo text-lg font-bold text-ink">Expenses</h2>
             <p className="text-xs text-slate-500">Total: {formatMinor(totalExpenseMinor)}</p>
           </div>
           <details className="relative">
@@ -48,7 +47,7 @@ export default async function ExpensesPage() {
             </summary>
             <form
               action={createExpense}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Category</label>
@@ -56,24 +55,24 @@ export default async function ExpensesPage() {
                   name="category"
                   required
                   placeholder="e.g. Utilities, Rent, Supplies"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Amount (₹)</label>
+                <label className="block text-xs font-medium text-slate-500">Amount (\u20B9)</label>
                 <input
                   type="number"
                   name="amount"
                   step="0.01"
                   required
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Financial account (optional)</label>
                 <select
                   name="financial_account_id"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 >
                   <option value="">None</option>
                   {(financialAccounts || []).map((a: any) => (
@@ -85,7 +84,7 @@ export default async function ExpensesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Note</label>
-                <textarea name="note" rows={2} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="note" rows={2} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Expense
@@ -95,7 +94,7 @@ export default async function ExpensesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Category</th>
               <th className="py-2">Amount</th>
               <th className="py-2">Account</th>
@@ -106,7 +105,7 @@ export default async function ExpensesPage() {
           </thead>
           <tbody>
             {(expenses || []).map((e: any) => (
-              <tr key={e.id} className="border-b border-slate-100">
+              <tr key={e.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{e.category}</td>
                 <td className="py-2 text-slate-600">{formatMinor(e.amount_minor)}</td>
                 <td className="py-2 text-slate-600">{e.financial_account_id ? accountName.get(e.financial_account_id) : "-"}</td>
@@ -126,16 +125,16 @@ export default async function ExpensesPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Machines</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Machines</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Machine
             </summary>
             <form
               action={createMachine}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Name</label>
@@ -143,7 +142,7 @@ export default async function ExpensesPage() {
                   name="name"
                   required
                   placeholder="e.g. Washer 1, Dryer 2"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
@@ -151,14 +150,14 @@ export default async function ExpensesPage() {
                 <input
                   name="machine_type"
                   placeholder="e.g. washer, dryer, presser"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Workstation (optional)</label>
                 <select
                   name="workstation_id"
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]"
                 >
                   <option value="">None</option>
                   {(workstations || []).map((w: any) => (
@@ -176,7 +175,7 @@ export default async function ExpensesPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Name</th>
               <th className="py-2">Type</th>
               <th className="py-2">Workstation</th>
@@ -186,14 +185,14 @@ export default async function ExpensesPage() {
           </thead>
           <tbody>
             {(machines || []).map((m: any) => (
-              <tr key={m.id} className="border-b border-slate-100">
+              <tr key={m.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{m.name}</td>
                 <td className="py-2 text-slate-600">{m.machine_type || "-"}</td>
                 <td className="py-2 text-slate-600">{m.workstation_id ? workstationName.get(m.workstation_id) : "-"}</td>
                 <td className="py-2 text-slate-600">
                   <span
                     className={
-                      "rounded-full px-2 py-0.5 text-xs font-medium " +
+                      "px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " +
                       (m.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")
                     }
                   >
