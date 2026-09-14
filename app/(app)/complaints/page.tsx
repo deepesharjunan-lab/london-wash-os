@@ -3,7 +3,7 @@ import { createComplaint, updateComplaintStatus, assignComplaint, createRefund }
 
 function formatMinor(minor: number | null) {
   if (minor === null || minor === undefined) return "-";
-  return "₹" + (minor / 100).toFixed(2);
+  return "\u20B9" + (minor / 100).toFixed(2);
 }
 
 const complaintStatuses = ["open", "investigating", "resolved", "closed"];
@@ -38,25 +38,24 @@ export default async function ComplaintsPage() {
   );
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Complaints & Refunds</h1>
-        <p className="text-slate-500">Customer complaints and payment refunds.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Money</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Complaints &amp; Refunds</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Customer complaints and payment refunds.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Complaints</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Complaints</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Log Complaint
             </summary>
             <form
               action={createComplaint}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Customer</label>
-                <select name="customer_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="customer_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select customer</option>
                   {(customers || []).map((c: any) => (
                     <option key={c.id} value={c.id}>
@@ -67,7 +66,7 @@ export default async function ComplaintsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Order (optional)</label>
-                <select name="order_id" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="order_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">No order</option>
                   {(orders || []).map((o: any) => (
                     <option key={o.id} value={o.id}>
@@ -78,11 +77,11 @@ export default async function ComplaintsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Subject</label>
-                <input name="subject" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="subject" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Description</label>
-                <textarea name="description" rows={3} className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="description" rows={3} className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Complaint
@@ -91,7 +90,7 @@ export default async function ComplaintsPage() {
           </details>
         </div>        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Customer</th>
               <th className="py-2">Order</th>
               <th className="py-2">Subject</th>
@@ -102,14 +101,14 @@ export default async function ComplaintsPage() {
           </thead>
           <tbody>
             {(complaints || []).map((c: any) => (
-              <tr key={c.id} className="border-b border-slate-100">
+              <tr key={c.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{customerName.get(c.customer_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{c.order_id ? orderNumber.get(c.order_id) : "-"}</td>
                 <td className="py-2 text-slate-600">{c.subject}</td>
                 <td className="py-2 text-slate-600">
                   <form action={updateComplaintStatus} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={c.id} />
-                    <select name="status" defaultValue={c.status} className="rounded-md border border-slate-300 px-2 py-1 text-xs">
+                    <select name="status" defaultValue={c.status} className="border border-black/10 px-2 py-1 text-xs">
                       {complaintStatuses.map((s) => (
                         <option key={s} value={s}>
                           {s}
@@ -124,7 +123,7 @@ export default async function ComplaintsPage() {
                 <td className="py-2 text-slate-600">
                   <form action={assignComplaint} className="flex items-center gap-2">
                     <input type="hidden" name="id" value={c.id} />
-                    <select name="assigned_to" defaultValue={c.assigned_to || ""} className="rounded-md border border-slate-300 px-2 py-1 text-xs">
+                    <select name="assigned_to" defaultValue={c.assigned_to || ""} className="border border-black/10 px-2 py-1 text-xs">
                       <option value="">Unassigned</option>
                       {(users || []).map((u: any) => (
                         <option key={u.id} value={u.id}>
@@ -150,20 +149,20 @@ export default async function ComplaintsPage() {
           </tbody>
         </table>
       </section>
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Refunds</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Refunds</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Add Refund
             </summary>
             <form
               action={createRefund}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Payment</label>
-                <select name="payment_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="payment_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select payment</option>
                   {(payments || []).map((p: any) => (
                     <option key={p.id} value={p.id}>
@@ -173,12 +172,12 @@ export default async function ComplaintsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500">Amount (₹)</label>
-                <input type="number" name="amount" step="0.01" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <label className="block text-xs font-medium text-slate-500">Amount (\u20B9)</label>
+                <input type="number" name="amount" step="0.01" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Reason</label>
-                <textarea name="reason" rows={2} required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <textarea name="reason" rows={2} required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Save Refund
@@ -188,7 +187,7 @@ export default async function ComplaintsPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Payment</th>
               <th className="py-2">Amount</th>
               <th className="py-2">Reason</th>
@@ -198,7 +197,7 @@ export default async function ComplaintsPage() {
           </thead>
           <tbody>
             {(refunds || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{paymentLabel.get(r.payment_id) || "-"}</td>
                 <td className="py-2 text-slate-600">{formatMinor(r.amount_minor)}</td>
                 <td className="py-2 text-slate-600">{r.reason}</td>
