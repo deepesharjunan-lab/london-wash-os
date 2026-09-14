@@ -19,21 +19,19 @@ export default async function InventoryPage() {
   return (
     <div>
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Inventory</div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-archivo text-2xl font-extrabold text-ink">Inventory</h1>
-      </div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Inventory</h1>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="mb-4 bg-red-50 px-3 py-2 text-sm text-red-600">
           Could not load inventory: {error.message}
         </p>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
+        <div className="overflow-hidden border-2 border-black/10 bg-white">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+              <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
                 <th className="px-4 py-3">Item</th>
                 <th className="px-4 py-3 text-right">On hand</th>
                 <th className="px-4 py-3 text-right">Reorder level</th>
@@ -48,7 +46,7 @@ export default async function InventoryPage() {
                     <td className="px-4 py-3 font-medium text-ink">
                       {it.name}
                       {low && (
-                        <span className="ml-2 inline-flex rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
+                        <span className="ml-2 inline-flex bg-danger/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-danger">
                           Low stock
                         </span>
                       )}
@@ -61,7 +59,7 @@ export default async function InventoryPage() {
                         <select
                           name="type"
                           defaultValue="receipt"
-                          className="rounded-md border border-black/10 px-2 py-1.5 text-xs capitalize outline-none focus:border-accent"
+                          className="border border-black/10 px-2 py-1.5 text-xs capitalize outline-none focus:border-accent"
                         >
                           {TYPE_OPTIONS.map((t) => (
                             <option key={t} value={t} className="capitalize">
@@ -75,13 +73,13 @@ export default async function InventoryPage() {
                           step="any"
                           placeholder="Qty"
                           required
-                          className="w-20 rounded-md border border-black/10 px-2 py-1.5 text-xs outline-none focus:border-accent"
+                          className="w-20 border border-black/10 px-2 py-1.5 text-xs outline-none focus:border-accent"
                         />
                         <input
                           type="text"
                           name="note"
                           placeholder="Note (optional)"
-                          className="w-32 rounded-md border border-black/10 px-2 py-1.5 text-xs outline-none focus:border-accent"
+                          className="w-32 border border-black/10 px-2 py-1.5 text-xs outline-none focus:border-accent"
                         />
                         <button
                           type="submit"
@@ -105,7 +103,7 @@ export default async function InventoryPage() {
           </table>
         </div>
 
-        <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+        <div className="border-2 border-black/10 bg-white p-4">
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Add item</div>
           <form action={createInventoryItem} className="space-y-3">
             <div>
@@ -116,7 +114,7 @@ export default async function InventoryPage() {
                 name="name"
                 required
                 placeholder="e.g. Detergent (5L)"
-                className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               />
             </div>
             <div>
@@ -127,7 +125,7 @@ export default async function InventoryPage() {
                 name="unit"
                 defaultValue="unit"
                 placeholder="e.g. litre, kg, piece"
-                className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               />
             </div>
             <div>
@@ -139,7 +137,7 @@ export default async function InventoryPage() {
                 name="reorder_level"
                 step="any"
                 defaultValue={0}
-                className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               />
             </div>
             <button
