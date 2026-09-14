@@ -34,15 +34,15 @@ export default async function CustomersPage() {
       </div>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           Could not load customers: {error.message}
         </p>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm">
+      <div className="border-2 border-black/10 bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-black/5 bg-black/[0.02] text-left text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Phone</th>
               <th className="px-4 py-3">Tier</th>
@@ -62,7 +62,7 @@ export default async function CustomersPage() {
                 <td className="px-4 py-3 text-ink/70">{c.phone}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    className={`inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                       TIER_STYLES[c.tier as string] ?? "bg-black/5 text-ink/60"
                     }`}
                   >
@@ -73,7 +73,7 @@ export default async function CustomersPage() {
                 <td className="px-4 py-3 text-right text-ink/70">{formatMinor(Number(c.lifetime_spend_minor))}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    className={`inline-flex px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                       c.is_active ? "bg-ok/10 text-ok" : "bg-black/5 text-ink/40"
                     }`}
                   >
