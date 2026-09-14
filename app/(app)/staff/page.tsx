@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addEmployee, checkInStaff, checkOutStaff } from "./actions";
 
 function formatTime(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "\u2014";
   const d = new Date(iso);
   return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
 }
@@ -34,19 +34,13 @@ export default async function StaffPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="font-archivo text-[11px] font-semibold uppercase tracking-wide text-accent">
-            Staff
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold text-ink">Staff &amp; Attendance</h1>
-        </div>
-        <div className="text-right text-[13px] text-ink/60">
-          {checkedInCount} checked in of {staff.length} staff &middot; Today
-        </div>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Staff</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Staff &amp; Attendance</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">
+        {checkedInCount} checked in of {staff.length} staff &middot; Today
+      </p>
 
-      <details className="rounded-lg border border-black/5 bg-white">
+      <details className="border-2 border-black/10 bg-white">
         <summary className="cursor-pointer select-none px-5 py-3 text-[13px] font-semibold text-ink">
           + Add Employee
         </summary>
@@ -58,29 +52,29 @@ export default async function StaffPage() {
             name="full_name"
             placeholder="Full name"
             required
-            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+            className="border border-black/10 px-3 py-2 text-[13px]"
           />
           <input
             name="role_title"
             placeholder="Role (e.g. Presser)"
-            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+            className="border border-black/10 px-3 py-2 text-[13px]"
           />
           <input
             name="phone"
             placeholder="Phone"
-            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+            className="border border-black/10 px-3 py-2 text-[13px]"
           />
           <input
             name="date_joined"
             type="date"
-            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+            className="border border-black/10 px-3 py-2 text-[13px]"
           />
           <input
             name="monthly_salary"
             type="number"
             step="0.01"
-            placeholder="Monthly salary (₹)"
-            className="rounded-md border border-black/10 px-3 py-2 text-[13px]"
+            placeholder="Monthly salary (\u20B9)"
+            className="border border-black/10 px-3 py-2 text-[13px]"
           />
           <button
             type="submit"
@@ -91,9 +85,9 @@ export default async function StaffPage() {
         </form>
       </details>
 
-      <div className="overflow-hidden rounded-lg border border-black/5 bg-white">
+      <div className="overflow-hidden border-2 border-black/10 bg-white">
         <table className="w-full text-left text-[13px]">
-          <thead className="bg-black/[0.02] text-[11px] uppercase tracking-wide text-ink/50">
+          <thead className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
             <tr>
               <th className="px-5 py-3 font-medium">Name</th>
               <th className="px-5 py-3 font-medium">Role</th>
@@ -119,11 +113,11 @@ export default async function StaffPage() {
               return (
                 <tr key={e.id} className="border-t border-black/5">
                   <td className="px-5 py-3 font-medium text-ink">{e.full_name}</td>
-                  <td className="px-5 py-3 text-ink/70">{e.role_title || "—"}</td>
-                  <td className="px-5 py-3 text-ink/70">{e.phone || "—"}</td>
+                  <td className="px-5 py-3 text-ink/70">{e.role_title || "\u2014"}</td>
+                  <td className="px-5 py-3 text-ink/70">{e.phone || "\u2014"}</td>
                   <td className="px-5 py-3">
                     <span
-                      className={`rounded-full px-2 py-1 text-[11px] font-medium ${
+                      className={`px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${
                         checkedIn
                           ? "bg-green-100 text-green-700"
                           : checkedOut
