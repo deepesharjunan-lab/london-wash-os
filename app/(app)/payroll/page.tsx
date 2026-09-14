@@ -46,25 +46,24 @@ export default async function PayrollPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Payroll &amp; Leave</h1>
-        <p className="text-slate-500">Staff leave requests and payroll runs.</p>
-      </div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Money</div>
+      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Payroll &amp; Leave</h1>
+      <p className="mb-6 -mt-4 text-sm text-ink/60">Staff leave requests and payroll runs.</p>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Leave Requests</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Leave Requests</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + Request Leave
             </summary>
             <form
               action={createLeaveRequest}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Employee</label>
-                <select name="employee_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="employee_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select employee</option>
                   {(employees || []).map((e: any) => (
                     <option key={e.id} value={e.id}>
@@ -75,7 +74,7 @@ export default async function PayrollPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Leave type</label>
-                <select name="leave_type" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="leave_type" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select type</option>
                   <option value="casual">Casual</option>
                   <option value="sick">Sick</option>
@@ -86,11 +85,11 @@ export default async function PayrollPage() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-slate-500">From</label>
-                  <input type="date" name="starts_on" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="starts_on" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-slate-500">To</label>
-                  <input type="date" name="ends_on" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="ends_on" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
@@ -101,7 +100,7 @@ export default async function PayrollPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Employee</th>
               <th className="py-2">Type</th>
               <th className="py-2">From</th>
@@ -112,13 +111,13 @@ export default async function PayrollPage() {
           </thead>
           <tbody>
             {(leaves || []).map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-100">
+              <tr key={r.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{r.employee?.full_name || "-"}</td>
                 <td className="py-2 text-slate-600 capitalize">{r.leave_type}</td>
                 <td className="py-2 text-slate-600">{r.starts_on}</td>
                 <td className="py-2 text-slate-600">{r.ends_on}</td>
                 <td className="py-2">
-                  <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + badgeClass(r.status)}>{r.status}</span>
+                  <span className={"px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " + badgeClass(r.status)}>{r.status}</span>
                 </td>
                 <td className="py-2">
                   {r.status === "requested" && (
@@ -153,20 +152,20 @@ export default async function PayrollPage() {
         </table>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="border-2 border-black/10 bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Payroll Runs</h2>
+          <h2 className="font-archivo text-lg font-bold text-ink">Payroll Runs</h2>
           <details className="relative">
             <summary className="cursor-pointer list-none rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
               + New Payroll Run
             </summary>
             <form
               action={createPayrollRun}
-              className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-md border border-slate-200 bg-white p-4 shadow-lg"
+              className="absolute right-0 z-10 mt-2 w-80 space-y-3 border-2 border-black/10 bg-white p-4"
             >
               <div>
                 <label className="block text-xs font-medium text-slate-500">Employee</label>
-                <select name="employee_id" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
+                <select name="employee_id" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]">
                   <option value="">Select employee</option>
                   {(employees || []).map((e: any) => (
                     <option key={e.id} value={e.id}>
@@ -178,20 +177,20 @@ export default async function PayrollPage() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-slate-500">Period start</label>
-                  <input type="date" name="period_start" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="period_start" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-slate-500">Period end</label>
-                  <input type="date" name="period_end" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                  <input type="date" name="period_end" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Gross (INR)</label>
-                <input name="gross" type="number" step="0.01" min="0" required className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="gross" type="number" step="0.01" min="0" required className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500">Deductions (INR)</label>
-                <input name="deductions" type="number" step="0.01" min="0" defaultValue="0" className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm" />
+                <input name="deductions" type="number" step="0.01" min="0" defaultValue="0" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-[13px]" />
               </div>
               <button type="submit" className="w-full rounded-md bg-slate-900 py-1.5 text-sm font-medium text-white">
                 Create Run
@@ -201,7 +200,7 @@ export default async function PayrollPage() {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Employee</th>
               <th className="py-2">Period</th>
               <th className="py-2">Gross</th>
@@ -213,7 +212,7 @@ export default async function PayrollPage() {
           </thead>
           <tbody>
             {payrollRuns.map((p: any) => (
-              <tr key={p.id} className="border-b border-slate-100">
+              <tr key={p.id} className="border-b border-black/5">
                 <td className="py-2 font-medium">{p.employee?.full_name || "-"}</td>
                 <td className="py-2 text-slate-600">
                   {p.period_start} to {p.period_end}
@@ -222,7 +221,7 @@ export default async function PayrollPage() {
                 <td className="py-2 text-slate-600">{formatMinor(p.deductions_minor, p.currency)}</td>
                 <td className="py-2 font-medium">{formatMinor(p.net_minor, p.currency)}</td>
                 <td className="py-2">
-                  <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + badgeClass(p.status)}>{p.status}</span>
+                  <span className={"px-2 py-1 text-[11px] font-semibold uppercase tracking-wide " + badgeClass(p.status)}>{p.status}</span>
                 </td>
                 <td className="py-2">
                   {p.status === "draft" && (
