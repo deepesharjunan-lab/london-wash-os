@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Barcode } from "@/lib/print/code128";
-import { ORG_NAME } from "@/lib/print/branding";
 
 // One 50mm x 30mm label per physical garment, sized for the TSC TE244.
 const LABEL_WIDTH_MM = 50;
@@ -106,16 +105,15 @@ export default async function OrderTagsPrintPage({ params }: { params: { id: str
           margin-top: 0.5mm;
         }
         .tag-service { font-size: 6.8pt; font-weight: 700; margin-top: 0.3mm; }
-        .tag-order { font-size: 7.3pt; font-weight: 800; margin-top: 0.3mm; }
-        .tag-org { font-size: 6.8pt; font-weight: 700; margin-top: 0.3mm; color: #333; }
-        .tag-code { font-size: 6.8pt; font-weight: 700; margin-top: 0.3mm; }
-        .tag-date { font-size: 6pt; margin-top: 0.2mm; color: #333; }
+        .tag-order { font-size: 7.6pt; font-weight: 800; margin-top: 0.5mm; }
+        .tag-code { font-size: 7pt; font-weight: 700; margin-top: 0.5mm; }
+        .tag-date { font-size: 6.2pt; margin-top: 0.3mm; color: #333; }
         .tag-rule {
           width: 100%;
           border-top: 0.5pt dashed #000;
-          margin: 0.6mm 0 0.4mm;
+          margin: 0.8mm 0 0.6mm;
         }
-        .tag-barcode { margin-top: 0.2mm; }
+        .tag-barcode { margin-top: 0.3mm; }
         @media screen {
           body { background: #e5e5e5; padding: 10px; }
           .tag-page {
@@ -140,14 +138,13 @@ export default async function OrderTagsPrintPage({ params }: { params: { id: str
               {t.serviceName} · {t.piece}/{t.total}
             </div>
             <div className="tag-order">{order.order_number}</div>
-            <div className="tag-org">{ORG_NAME}</div>
             <div className="tag-code">
               {t.tagCode} {customer?.full_name || ""}
             </div>
             <div className="tag-date">{dateLabel}</div>
             <div className="tag-rule" />
             <div className="tag-barcode">
-              <Barcode value={t.tagCode} height={18} moduleWidth={1.1} />
+              <Barcode value={t.tagCode} height={20} moduleWidth={1.2} />
             </div>
           </div>
         ))
