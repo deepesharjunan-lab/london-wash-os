@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { PrintPreviewButton } from "@/lib/print/PrintPreviewButton";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-black/5 text-ink/60",
@@ -91,21 +92,17 @@ export default async function OrdersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold">
-                      <Link
-                        href={`/orders/${o.id}/print/invoice`}
-                        target="_blank"
+                      <PrintPreviewButton
+                        label="Invoice"
+                        url={`/orders/${o.id}/print/invoice`}
                         className="text-accent hover:underline"
-                      >
-                        Invoice
-                      </Link>
+                      />
                       <span className="text-ink/20">|</span>
-                      <Link
-                        href={`/orders/${o.id}/print/tags`}
-                        target="_blank"
+                      <PrintPreviewButton
+                        label="Tags"
+                        url={`/orders/${o.id}/print/tags`}
                         className="text-accent hover:underline"
-                      >
-                        Tags
-                      </Link>
+                      />
                     </div>
                   </td>
                 </tr>
