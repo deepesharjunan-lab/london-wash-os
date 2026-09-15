@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PrintPreviewButton } from "@/lib/print/PrintPreviewButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateOrderStatus, recordPayment } from "./actions";
@@ -112,20 +113,16 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           >
             {formatStatus(order.status as string)}
           </span>
-          <Link
-            href={`/orders/${order.id}/print/invoice`}
-            target="_blank"
+          <PrintPreviewButton
+            label="Print Invoice"
+            url={`/orders/${order.id}/print/invoice`}
             className="rounded-md border-2 border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink hover:border-accent hover:text-accent"
-          >
-            Print Invoice
-          </Link>
-          <Link
-            href={`/orders/${order.id}/print/tags`}
-            target="_blank"
+          />
+          <PrintPreviewButton
+            label="Print Tags"
+            url={`/orders/${order.id}/print/tags`}
             className="rounded-md border-2 border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink hover:border-accent hover:text-accent"
-          >
-            Print Tags
-          </Link>
+          />
         </div>
       </div>
 
