@@ -104,13 +104,29 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       </div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">{order.order_number}</h1>
-        <span
-          className={`inline-flex px-3 py-1.5 text-xs font-semibold uppercase tracking-wide capitalize ${
-            STATUS_STYLES[order.status as string] ?? "bg-black/5 text-ink/60"
-          }`}
-        >
-          {formatStatus(order.status as string)}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex px-3 py-1.5 text-xs font-semibold uppercase tracking-wide capitalize ${
+              STATUS_STYLES[order.status as string] ?? "bg-black/5 text-ink/60"
+            }`}
+          >
+            {formatStatus(order.status as string)}
+          </span>
+          <Link
+            href={`/orders/${order.id}/print/invoice`}
+            target="_blank"
+            className="rounded-md border-2 border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink hover:border-accent hover:text-accent"
+          >
+            Print Invoice
+          </Link>
+          <Link
+            href={`/orders/${order.id}/print/tags`}
+            target="_blank"
+            className="rounded-md border-2 border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink hover:border-accent hover:text-accent"
+          >
+            Print Tags
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
