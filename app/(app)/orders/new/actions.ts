@@ -79,10 +79,37 @@ export async function createOrder(input: {
     line_total_minor: Math.round(l.unit_price_minor) * l.quantity,
   }));
 
-  const { error: itemsError } = await supabase.from("order_item").insert(itemsPayload);
+  const { data: insertedItems, error: itemsError } = await supabase
+    .from("order_item")
+    .insert(itemsPayload)
+    .select("id, quantity, item_id");
 
   if (itemsError) {
     return { error: itemsError.message };
+  }
+
+  // Auto-create one trackable garment per physical piece so a printable
+  // tag (with barcode) is ready the moment the order is placed.
+  const totalPieces = (insertedItems || []).reduce((sum, it: any) => sum + Number(it.quantity), 0);
+  if (totalPieces > 0) {
+    const { data: tagCodes, error: tagError } = await supabase.rpc("generate_garment_tags", {
+      p_count: totalPieces,
+    });
+
+    if (!tagError && tagCodes) {
+      const codes = [...(tagCodes as string[])];
+      const garmentsPayload = (insertedItems || []).flatMap((it: any) =>
+        Array.from({ length: Number(it.quantity) }, () => ({
+          order_item_id: it.id,
+          item_id: it.item_id,
+          tag_code: codes.shift(),
+        }))
+      );
+      const { error: garmentError } = await supabase.from("garment").insert(garmentsPayload);
+      if (garmentError) console.error("garment auto-create failed:", garmentError);
+    } else if (tagError) {
+      console.error("generate_garment_tags failed:", tagError);
+    }
   }
 
   revalidatePath("/orders");
