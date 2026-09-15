@@ -57,6 +57,7 @@ export default async function OrdersPage() {
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Total</th>
               <th className="px-4 py-3">Placed</th>
+              <th className="px-4 py-3">Print</th>
             </tr>
           </thead>
           <tbody>
@@ -87,6 +88,25 @@ export default async function OrdersPage() {
                       month: "short",
                       year: "numeric",
                     })}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold">
+                      <Link
+                        href={`/orders/${o.id}/print/invoice`}
+                        target="_blank"
+                        className="text-accent hover:underline"
+                      >
+                        Invoice
+                      </Link>
+                      <span className="text-ink/20">|</span>
+                      <Link
+                        href={`/orders/${o.id}/print/tags`}
+                        target="_blank"
+                        className="text-accent hover:underline"
+                      >
+                        Tags
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );
