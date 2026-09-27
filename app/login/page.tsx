@@ -11,7 +11,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
+      className="w-full rounded-full bg-[#efe8da] px-4 py-3 text-sm font-semibold text-navy shadow-sm transition hover:bg-white disabled:opacity-60"
     >
       {pending ? "Signing in..." : "Sign in"}
     </button>
@@ -35,7 +35,7 @@ function LoginForm() {
           name="email"
           required
           autoComplete="username"
-          className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-brass-2 focus:ring-2 focus:ring-brass-2/30"
           placeholder="you@thelondonwash.com"
         />
       </div>
@@ -48,7 +48,7 @@ function LoginForm() {
           name="password"
           required
           autoComplete="current-password"
-          className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-accent"
+          className="w-full rounded-[10px] border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-brass-2 focus:ring-2 focus:ring-brass-2/30"
           placeholder="********"
         />
       </div>
@@ -66,16 +66,25 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-sidebar px-4">
-      <div className="w-full max-w-sm rounded-xl border border-white/10 bg-[#26221f] p-8 shadow-xl">
-        <div className="mb-6 flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-          <span className="font-archivo text-lg font-extrabold tracking-tight text-white">
-            The London Wash
+    <main className="lw-login flex min-h-screen items-center justify-center bg-[radial-gradient(90%_60%_at_50%_35%,#1e2d4d_0%,#101828_70%)] px-4">
+      <div className="w-full max-w-sm rounded-[20px] border border-white/10 bg-[#141d31]/90 p-8 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.8)]">
+        <div className="mb-8 flex items-stretch gap-3 leading-[0.92] text-[#efe8da]">
+          <span className="font-archivo text-[15px] font-extrabold uppercase tracking-[0.06em]">
+            The
+            <br />
+            London
+            <br />
+            Wash
+          </span>
+          <span className="w-px bg-current opacity-50" />
+          <span className="self-center font-display text-[15px] italic leading-[1.02]">
+            the art
+            <br />
+            of laundry
           </span>
         </div>
-        <h1 className="mb-1 text-xl font-extrabold text-white">Sign in</h1>
-        <p className="mb-6 text-sm text-white/50">Admin console &middot; staff access only</p>
+        <h1 className="mb-1 font-display text-[30px] font-medium leading-tight text-[#efe8da]">Sign in</h1>
+        <p className="mb-6 text-sm text-white/50">Operations console &middot; staff access only</p>
 
         <Suspense fallback={<div className="text-sm text-white/40">Loading...</div>}>
           <LoginForm />
