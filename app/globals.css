@@ -3,13 +3,132 @@
 @tailwind utilities;
 
 :root {
-  --accent: #ec3013;
-  --ok: #189a5b;
-  --warn: #dd9a0c;
-  --danger: #d1373f;
-  --info: #3d6fe0;
+  --accent: #15213a;
+  --ok: #2c6a4e;
+  --warn: #8a5a12;
+  --danger: #9c3326;
+  --info: #2b5584;
+
+  --lw-navy: #15213a;
+  --lw-brass: #9a8358;
+  --lw-brass-2: #c7b58f;
+  --lw-ivory: #f8f5ef;
+  --lw-beige: #f2ede4;
+  --lw-hair: #e3dbcd;
+  --lw-hair-2: #d2c8b6;
+  --lw-text: #1a1d23;
+  --lw-text-2: #5b574f;
+  --lw-text-3: #8a857a;
 }
 
 body {
   font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   Console theme. Scoped to .lw-console (app/(app)/layout.tsx) and
+   .lw-login so print routes are never affected.
+   ------------------------------------------------------------------ */
+.lw-console,
+.lw-login {
+  font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.lw-console {
+  background: var(--lw-ivory);
+  color: var(--lw-text);
+}
+.lw-console :focus-visible {
+  outline: 2px solid var(--lw-brass);
+  outline-offset: 2px;
+}
+
+/* Page titles in the display serif */
+.lw-main h1 {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 500;
+  font-size: 2.125rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.lw-main h2 {
+  letter-spacing: -0.005em;
+}
+
+/* Cards: hairline borders, soft radius, quiet shadow */
+.lw-main .border-2 {
+  border-width: 1px;
+}
+.lw-main .border-black\/10,
+.lw-main .border-black\/5 {
+  border-color: var(--lw-hair);
+}
+.lw-main section.bg-white,
+.lw-main div.bg-white.border-2,
+.lw-main div.bg-white.border {
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(21, 33, 58, 0.04), 0 10px 28px -18px rgba(21, 33, 58, 0.2);
+}
+
+/* Tables */
+.lw-main .border-b-2 {
+  border-bottom-width: 1px;
+}
+.lw-main thead th {
+  color: var(--lw-text-3);
+  letter-spacing: 0.08em;
+}
+.lw-main tbody tr:hover > td {
+  background: rgba(242, 237, 228, 0.55);
+}
+
+/* Buttons: navy pills */
+.lw-main .bg-slate-900 {
+  background-color: var(--lw-navy);
+}
+.lw-main button.bg-slate-900,
+.lw-main summary.bg-slate-900,
+.lw-main a.bg-slate-900,
+.lw-main button.bg-accent,
+.lw-main a.bg-accent,
+.lw-main summary.bg-accent {
+  border-radius: 999px;
+}
+
+/* Form controls */
+.lw-main input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.lw-main select,
+.lw-main textarea {
+  border-color: var(--lw-hair-2);
+  border-radius: 10px;
+  background-color: #fff;
+}
+.lw-main input:not([type="checkbox"]):not([type="radio"]):focus,
+.lw-main select:focus,
+.lw-main textarea:focus {
+  border-color: var(--lw-brass);
+  box-shadow: 0 0 0 3px rgba(154, 131, 88, 0.18);
+  outline: none;
+}
+.lw-main input[type="checkbox"],
+.lw-main input[type="radio"] {
+  accent-color: var(--lw-navy);
+}
+
+/* Popover forms opened from "+ Add" buttons */
+.lw-main details > form.absolute,
+.lw-main details > div.absolute {
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -24px rgba(21, 33, 58, 0.45);
+}
+
+/* Sidebar scrollbar */
+.lw-nav::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.lw-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
 }

@@ -34,10 +34,10 @@ const channelLabels: Record<string, string> = {
   phone: "Phone",
 };
 const CHANNEL_COLORS: Record<string, string> = {
-  pos_counter: "#201e1d",
-  portal: "#ec3013",
-  whatsapp: "#7d7979",
-  phone: "#bab6b6",
+  pos_counter: "#15213a",
+  portal: "#9a8358",
+  whatsapp: "#7f8fa0",
+  phone: "#cdbfa5",
 };
 const LIVE_STATUSES = ["confirmed", "in_production", "ready", "out_for_delivery"];
 const stageLabels: Record<string, string> = {
