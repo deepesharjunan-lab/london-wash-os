@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadConfig, loadServices, loadTiers } from "@/lib/loyalty/data";
-import { campaignStatus, inr } from "@/lib/loyalty/engine";
+import { campaignStatus, computeEarning, inr, pts } from "@/lib/loyalty/engine";
+import type { ClubCampaign, ClubConfig } from "@/lib/loyalty/engine";
 import { createCampaign, removeCampaign, saveCampaign, toggleCampaign } from "../actions";
 import { btnPrimary, btnSecondary, Card, ClubHeader, Field, inputCls, StatusPill } from "../ui";
 
@@ -21,9 +22,11 @@ type Campaign = {
   is_enabled: boolean;
   message: string | null;
   perk: string | null;
+  max_bonus_points: number | null;
+  stackable: boolean;
 };
 
-const OCCASIONS = ["Onam", "Vishu", "Eid", "Christmas", "Wedding season", "School reopening", "Monsoon", "Other"];
+const OCCASIONS = ["Onam", "Vishu", "Eid", "Christmas", "Wedding season", "School reopening", "Monsoon", "Customer anniversary", "Store anniversary", "Special promotion", "Other"];
 const ORDER: Record<string, number> = { live: 0, scheduled: 1, off: 2, ended: 3 };
 const rs = (minor: number) => String(Math.round(minor) / 100);
 
@@ -35,7 +38,7 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
     loadServices(supabase),
     supabase
       .from("loyalty_campaign")
-      .select("id, name, occasion, campaign_type, multiplier, bonus_points, min_order_minor, service_ids, min_tier_id, starts_on, ends_on, is_enabled, message, perk")
+      .select("id, name, occasion, campaign_type, multiplier, bonus_points, min_order_minor, service_ids, min_tier_id, starts_on, ends_on, is_enabled, message, perk, max_bonus_points, stackable")
       .is("deleted_at", null),
   ]);
   const campaigns = ((res.data ?? []) as Campaign[]).sort(
@@ -68,11 +71,14 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
           const st = campaignStatus(c);
           const offer = c.campaign_type === "multiplier" ? `${Number(c.multiplier)}× points` : `+${c.bonus_points} points`;
           const scope = c.service_ids && c.service_ids.length ? c.service_ids.map((s) => svcName.get(s) ?? "").filter(Boolean).join(", ") : "All services";
-          // Example: a ₹1,800 order from the second tier
-          const base = cfg ? Math.floor(180000 / cfg.spend_per_point_minor) : 18;
-          const tierMult = elite ? Number(elite.points_multiplier) : 1;
-          const normal = Math.floor(base * tierMult);
-          const extra = c.campaign_type === "multiplier" ? Math.floor(base * (Number(c.multiplier) - 1)) : 180000 >= c.min_order_minor ? c.bonus_points : 0;
+          // Example: a Rs 2,000 order from the second tier, calculated by the real engine
+          const exCfg = cfg ? ({ ...cfg, campaigns_stack: true, max_promo_points_per_order: null, max_points_per_order: null } as ClubConfig) : null;
+          const byService: Record<string, number> = {};
+          if (c.service_ids && c.service_ids[0]) byService[c.service_ids[0]] = 200000;
+          const exDate = c.starts_on;
+          const campaignForExample = { ...(c as unknown as ClubCampaign), is_enabled: true };
+          const normal = exCfg && elite ? computeEarning(exCfg, tiers, elite, [], { eligibleMinor: 200000, eligibleByService: byService, orderDate: exDate }).total : 0;
+          const withCampaign = exCfg && elite ? computeEarning(exCfg, tiers, elite, [campaignForExample], { eligibleMinor: 200000, eligibleByService: byService, orderDate: exDate }).total : 0;
           return (
             <details key={c.id} className="group border border-black/10 bg-white [border-radius:14px]">
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-4 px-5 py-4">
@@ -90,7 +96,7 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
               <div className="space-y-4 border-t border-black/5 px-5 py-5">
                 {elite && (
                   <div className="rounded-xl bg-beige px-4 py-3 text-[13px] text-ink">
-                    A {inr(180000)} order from an {elite.name} member earns <b>{normal + extra} points</b> during this campaign, instead of {normal}.
+                    A {inr(200000)} order from an {elite.name} member earns <b>{pts(cfg, withCampaign)} points</b> during this campaign, instead of {pts(cfg, normal)}.
                   </div>
                 )}
                 <form action={saveCampaign} className="space-y-4">
@@ -107,6 +113,7 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
                     <Field label="Multiplier" hint="Used when the type is multiplier"><input className={inputCls} type="number" min={1} step={0.1} name="multiplier" defaultValue={Number(c.multiplier)} /></Field>
                     <Field label="Bonus points" hint="Used when the type is bonus"><input className={inputCls} type="number" min={0} name="bonus_points" defaultValue={c.bonus_points} /></Field>
                     <Field label="Minimum order (₹)"><input className={inputCls} type="number" min={0} name="min_order" defaultValue={rs(c.min_order_minor)} /></Field>
+                    <Field label="Maximum bonus points" hint="Per order; empty = no cap"><input className={inputCls} type="number" min={0} step={0.5} name="max_bonus_points" defaultValue={c.max_bonus_points ?? ""} /></Field>
                     <Field label="Eligible tiers">
                       <select className={inputCls} name="min_tier_id" defaultValue={c.min_tier_id ?? ""}>
                         <option value="">All members</option>
@@ -130,6 +137,7 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
                   </fieldset>
                   <div className="flex flex-wrap items-center gap-4">
                     <label className="flex items-center gap-2 text-[13.5px] text-ink"><input type="checkbox" name="is_enabled" defaultChecked={c.is_enabled} /> Switched on</label>
+                    <label className="flex items-center gap-2 text-[13.5px] text-ink"><input type="checkbox" name="stackable" defaultChecked={c.stackable} /> Can stack with other campaigns</label>
                     <button type="submit" className={btnPrimary + " ml-auto"}>Save campaign</button>
                   </div>
                 </form>
