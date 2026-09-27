@@ -1,7 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ClubConfig, ClubTier, Qualifying } from "./engine";
 
-type Supa = ReturnType<typeof createClient>;
+// Staff session client or service-role client.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Supa = SupabaseClient<any, "public", any>;
 
 export async function loadConfig(supabase: Supa): Promise<ClubConfig | null> {
   const { data } = await supabase
@@ -101,6 +103,22 @@ export async function loadPointsOutstanding(supabase: Supa) {
     if (rows.length < pageSize) break;
   }
   return total;
+}
+
+export async function loadItems(supabase: Supa) {
+  const out: { id: string; name: string; category: string | null }[] = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data } = await supabase
+      .from("item")
+      .select("id, name, category")
+      .is("deleted_at", null)
+      .order("name", { ascending: true })
+      .range(from, from + 999);
+    const rows = (data ?? []) as { id: string; name: string; category: string | null }[];
+    out.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  return out;
 }
 
 export async function loadServices(supabase: Supa) {
