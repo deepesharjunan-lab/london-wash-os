@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { onCustomerCreated } from "@/lib/loyalty/ledger";
 
 type CartLine = {
   price_list_entry_id: string;
@@ -154,6 +155,8 @@ export async function createCustomerQuick(input: { full_name: string; phone: str
   if (error || !created) {
     return { error: error?.message || "Failed to create customer." };
   }
+
+  await onCustomerCreated(supabase, created.id); // loyalty wallet + New Member Bonus; never throws
 
   revalidatePath("/customers");
 

@@ -24,6 +24,13 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
     ],
   },
   {
+    section: "Loyalty",
+    items: [
+      { href: "/club", label: "Loyalty Club" },
+      { href: "/loyalty", label: "Accounts & Subscriptions" },
+    ],
+  },
+  {
     section: "Production",
     items: [
       { href: "/production", label: "Production Board" },
@@ -37,7 +44,6 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
     section: "Money",
     items: [
       { href: "/wallet", label: "Membership & Wallet" },
-      { href: "/loyalty", label: "Loyalty & Subscriptions" },
       { href: "/payroll", label: "Payroll & Leave" },
       { href: "/incentives", label: "Staff Incentives" },
       { href: "/complaints", label: "Complaints & Refunds" },

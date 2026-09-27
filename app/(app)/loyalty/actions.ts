@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { adjust, loadCtx } from "@/lib/loyalty/ledger";
 
 export async function addLoyaltyTier(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
@@ -47,29 +48,19 @@ export async function adjustLoyaltyPoints(formData: FormData) {
   if (!points) return;
   const type = String(formData.get("type") || "adjustment");
 
+  // Goes through the audited points ledger (status, reason, balance after).
   const supabase = createClient();
   const { data: account } = await supabase
     .from("loyalty_account")
-    .select("points_balance")
+    .select("customer_id")
     .eq("id", loyalty_account_id)
     .single();
   if (!account) return;
-
-  const balance_after = account.points_balance + points;
-
-  const { error: txnError } = await supabase.from("loyalty_transaction").insert({
-    loyalty_account_id,
-    type,
-    points,
-    balance_after,
-  });
-  if (txnError) console.error(txnError);
-
-  const { error: updateError } = await supabase
-    .from("loyalty_account")
-    .update({ points_balance: balance_after })
-    .eq("id", loyalty_account_id);
-  if (updateError) console.error(updateError);
+  const ctx = await loadCtx(supabase);
+  if (!ctx) return;
+  const signed = type === "redeem" ? -Math.abs(points) : points;
+  const label = type === "earn" ? "Points added by staff" : type === "redeem" ? "Points used by staff" : "Staff adjustment";
+  await adjust(ctx, (account as { customer_id: string }).customer_id, signed, label);
 
   revalidatePath("/loyalty");
 }

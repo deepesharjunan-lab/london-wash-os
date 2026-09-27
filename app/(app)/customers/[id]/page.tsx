@@ -62,9 +62,14 @@ export default async function CustomerDetailPage({
           <h1 className="font-archivo text-2xl font-extrabold text-ink">{customer.full_name}</h1>
           <p className="mt-1 text-sm text-ink/60">{customer.phone}{customer.email ? ` · ${customer.email}` : ""}</p>
         </div>
-        <Link href="/customers" className="text-sm font-medium text-ink/60 hover:text-accent">
-          &larr; Back to customers
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href={`/club/members/${customer.id}`} className="rounded-full bg-navy px-4 py-1.5 text-[12.5px] font-semibold text-[#efe8da] hover:brightness-110">
+            Loyalty wallet
+          </Link>
+          <Link href="/customers" className="text-sm font-medium text-ink/60 hover:text-accent">
+            &larr; Back to customers
+          </Link>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

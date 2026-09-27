@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { onCustomerCreated } from "@/lib/loyalty/ledger";
 
 export async function createCustomer(
   _prevState: { error?: string } | undefined,
@@ -52,6 +53,8 @@ export async function createCustomer(
   if (error) {
     return { error: error.message };
   }
+
+  await onCustomerCreated(supabase, created.id); // loyalty wallet + New Member Bonus; never throws
 
   redirect(`/customers/${created.id}`);
 }
