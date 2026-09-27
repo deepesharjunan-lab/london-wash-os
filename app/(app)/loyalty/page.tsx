@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import {
-  addLoyaltyTier,
   enrollLoyaltyAccount,
   adjustLoyaltyPoints,
   addSubscriptionPlan,
@@ -65,40 +64,13 @@ export default async function LoyaltyPage() {
         <div className="border-b-2 border-black/10 px-5 py-3 font-archivo text-[13.5px] font-bold text-ink">
           Loyalty Tiers
         </div>
-        <details className="border-b border-black/5">
-          <summary className="cursor-pointer select-none px-5 py-3 text-[13px] font-semibold text-accent">
-            + Add Tier
-          </summary>
-          <form
-            action={addLoyaltyTier}
-            className="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <input
-              name="name"
-              required
-              placeholder="e.g. Gold"
-              className="border border-black/10 px-3 py-2 text-[13px]"
-            />
-            <input
-              name="min_points"
-              type="number"
-              step="1"
-              placeholder="Min points"
-              className="border border-black/10 px-3 py-2 text-[13px]"
-            />
-            <input
-              name="perk_description"
-              placeholder="Perk description"
-              className="border border-black/10 px-3 py-2 text-[13px] sm:col-span-2 lg:col-span-1"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:brightness-110"
-            >
-              Add
-            </button>
-          </form>
-        </details>
+        <div className="border-b border-black/5 px-5 py-3 text-[13px] text-ink/70">
+          Tiers are managed in{" "}
+          <a href="/club/tiers" className="font-semibold text-accent hover:underline">
+            Loyalty Club → Tiers &amp; benefits
+          </a>
+          .
+        </div>
         <table className="w-full text-left text-[13px]">
           <thead className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
             <tr>
