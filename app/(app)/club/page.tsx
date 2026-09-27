@@ -3,12 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { loadConfig, loadCustomers, loadPointsOutstanding, loadQualifying, loadTiers } from "@/lib/loyalty/data";
 import { campaignStatus, gapToNext, inr, num, tierColor, tierIndex } from "@/lib/loyalty/engine";
 import { Card, ClubHeader, Kpi, StatusPill } from "./ui";
+import { settleAll } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default async function ClubOverviewPage() {
+export default async function ClubOverviewPage({ searchParams }: { searchParams: { saved?: string } }) {
   const supabase = createClient();
   const [cfg, tiers] = await Promise.all([loadConfig(supabase), loadTiers(supabase)]);
 
@@ -70,7 +71,13 @@ export default async function ClubOverviewPage() {
         current="/club"
         title="Loyalty Club"
         sub={`Every customer is placed in a tier from their ${modeLabel} over the last ${cfg.qualification_period_months} months, using the levels on Tiers & benefits. Orders that are drafts or cancelled don't count.`}
+        saved={searchParams.saved}
       />
+
+      <form action={settleAll} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-beige px-4 py-3 text-[13px] text-ink">
+        <span>Points expire {cfg.points_expiry_months} months after they&apos;re earned. Expiry and birthday bonuses are checked on every order; run a full check here any time.</span>
+        <button type="submit" className="rounded-full border border-hair-2 bg-white px-4 py-1.5 text-[12.5px] font-semibold text-ink hover:bg-ivory">Run expiry &amp; birthday check</button>
+      </form>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Kpi label="Members" value={num(totalMembers)} note="Every customer is a member" />
@@ -81,7 +88,7 @@ export default async function ClubOverviewPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi label="Points outstanding" value={num(pointsOutstanding)} note="Across loyalty accounts" />
+        <Kpi label="Points outstanding" value={pointsOutstanding.toLocaleString("en-IN", { maximumFractionDigits: cfg.points_display_decimals ?? 1 })} note="Available across all wallets" />
         <Kpi label="Points liability" value={inr(pointsOutstanding * cfg.point_value_minor)} note={`At ${inr(cfg.point_value_minor * 100)} per 100 points`} />
         <Kpi label="Rewards live" value={num(liveRewards)} note={`${rewards.length} in the catalogue`} />
         <Kpi label="Campaigns live" value={num(campaigns.filter((c) => campaignStatus(c) === "live").length)} note={`${campaigns.length} set up`} />

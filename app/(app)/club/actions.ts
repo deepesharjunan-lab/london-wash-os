@@ -2,6 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { adjust, ensureAccount, loadCtx, recordReview, redeem, settleAccount } from "@/lib/loyalty/ledger";
+import type { Account } from "@/lib/loyalty/ledger";
 
 // Form helpers. Rupee inputs are converted to paise (minor units).
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -20,6 +22,9 @@ const rupees = (f: FormData, k: string, d = 0) => {
 };
 const rupeesOrNull = (f: FormData, k: string) => (str(f, k) === "" ? null : rupees(f, k));
 const bool = (f: FormData, k: string) => f.get(k) === "on" || f.get(k) === "true";
+/** "250, 500, 1000" -> [250, 500, 1000], sorted, positive whole numbers only. */
+const intList = (s: string) =>
+  Array.from(new Set(s.split(/[\s,]+/).map((x) => Math.round(Number(x))).filter((n) => Number.isFinite(n) && n > 0))).sort((a, b) => a - b);
 
 function done(path: string, msg: string): never {
   revalidatePath(path);
@@ -44,7 +49,8 @@ export async function saveRules(f: FormData) {
       downgrade_grace_days: Math.max(0, int(f, "downgrade_grace_days", 30)),
       family_orders_count: bool(f, "family_orders_count"),
       spend_per_point_minor: Math.max(100, rupees(f, "spend_per_point", 10000)),
-      point_value_minor: Math.max(0, rupees(f, "point_value", 12)),
+      // Entered as "value of 100 points" in rupees; stored per point in paise.
+      point_value_minor: Math.max(0, Math.round(rupees(f, "point_value_100", 1000) / 100)),
       points_expiry_months: Math.max(1, int(f, "points_expiry_months", 12)),
       max_redeem_pct: Math.min(100, Math.max(1, int(f, "max_redeem_pct", 50))),
       redeem_step_points: Math.max(1, int(f, "redeem_step_points", 100)),
@@ -64,6 +70,24 @@ export async function saveRules(f: FormData) {
       birthday_perk: str(f, "birthday_perk") || "Free pickup & delivery",
       delivery_fee_minor: Math.max(0, rupees(f, "delivery_fee")),
       free_delivery_above_minor: Math.max(0, rupees(f, "free_delivery_above")),
+      points_display_decimals: Math.min(2, Math.max(0, int(f, "points_display_decimals", 1))),
+      min_redeem_balance: Math.max(0, int(f, "min_redeem_balance", 250)),
+      redemption_denominations: intList(str(f, "redemption_denominations")),
+      max_points_per_order: str(f, "max_points_per_order") === "" ? null : Math.max(0, dec(f, "max_points_per_order", 0)),
+      max_promo_points_per_order: str(f, "max_promo_points_per_order") === "" ? null : Math.max(0, dec(f, "max_promo_points_per_order", 0)),
+      bonus_referral_points: Math.max(0, int(f, "bonus_referral_points")),
+      bonus_referral_friend_points: Math.max(0, int(f, "bonus_referral_friend_points")),
+      bonus_tier_upgrade_points: Math.max(0, int(f, "bonus_tier_upgrade_points")),
+      expiry_warning_days: Math.max(1, int(f, "expiry_warning_days", 30)),
+      expiry_reminder_days: intList(str(f, "expiry_reminder_days")),
+      app_order_channels: f.getAll("app_order_channels").map(String),
+      eligible_service_ids: f.getAll("eligible_service_ids").map(String).filter(Boolean),
+      campaigns_stack: bool(f, "campaigns_stack"),
+      birthday_stacks_with_campaigns: bool(f, "birthday_stacks_with_campaigns"),
+      reverse_on_cancel: bool(f, "reverse_on_cancel"),
+      reverse_on_refund: bool(f, "reverse_on_refund"),
+      allow_negative_balance: bool(f, "allow_negative_balance"),
+      earning_starts_on: str(f, "earning_starts_on") || new Date().toISOString().slice(0, 10),
     })
     .eq("id", id);
   if (error) {
@@ -204,6 +228,9 @@ const OCCASIONS: Record<string, { name: string; type: "multiplier" | "bonus"; mu
   "Wedding season": { name: "Wedding Season Privileges", type: "multiplier", mult: 1.5, bonus: 0, message: "1.5× points on wedding wear and saree care." },
   "School reopening": { name: "Back to School Rewards", type: "bonus", mult: 1, bonus: 75, message: "75 bonus points on uniform washing and ironing." },
   Monsoon: { name: "Monsoon Care Week", type: "multiplier", mult: 1.5, bonus: 0, message: "1.5× points on wash & fold, shoe and curtain cleaning." },
+  "Customer anniversary": { name: "Anniversary Double Points", type: "multiplier", mult: 2, bonus: 0, message: "Double points in the month of your Club anniversary." },
+  "Store anniversary": { name: "Store Anniversary Triple Points", type: "multiplier", mult: 3, bonus: 0, message: "Triple points to celebrate our store anniversary." },
+  "Special promotion": { name: "Double Points Weekend", type: "multiplier", mult: 2, bonus: 0, message: "Double points on every order this weekend." },
   Other: { name: "New campaign", type: "bonus", mult: 1, bonus: 50, message: "50 bonus points on every order." },
 };
 export async function createCampaign(f: FormData) {
@@ -253,6 +280,8 @@ export async function saveCampaign(f: FormData) {
       starts_on,
       ends_on,
       is_enabled: bool(f, "is_enabled"),
+      max_bonus_points: str(f, "max_bonus_points") === "" ? null : Math.max(0, dec(f, "max_bonus_points", 0)),
+      stackable: bool(f, "stackable"),
       message: str(f, "message") || null,
       perk: str(f, "perk") || null,
     })
@@ -276,6 +305,99 @@ export async function removeCampaign(f: FormData) {
   const { error } = await supabase.from("loyalty_campaign").update({ deleted_at: new Date().toISOString(), is_enabled: false }).eq("id", str(f, "id"));
   if (error) console.error(error);
   done("/club/campaigns", "Campaign removed.");
+}
+
+export async function deleteReward(f: FormData) {
+  const supabase = createClient();
+  const { error } = await supabase.from("reward").update({ deleted_at: new Date().toISOString(), is_active: false }).eq("id", str(f, "id"));
+  if (error) {
+    console.error(error);
+    fail("/club/rewards", "Couldn't delete the reward.");
+  }
+  done("/club/rewards", "Reward deleted. Vouchers already issued stay valid.");
+}
+
+/* ---------------- Members (wallet) ---------------- */
+export async function redeemForMember(f: FormData) {
+  const customerId = str(f, "customer_id");
+  const path = `/club/members/${customerId}`;
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) fail(path, "The Club isn't set up yet.");
+  const rewardId = str(f, "reward_id");
+  const res = await redeem(ctx, customerId, rewardId ? { rewardId } : { points: int(f, "points") });
+  if (res.error) fail(path, res.error);
+  done(path, `Redeemed. Voucher ${res.code} is worth ₹${Math.round((res.value ?? 0) / 100)}. Apply it as a discount on the order.`);
+}
+
+export async function adjustMember(f: FormData) {
+  const customerId = str(f, "customer_id");
+  const path = `/club/members/${customerId}`;
+  const points = dec(f, "points", 0);
+  const reason = str(f, "reason") || "Staff adjustment";
+  if (!points) fail(path, "Enter a number of points, positive to add or negative to remove.");
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) fail(path, "The Club isn't set up yet.");
+  const row = await adjust(ctx, customerId, points, reason);
+  if (!row) fail(path, "Couldn't record the adjustment.");
+  done(path, `${points > 0 ? "Added" : "Removed"} ${Math.abs(points)} points: ${reason}.`);
+}
+
+export async function reviewForMember(f: FormData) {
+  const customerId = str(f, "customer_id");
+  const path = `/club/members/${customerId}`;
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) fail(path, "The Club isn't set up yet.");
+  const res = await recordReview(ctx, str(f, "order_id"), Math.min(5, Math.max(1, int(f, "stars", 5))), str(f, "body") || null);
+  if (res.error) fail(path, res.error);
+  done(path, res.awarded ? `Review saved. ${res.awarded} points added.` : "Review saved. It was outside the review window, so no points were added.");
+}
+
+export async function settleMember(f: FormData) {
+  const customerId = str(f, "customer_id");
+  const path = `/club/members/${customerId}`;
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) fail(path, "The Club isn't set up yet.");
+  const acct = await ensureAccount(ctx, customerId);
+  if (acct) await settleAccount(ctx, acct);
+  done(path, "Wallet checked: due points expired and any birthday bonus added.");
+}
+
+/** Runs expiry and birthday checks for every wallet with points or a birthday this month. */
+export async function settleAll() {
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) fail("/club", "The Club isn't set up yet.");
+  const accounts: Account[] = [];
+  for (let from = 0; from < 100000; from += 1000) {
+    const { data } = await supabase
+      .from("loyalty_account")
+      .select("id, customer_id, loyalty_tier_id, points_balance, pending_balance, lifetime_points, redeemed_points, expired_points, reversed_points, member_no")
+      .order("id")
+      .range(from, from + 999);
+    const rows = (data ?? []) as Account[];
+    accounts.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  let checked = 0;
+  for (const a of accounts) {
+    if (Number(a.points_balance) > 0) {
+      await settleAccount(ctx, a);
+      checked++;
+    }
+  }
+  // Birthday bonuses for members who have no wallet yet.
+  const month = String(new Date().getMonth() + 1).padStart(2, "0");
+  const { data: bdays } = await supabase.from("customer").select("id, birth_date").not("birth_date", "is", null).is("deleted_at", null);
+  for (const c of (bdays ?? []) as { id: string; birth_date: string }[]) {
+    if (c.birth_date.slice(5, 7) !== month) continue;
+    const acct = await ensureAccount(ctx, c.id);
+    if (acct) await settleAccount(ctx, acct);
+  }
+  done("/club", `Checked ${checked} wallets with points: expired points removed and birthday bonuses added.`);
 }
 
 /* ---------------- Automations ---------------- */
