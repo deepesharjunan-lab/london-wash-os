@@ -36,7 +36,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = path === "/login" || path.startsWith("/_next") || path.startsWith("/api/public");
+  // /my is the customer app (it has its own sign-in and session), and
+  // /api/cron is the nightly job (it checks Vercel's cron credentials).
+  const isCustomerApp = path === "/my" || path.startsWith("/my/");
+  const isPublic =
+    path === "/login" ||
+    path.startsWith("/_next") ||
+    path.startsWith("/api/public") ||
+    path.startsWith("/api/cron/") ||
+    isCustomerApp;
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

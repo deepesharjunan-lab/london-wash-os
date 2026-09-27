@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { loadConfig, loadServices, loadTiers } from "@/lib/loyalty/data";
+import { loadConfig, loadItems, loadServices, loadTiers } from "@/lib/loyalty/data";
 import { computeEarning, inr, pts } from "@/lib/loyalty/engine";
 import type { ClubConfig } from "@/lib/loyalty/engine";
 import { saveRules } from "../actions";
@@ -12,7 +12,7 @@ const CHANNELS: [string, string][] = [["portal", "Customer app / portal"], ["wha
 
 export default async function ClubRulesPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
   const supabase = createClient();
-  const [raw, tiers, services] = await Promise.all([loadConfig(supabase), loadTiers(supabase), loadServices(supabase)]);
+  const [raw, tiers, services, items] = await Promise.all([loadConfig(supabase), loadTiers(supabase), loadServices(supabase), loadItems(supabase)]);
   if (!raw) {
     return <ClubHeader current="/club/rules" title="Loyalty rules" sub="No rules row found. Run the Club setup scripts first." />;
   }
@@ -30,6 +30,7 @@ export default async function ClubRulesPage({ searchParams }: { searchParams: { 
     e: computeEarning(cfg, tiers, t, [], { eligibleMinor: example, eligibleByService: {}, orderDate: new Date().toISOString() }),
   }));
   const eligibleSvc = new Set(cfg.eligible_service_ids);
+  const excluded = new Set(cfg.excluded_item_ids);
 
   const modes: [string, string, string][] = [
     ["spend", "Annual spend", "Members qualify on money spent in the period"],
@@ -104,6 +105,23 @@ export default async function ClubRulesPage({ searchParams }: { searchParams: { 
             </Field>
             <Field label="Earning starts on" hint="Orders delivered from this date earn points"><input className={inputCls} type="date" name="earning_starts_on" defaultValue={cfg.earning_starts_on} /></Field>
           </div>
+          <details className="mt-5 rounded-xl border border-hair bg-white" open={excluded.size > 0}>
+            <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-semibold text-ink">
+              Products that never earn points{excluded.size ? ` · ${excluded.size} excluded` : " · none excluded"}
+              <span className="block text-[12px] font-normal text-ink-3">For example gift cards, packaging or resale products. Ticked products are left out of eligible spend.</span>
+            </summary>
+            <div className="max-h-72 overflow-y-auto border-t border-hair px-4 py-3">
+              <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((it) => (
+                  <label key={it.id} className="flex items-center gap-2 text-[12.5px] text-ink">
+                    <input type="checkbox" name="excluded_item_ids" value={it.id} defaultChecked={excluded.has(it.id)} />
+                    <span className="truncate">{it.name}{it.category ? <span className="text-ink-3"> · {it.category}</span> : null}</span>
+                  </label>
+                ))}
+                {items.length === 0 && <span className="text-[12.5px] text-ink-3">No products found in Services &amp; Prices.</span>}
+              </div>
+            </div>
+          </details>
           <fieldset className="mt-5">
             <legend className="mb-2 text-[12.5px] font-semibold text-ink-2">Eligible services (none ticked = all services earn points)</legend>
             <div className="flex flex-wrap gap-2">

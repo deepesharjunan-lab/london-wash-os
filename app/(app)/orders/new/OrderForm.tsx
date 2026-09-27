@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createOrder, createCustomerQuick } from "./actions";
+import { createOrder, createCustomerQuick, getCheckoutLoyalty } from "./actions";
+
+type Loyalty = {
+  available: number;
+  pointValueMinor: number;
+  minRedeem: number;
+  maxRedeemPct: number;
+  denominations: number[];
+  vouchers: { code: string; label: string; valueMinor: number; minOrderMinor: number }[];
+};
 
 type Customer = { id: string; full_name: string; phone: string };
 type PriceListProfile = { id: string; name: string; is_default: boolean | null };
@@ -89,6 +98,51 @@ export default function OrderForm({
   }, [entriesForProfile, lineServiceId]);
 
   const subtotalMinor = cart.reduce((sum, l) => sum + l.unit_price_minor * l.quantity, 0);
+
+  // Loyalty: points and vouchers for the selected customer
+  const [loyalty, setLoyalty] = useState<Loyalty | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [redeemPoints, setRedeemPoints] = useState(0);
+  const [voucherCode, setVoucherCode] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    setLoyalty(null);
+    setRedeemPoints(0);
+    setVoucherCode("");
+    if (!customerId) return;
+    setLoyaltyLoading(true);
+    getCheckoutLoyalty(customerId)
+      .then((l) => {
+        if (!cancelled) setLoyalty(l as Loyalty | null);
+      })
+      .catch(() => {
+        if (!cancelled) setLoyalty(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoyaltyLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId]);
+
+  const voucher = loyalty?.vouchers.find((v) => v.code === voucherCode) ?? null;
+  const voucherMinor = voucher && subtotalMinor >= voucher.minOrderMinor ? Math.min(voucher.valueMinor, subtotalMinor) : 0;
+  const pointsMinor = loyalty ? Math.round(redeemPoints * loyalty.pointValueMinor) : 0;
+  const totalMinor = Math.max(0, subtotalMinor - voucherMinor - pointsMinor);
+  const pointOptions = loyalty
+    ? loyalty.denominations.filter(
+        (d) =>
+          loyalty.available >= loyalty.minRedeem &&
+          d <= loyalty.available &&
+          Math.round(d * loyalty.pointValueMinor) <= Math.floor((subtotalMinor * loyalty.maxRedeemPct) / 100) &&
+          Math.round(d * loyalty.pointValueMinor) <= subtotalMinor - voucherMinor
+      )
+    : [];
+  useEffect(() => {
+    if (redeemPoints && !pointOptions.includes(redeemPoints)) setRedeemPoints(0);
+    if (voucher && subtotalMinor < voucher.minOrderMinor) setVoucherCode("");
+  }, [subtotalMinor, redeemPoints, pointOptions, voucher]);
 
   function addLine() {
     setFormError(null);
@@ -187,6 +241,8 @@ export default function OrderForm({
           unit_price_minor: l.unit_price_minor,
           quantity: l.quantity,
         })),
+        redeem_points: redeemPoints || undefined,
+        voucher_code: voucherCode || undefined,
       });
       if (result && "error" in result && result.error) {
         setFormError(result.error);
@@ -395,9 +451,77 @@ export default function OrderForm({
             <span>Items</span>
             <span>{cart.reduce((n, l) => n + l.quantity, 0)}</span>
           </div>
+          <div className="flex items-center justify-between py-1 text-sm text-ink/60">
+            <span>Subtotal</span>
+            <span>{formatMinor(subtotalMinor)}</span>
+          </div>
+
+          {customerId && (
+            <div className="my-2 space-y-2 rounded-md border border-black/10 bg-black/[0.015] p-3">
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-ink/50">
+                <span>Loyalty</span>
+                <span className="normal-case tracking-normal">
+                  {loyaltyLoading
+                    ? "Loading…"
+                    : loyalty
+                      ? `${loyalty.available.toLocaleString("en-IN", { maximumFractionDigits: 1 })} points`
+                      : "No wallet yet"}
+                </span>
+              </div>
+              {loyalty && (
+                <>
+                  <select
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(Number(e.target.value))}
+                    disabled={pointOptions.length === 0}
+                    aria-label="Use points"
+                    className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent disabled:bg-black/[0.02]"
+                  >
+                    <option value={0}>
+                      {pointOptions.length ? "Don't use points" : loyalty.available < loyalty.minRedeem ? `Needs ${loyalty.minRedeem} points to redeem` : "Add items to use points"}
+                    </option>
+                    {pointOptions.map((d) => (
+                      <option key={d} value={d}>
+                        Use {d} points (−{formatMinor(Math.round(d * loyalty.pointValueMinor))})
+                      </option>
+                    ))}
+                  </select>
+                  {loyalty.vouchers.length > 0 && (
+                    <select
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value)}
+                      aria-label="Apply a voucher"
+                      className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
+                    >
+                      <option value="">No voucher</option>
+                      {loyalty.vouchers.map((v) => (
+                        <option key={v.code} value={v.code} disabled={subtotalMinor < v.minOrderMinor}>
+                          {v.code} · {v.label} (−{formatMinor(v.valueMinor)})
+                          {subtotalMinor < v.minOrderMinor ? ` · min ${formatMinor(v.minOrderMinor)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {voucherMinor > 0 && (
+            <div className="flex items-center justify-between py-1 text-sm text-ink/60">
+              <span>Voucher {voucherCode}</span>
+              <span>−{formatMinor(voucherMinor)}</span>
+            </div>
+          )}
+          {pointsMinor > 0 && (
+            <div className="flex items-center justify-between py-1 text-sm text-ink/60">
+              <span>{redeemPoints} points</span>
+              <span>−{formatMinor(pointsMinor)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between border-t border-black/5 py-2 text-base font-bold text-ink">
             <span>Total</span>
-            <span>{formatMinor(subtotalMinor)}</span>
+            <span>{formatMinor(totalMinor)}</span>
           </div>
           {formError && (
             <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{formError}</p>

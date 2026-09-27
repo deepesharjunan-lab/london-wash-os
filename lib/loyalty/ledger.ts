@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeEarning, pointsValueMinor, r2, tierIndex } from "./engine";
 import type { ClubCampaign, ClubConfig, ClubTier, Earning } from "./engine";
 import { loadConfig, loadTiers } from "./data";
@@ -8,7 +8,10 @@ import { loadConfig, loadTiers } from "./data";
 // to the original through related_transaction_id, so the full history can be
 // audited. Once-only awards are guarded by a unique bonus_key per account.
 
-type Supa = ReturnType<typeof createClient>;
+// Works with the staff session client and with the service-role client
+// (used by the nightly job and the customer app).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Supa = SupabaseClient<any, "public", any>;
 type Status = "pending" | "earned" | "redeemed" | "expired" | "reversed" | "cancelled";
 type Source =
   | "order" | "welcome" | "review" | "birthday" | "referral" | "campaign" | "reward" | "checkout"
@@ -219,11 +222,13 @@ export async function post(ctx: Ctx, acct: Account, p: PostInput): Promise<Ledge
     if (error.code !== "23505") console.error("loyalty post failed", error);
     return null;
   }
+  // Points given back after a cancelled checkout undo a redemption; they aren't new lifetime points.
+  const isReturn = p.status === "earned" && p.source === "checkout";
   const upd = {
     points_balance: balance,
     pending_balance: r2(Number(acct.pending_balance) + pending),
-    lifetime_points: r2(Number(acct.lifetime_points) + (p.status === "earned" && points > 0 ? points : 0)),
-    redeemed_points: r2(Number(acct.redeemed_points) + (p.status === "redeemed" ? -points : 0)),
+    lifetime_points: r2(Number(acct.lifetime_points) + (p.status === "earned" && points > 0 && !isReturn ? points : 0)),
+    redeemed_points: r2(Number(acct.redeemed_points) + (p.status === "redeemed" ? -points : 0) - (isReturn ? points : 0)),
     expired_points: r2(Number(acct.expired_points) + (p.status === "expired" ? -points : 0)),
     reversed_points: r2(Number(acct.reversed_points) + (p.status === "reversed" ? -points : 0)),
   };
@@ -268,7 +273,9 @@ export async function eligibleForOrder(ctx: Ctx, order: OrderRow) {
     byService[i.service_id] = (byService[i.service_id] ?? 0) + v;
   }
   const base = Math.max(itemsTotal, Number(order.subtotal_minor) || 0) || 1;
-  const deductions = (Number(order.discount_minor) || 0) + (Number(order.loyalty_redeemed_minor) || 0);
+  // discount_minor already includes vouchers and points redeemed at checkout
+  // (loyalty_redeemed_minor records the points part), so it's counted once.
+  const deductions = Number(order.discount_minor) || 0;
   const factor = Math.max(0, 1 - deductions / base);
   const eligibleMinor = Math.round(eligibleGross * factor);
   for (const k of Object.keys(byService)) byService[k] = Math.round(byService[k] * factor);
@@ -410,6 +417,16 @@ export async function onOrderStatus(supabase: Supa, orderId: string, status: str
       if (earned && ctx.cfg.reverse_on_cancel) {
         await reverseOrder(ctx, acct, order, 1, `order:${orderId}:reversed`, `Order ${order.order_number} cancelled: points reversed`);
       }
+      // Give back points spent on this order at checkout, and reopen any voucher used.
+      const spent = find(`checkout:${orderId}`);
+      if (spent) {
+        await post(ctx, acct, {
+          status: "earned", source: "checkout", points: -Number(spent.points), related_transaction_id: spent.id,
+          order_id: orderId, bonus_key: `checkout_return:${orderId}`,
+          description: `Order ${order.order_number} cancelled: redeemed points returned`,
+        });
+      }
+      await supabase.from("reward_voucher").update({ status: "active", used_order_id: null, used_at: null }).eq("used_order_id", orderId);
     }
   } catch (e) {
     console.error("loyalty onOrderStatus failed", e);
@@ -706,6 +723,159 @@ export async function recordReview(ctx: Ctx, orderId: string, stars: number, bod
     }
   }
   return { awarded: award };
+}
+
+/* ------------------------------------------------------------------ */
+/* Checkout (POS and customer app)                                     */
+/* ------------------------------------------------------------------ */
+
+export type CheckoutOptions = {
+  available: number;
+  pointValueMinor: number;
+  minRedeem: number;
+  maxRedeemPct: number;
+  denominations: number[];
+  vouchers: { code: string; label: string; valueMinor: number; minOrderMinor: number }[];
+};
+
+/** What a customer can use at checkout: points balance, allowed amounts and active vouchers. */
+export async function checkoutOptions(ctx: Ctx, customerId: string): Promise<CheckoutOptions> {
+  const acct = await getAccount(ctx, customerId);
+  if (acct) await settleAccount(ctx, acct);
+  const { data } = await ctx.supabase
+    .from("reward_voucher")
+    .select("code, value_minor, expires_at, reward:reward_id(name, min_order_minor, value_minor)")
+    .eq("customer_id", customerId)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString());
+  const vouchers = ((data ?? []) as unknown as { code: string; value_minor: number | null; reward: { name: string; min_order_minor: number; value_minor: number } | { name: string; min_order_minor: number; value_minor: number }[] | null }[]).map((v) => {
+    const r = Array.isArray(v.reward) ? v.reward[0] : v.reward;
+    const value = Number(v.value_minor ?? r?.value_minor ?? 0);
+    return { code: v.code, label: r?.name ?? `₹${Math.round(value / 100)} off`, valueMinor: value, minOrderMinor: Number(r?.min_order_minor ?? 0) };
+  });
+  return {
+    available: acct ? Number(acct.points_balance) : 0,
+    pointValueMinor: ctx.cfg.point_value_minor,
+    minRedeem: ctx.cfg.min_redeem_balance,
+    maxRedeemPct: ctx.cfg.max_redeem_pct,
+    denominations: ctx.cfg.redemption_denominations,
+    vouchers,
+  };
+}
+
+/**
+ * Applies points and/or a voucher to a just-created order: records the
+ * redemption in the ledger and lowers the order total. Points and vouchers
+ * go into discount_minor (so the printed invoice shows them); the points
+ * part is also stored in loyalty_redeemed_minor.
+ */
+export async function applyCheckout(ctx: Ctx, orderId: string, opts: { points?: number; voucherCode?: string }): Promise<{ error?: string }> {
+  const { data } = await ctx.supabase.from("order").select(ORDER_COLS).eq("id", orderId).maybeSingle();
+  const order = data as OrderRow | null;
+  if (!order) return { error: "Order not found." };
+  const subtotal = Number(order.subtotal_minor) || 0;
+  let discount = Number(order.discount_minor) || 0;
+  let redeemedMinor = Number(order.loyalty_redeemed_minor) || 0;
+
+  if (opts.voucherCode) {
+    const { data: v } = await ctx.supabase
+      .from("reward_voucher")
+      .select("id, customer_id, status, expires_at, value_minor, reward:reward_id(min_order_minor, value_minor)")
+      .eq("code", opts.voucherCode)
+      .maybeSingle();
+    const vv = v as unknown as { id: string; customer_id: string; status: string; expires_at: string; value_minor: number | null; reward: { min_order_minor: number; value_minor: number } | { min_order_minor: number; value_minor: number }[] | null } | null;
+    const rw = vv ? (Array.isArray(vv.reward) ? vv.reward[0] : vv.reward) : null;
+    if (!vv || vv.customer_id !== order.customer_id) return { error: "That voucher doesn't belong to this customer." };
+    if (vv.status !== "active" || new Date(vv.expires_at) < new Date()) return { error: "That voucher has been used or has expired." };
+    if (subtotal < Number(rw?.min_order_minor ?? 0)) return { error: `That voucher needs an order of ₹${Math.round(Number(rw?.min_order_minor) / 100)} or more.` };
+    const value = Math.min(Number(vv.value_minor ?? rw?.value_minor ?? 0), Math.max(0, subtotal - discount));
+    discount += value;
+    await ctx.supabase.from("reward_voucher").update({ status: "used", used_order_id: orderId, used_at: new Date().toISOString() }).eq("id", vv.id);
+  }
+
+  const points = Number(opts.points) || 0;
+  if (points > 0) {
+    const acct = await ensureAccount(ctx, order.customer_id);
+    if (!acct) return { error: "Customer not found." };
+    await settleAccount(ctx, acct);
+    const balance = Number(acct.points_balance);
+    if (balance < ctx.cfg.min_redeem_balance) return { error: `The customer needs at least ${ctx.cfg.min_redeem_balance} points to redeem.` };
+    if (points > balance) return { error: `Only ${balance} points available.` };
+    if (ctx.cfg.redemption_denominations.length && !ctx.cfg.redemption_denominations.includes(points)) {
+      return { error: `Choose one of: ${ctx.cfg.redemption_denominations.join(", ")} points.` };
+    }
+    const value = pointsValueMinor(ctx.cfg, points);
+    const cap = Math.floor((subtotal * ctx.cfg.max_redeem_pct) / 100);
+    if (value > cap) return { error: `Points can pay up to ${ctx.cfg.max_redeem_pct}% of an order (₹${Math.round(cap / 100)} here).` };
+    if (value > subtotal - discount) return { error: "The points are worth more than what's left to pay." };
+    const row = await post(ctx, acct, {
+      status: "redeemed", source: "checkout", points: -points, points_redeemed: points, order_id: orderId,
+      bonus_key: `checkout:${orderId}`, description: `Points used on order ${order.order_number}: ₹${Math.round(value / 100)} off`,
+    });
+    if (!row) return { error: "Couldn't record the redemption. No points were taken." };
+    discount += value;
+    redeemedMinor += value;
+  }
+
+  const total = Math.max(0, subtotal - discount + (Number(order.tax_minor) || 0));
+  await ctx.supabase.from("order").update({ discount_minor: discount, loyalty_redeemed_minor: redeemedMinor, total_minor: total }).eq("id", orderId);
+  return {};
+}
+
+/* ------------------------------------------------------------------ */
+/* Nightly maintenance                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Expires due points and adds birthday bonuses. Idempotent.
+ * "nightly" only visits wallets with credits that expired in the last 7 days
+ * (fast enough for the midnight cron); "full" visits every wallet with a balance.
+ */
+export async function runDailyMaintenance(ctx: Ctx, mode: "nightly" | "full" = "full") {
+  const accounts: Account[] = [];
+  if (mode === "full") {
+    for (let from = 0; from < 100000; from += 1000) {
+      const { data } = await ctx.supabase.from("loyalty_account").select(ACCOUNT_COLS).order("id").range(from, from + 999);
+      const rows = (data ?? []) as Account[];
+      accounts.push(...rows);
+      if (rows.length < 1000) break;
+    }
+  } else {
+    const now = new Date();
+    const since = new Date(now.getTime() - 7 * 864e5);
+    const { data: due } = await ctx.supabase
+      .from("loyalty_transaction")
+      .select("loyalty_account_id")
+      .eq("status", "earned")
+      .gt("points", 0)
+      .gte("expires_at", since.toISOString())
+      .lte("expires_at", now.toISOString())
+      .limit(5000);
+    const ids = Array.from(new Set(((due ?? []) as { loyalty_account_id: string }[]).map((r) => r.loyalty_account_id)));
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data } = await ctx.supabase.from("loyalty_account").select(ACCOUNT_COLS).in("id", ids.slice(i, i + 200));
+      accounts.push(...((data ?? []) as Account[]));
+    }
+  }
+  let checked = 0;
+  for (const a of accounts) {
+    if (Number(a.points_balance) > 0) {
+      await settleAccount(ctx, a);
+      checked++;
+    }
+  }
+  const month = String(new Date().getMonth() + 1).padStart(2, "0");
+  const { data: bdays } = await ctx.supabase.from("customer").select("id, birth_date").not("birth_date", "is", null).is("deleted_at", null);
+  let birthdays = 0;
+  for (const c of (bdays ?? []) as { id: string; birth_date: string }[]) {
+    if (c.birth_date.slice(5, 7) !== month) continue;
+    const acct = await ensureAccount(ctx, c.id);
+    if (acct) {
+      await settleAccount(ctx, acct);
+      birthdays++;
+    }
+  }
+  return { checked, birthdays, accounts: accounts.length };
 }
 
 /** Manual adjustment by staff, always written to the ledger with the reason. */

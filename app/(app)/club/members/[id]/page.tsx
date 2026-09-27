@@ -7,6 +7,8 @@ import { gapToNext } from "@/lib/loyalty/engine";
 import { adjustMember, redeemForMember, reviewForMember, settleMember } from "../../actions";
 import { btnPrimary, btnSecondary, Card, ClubHeader, Field, inputCls, StatusPill } from "../../ui";
 
+import LoginCodeButton from "./LoginCodeButton";
+
 export const dynamic = "force-dynamic";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -65,6 +67,10 @@ export default async function MemberWalletPage({ params, searchParams }: { param
         <span>· {gap.text}</span>
         <Link href={`/customers/${cust.id}`} className="font-semibold text-ink hover:underline">Customer record</Link>
       </div>
+
+      <Card title="Customer app" sub="Customers sign in at london-wash-os.vercel.app/my with their mobile number and a 6-digit code. Until SMS/WhatsApp is connected, create the code here and give it to the customer in person, by phone or on WhatsApp.">
+        <LoginCodeButton customerId={cust.id} />
+      </Card>
 
       {!acct && (
         <Card title="No wallet yet">

@@ -30,7 +30,8 @@ body {
    .lw-login so print routes are never affected.
    ------------------------------------------------------------------ */
 .lw-console,
-.lw-login {
+.lw-login,
+.lw-app {
   font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
