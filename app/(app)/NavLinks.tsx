@@ -1,0 +1,87 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+type NavGroup = { section: string; items: { href: string; label: string }[] };
+
+// 24px line icons, 1.6 stroke, keyed by route.
+const ICONS: Record<string, string> = {
+  "/dashboard": '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
+  "/services": '<path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8.5 8.5z"/><circle cx="8" cy="8" r="1.3"/>',
+  "/orders": '<path d="M5.5 8h13l-1 12.2a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+  "/customers": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 5.3a3 3 0 0 1 0 5.4M17.5 14.8c1.6.6 2.6 2 3 4.2"/>',
+  "/corporate": '<rect x="4" y="7" width="16" height="13" rx="1"/><path d="M9 7V4.5h6V7M4 12h16"/>',
+  "/crm": '<path d="M4.5 19.5 5.6 16A7.8 7.8 0 1 1 8.4 18.6z"/><path d="M9 10h6M9 13h4"/>',
+  "/promotions": '<path d="M5 19 19 5"/><circle cx="7" cy="7" r="2"/><circle cx="17" cy="17" r="2"/>',
+  "/referrals": '<circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="m8.2 10.8 6.6-3.6M8.2 13.2l6.6 3.6"/>',
+  "/production": '<path d="M4 20h16M7 16v-5M12 16V7M17 16v-8"/>',
+  "/quality": '<path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6z"/><path d="m9 12 2 2 4-4"/>',
+  "/garments": '<path d="M12 8.2a2 2 0 1 1 2-2.1c0 1.2-2 1.6-2 3.1L3.6 15.2a1 1 0 0 0 .6 1.8h15.6a1 1 0 0 0 .6-1.8L12 9.2"/>',
+  "/packing": '<path d="m12 4 8 4v8l-8 4-8-4V8z"/><path d="m4 8 8 4 8-4M12 12v8"/>',
+  "/workflows": '<rect x="3" y="4" width="7" height="5" rx="1"/><rect x="14" y="15" width="7" height="5" rx="1"/><path d="M6.5 9v4.5a2 2 0 0 0 2 2H14"/>',
+  "/wallet": '<path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z"/><path d="M4 7l11-3v3M16 13.5h.01"/>',
+  "/loyalty": '<circle cx="12" cy="9" r="5"/><path d="m9 13.5-1.5 7L12 18l4.5 2.5-1.5-7"/>',
+  "/payroll": '<rect x="3" y="6" width="18" height="12.5" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  "/incentives": '<path d="m12 4 2.4 5 5.4.7-4 3.8 1 5.4-4.8-2.6-4.8 2.6 1-5.4-4-3.8 5.4-.7z"/>',
+  "/complaints": '<path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4M12 16.8h.01"/>',
+  "/expenses": '<path d="M7 4.5h10M7 8.5h10M7 4.5h3.5a4 4 0 0 1 0 8H7l7.5 7"/>',
+  "/inventory": '<path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/>',
+  "/staff": '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.5 3.8-5 7-5s6 1.5 7 5"/>',
+  "/approvals": '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  "/purchasing": '<circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M3 4h2.5l2.2 11h10.6L20 8H6.6"/>',
+  "/delivery": '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+  "/claims": '<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  "/family": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.3"/><path d="M16.2 14.5c2.2.1 3.8 1.4 4.3 4"/>',
+  "/messages": '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  "/privacy": '<rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>',
+  "/roles": '<circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2"/>',
+  "/system-settings": '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  "/sysops": '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
+  "/settings": '<path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/>',
+};
+const FALLBACK = '<circle cx="12" cy="12" r="3"/>';
+
+export function NavLinks({ groups }: { groups: NavGroup[] }) {
+  const pathname = usePathname() || "";
+  return (
+    <nav className="lw-nav flex flex-1 gap-1 overflow-x-auto px-3 pb-3 lg:block lg:overflow-y-auto lg:overflow-x-hidden lg:py-2" aria-label="Console">
+      {groups.map((group) => (
+        <div key={group.section} className="contents lg:block">
+          <div className="hidden px-2.5 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7f8796] lg:block">
+            {group.section}
+          </div>
+          {group.items.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={
+                  "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-[13.5px] font-medium transition " +
+                  (active
+                    ? "bg-[rgba(199,181,143,0.14)] text-[#f3ecdd]"
+                    : "text-[#c9c3b6] hover:bg-white/5 hover:text-white")
+                }
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className={"h-[18px] w-[18px] shrink-0 " + (active ? "text-brass-2" : "text-[#8d93a0]")}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dangerouslySetInnerHTML={{ __html: ICONS[item.href] || FALLBACK }}
+                />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
+}
