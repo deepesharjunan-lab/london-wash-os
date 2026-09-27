@@ -47,7 +47,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const { data: order } = await supabase
     .from("order")
     .select(
-      "id, order_number, status, channel, subtotal_minor, discount_minor, tax_minor, total_minor, currency, created_at, customer:customer_id(id, full_name, phone, email), price_list_profile:price_list_profile_id(name)"
+      "id, order_number, status, channel, subtotal_minor, discount_minor, loyalty_redeemed_minor, tax_minor, total_minor, currency, created_at, customer:customer_id(id, full_name, phone, email), price_list_profile:price_list_profile_id(name)"
     )
     .eq("id", params.id)
     .single();
@@ -74,6 +74,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const priceListProfile: any = Array.isArray(order.price_list_profile)
     ? order.price_list_profile[0]
     : order.price_list_profile;
+
+  const { data: loyaltyRows } = await supabase
+    .from("loyalty_transaction")
+    .select("status, source, points, pending_points, description")
+    .eq("order_id", params.id)
+    .order("created_at", { ascending: true });
 
   const paidMinor = (payments ?? [])
     .filter((p: any) => p.status !== "failed" && p.status !== "refunded")
@@ -180,6 +186,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <span>Discount</span>
                 <span>-{formatMinor(Number(order.discount_minor))}</span>
               </div>
+              {Number((order as any).loyalty_redeemed_minor) > 0 && (
+                <div className="flex items-center justify-between pl-3 text-[12.5px] text-ink/50">
+                  <span>of which loyalty points</span>
+                  <span>-{formatMinor(Number((order as any).loyalty_redeemed_minor))}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-ink/60">
                 <span>Tax</span>
                 <span>{formatMinor(Number(order.tax_minor))}</span>
@@ -190,6 +202,36 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </div>
             </div>
           </div>
+
+          {(loyaltyRows ?? []).length > 0 && (
+            <div className="border-2 border-black/10 bg-white p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-ink/50">Loyalty points</span>
+                {customer?.id && (
+                  <Link href={`/club/members/${customer.id}`} className="text-xs font-semibold text-accent hover:underline">
+                    Open wallet
+                  </Link>
+                )}
+              </div>
+              <ul className="space-y-1.5 text-sm">
+                {(loyaltyRows ?? []).map((r: any, i: number) => {
+                  const p = Number(r.points) || Number(r.pending_points);
+                  return (
+                    <li key={i} className="flex items-center justify-between gap-3 text-ink/70">
+                      <span>
+                        {r.description ?? r.source}
+                        <span className="ml-2 text-[11px] uppercase tracking-wide text-ink/40">{r.status}</span>
+                      </span>
+                      <span className={"font-semibold " + (p >= 0 ? "text-[#2c6a4e]" : "text-[#9c3326]")}>
+                        {p >= 0 ? "+" : "−"}
+                        {Math.abs(p).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           <div className="overflow-hidden border-2 border-black/10 bg-white">
             <div className="flex items-center justify-between border-b-2 border-black/10 px-4 py-3">
