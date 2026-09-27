@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadServices, loadTiers } from "@/lib/loyalty/data";
 import { inr, num } from "@/lib/loyalty/engine";
-import { saveReward, toggleReward } from "../actions";
+import { deleteReward, saveReward, toggleReward } from "../actions";
 import { btnPrimary, btnSecondary, Card, ClubHeader, Field, inputCls, StatusPill } from "../ui";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +54,7 @@ function RewardForm({ r, tiers, services }: { r: Partial<Reward>; tiers: { id: s
         </Field>
         <Field label="Minimum order (₹)"><input className={inputCls} type="number" min={0} name="min_order" defaultValue={rs(r.min_order_minor ?? 0)} /></Field>
         <Field label="Valid after redeeming (days)"><input className={inputCls} type="number" min={1} name="validity_days" defaultValue={r.validity_days ?? 30} /></Field>
-        <Field label="Limit per member" hint="0 means no limit"><input className={inputCls} type="number" min={0} name="usage_limit_per_member" defaultValue={r.usage_limit_per_member ?? 0} /></Field>
+        <Field label="Redemption limit per member" hint="0 means no limit"><input className={inputCls} type="number" min={0} name="usage_limit_per_member" defaultValue={r.usage_limit_per_member ?? 0} /></Field>
         <Field label="Quantity available" hint="Empty means unlimited"><input className={inputCls} type="number" min={0} name="stock" defaultValue={r.stock ?? ""} /></Field>
         <Field label="Start date"><input className={inputCls} type="date" name="starts_on" defaultValue={r.starts_on ?? ""} /></Field>
         <Field label="End date"><input className={inputCls} type="date" name="ends_on" defaultValue={r.ends_on ?? ""} /></Field>
@@ -141,11 +141,17 @@ export default async function ClubRewardsPage({ searchParams }: { searchParams: 
               </summary>
               <div className="border-t border-black/5 px-5 py-5">
                 <RewardForm r={r} tiers={tiers} services={services} />
-                <form action={toggleReward} className="mt-3">
-                  <input type="hidden" name="id" value={r.id} />
-                  <input type="hidden" name="next" value={r.is_active ? "false" : "true"} />
-                  <button type="submit" className={btnSecondary}>{r.is_active ? "Pause this reward" : "Make active"}</button>
-                </form>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <form action={toggleReward}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="next" value={r.is_active ? "false" : "true"} />
+                    <button type="submit" className={btnSecondary}>{r.is_active ? "Deactivate" : "Activate"}</button>
+                  </form>
+                  <form action={deleteReward}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <button type="submit" className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-[#9c3326] hover:bg-[#f6e4df]">Delete reward</button>
+                  </form>
+                </div>
               </div>
             </details>
           );
