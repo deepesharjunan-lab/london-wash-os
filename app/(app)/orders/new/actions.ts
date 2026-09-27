@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { onCustomerCreated } from "@/lib/loyalty/ledger";
+import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated } from "@/lib/loyalty/ledger";
 
 type CartLine = {
   price_list_entry_id: string;
@@ -13,11 +13,22 @@ type CartLine = {
   quantity: number;
 };
 
+/** Points balance, redemption amounts and active vouchers for the selected customer. */
+export async function getCheckoutLoyalty(customerId: string) {
+  if (!customerId) return null;
+  const supabase = createClient();
+  const ctx = await loadCtx(supabase);
+  if (!ctx) return null;
+  return checkoutOptions(ctx, customerId);
+}
+
 export async function createOrder(input: {
   customer_id: string;
   price_list_profile_id: string | null;
   channel: string;
   lines: CartLine[];
+  redeem_points?: number;
+  voucher_code?: string;
 }) {
   if (!input.customer_id) {
     return { error: "Select a customer." };
@@ -27,6 +38,30 @@ export async function createOrder(input: {
   }
 
   const supabase = createClient();
+
+  // Check points and voucher before creating anything, so a bad choice never leaves a half-made order.
+  const wantsLoyalty = (input.redeem_points ?? 0) > 0 || !!input.voucher_code;
+  const loyaltyCtx = wantsLoyalty ? await loadCtx(supabase) : null;
+  if (wantsLoyalty) {
+    if (!loyaltyCtx) return { error: "Loyalty Club isn't set up, so points and vouchers can't be used." };
+    const opts = await checkoutOptions(loyaltyCtx, input.customer_id);
+    const subtotal = input.lines.reduce((s, l) => s + Math.round(l.unit_price_minor) * l.quantity, 0);
+    let remaining = subtotal;
+    if (input.voucher_code) {
+      const v = opts.vouchers.find((x) => x.code === input.voucher_code);
+      if (!v) return { error: "That voucher isn't active for this customer." };
+      if (subtotal < v.minOrderMinor) return { error: `That voucher needs an order of ₹${Math.round(v.minOrderMinor / 100)} or more.` };
+      remaining -= Math.min(v.valueMinor, remaining);
+    }
+    const pts = input.redeem_points ?? 0;
+    if (pts > 0) {
+      if (opts.available < opts.minRedeem) return { error: `The customer needs at least ${opts.minRedeem} points to redeem.` };
+      if (pts > opts.available) return { error: `Only ${opts.available} points available.` };
+      const value = Math.round(pts * opts.pointValueMinor);
+      if (value > Math.floor((subtotal * opts.maxRedeemPct) / 100)) return { error: `Points can pay up to ${opts.maxRedeemPct}% of an order.` };
+      if (value > remaining) return { error: "The points are worth more than what's left to pay." };
+    }
+  }
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) {
     return { error: "You are not signed in." };
@@ -111,6 +146,14 @@ export async function createOrder(input: {
     } else if (tagError) {
       console.error("generate_garment_tags failed:", tagError);
     }
+  }
+
+  if (wantsLoyalty && loyaltyCtx) {
+    const applied = await applyCheckout(loyaltyCtx, order.id, {
+      points: input.redeem_points,
+      voucherCode: input.voucher_code || undefined,
+    });
+    if (applied.error) console.error("checkout loyalty failed", order.id, applied.error);
   }
 
   revalidatePath("/orders");
