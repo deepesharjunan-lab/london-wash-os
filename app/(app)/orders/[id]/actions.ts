@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { onOrderStatus, onPayment } from "@/lib/loyalty/ledger";
 
 export async function updateOrderStatus(orderId: string, status: string) {
   const supabase = createClient();
@@ -9,6 +10,8 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
   const { error } = await supabase.from("order").update({ status }).eq("id", orderId);
   if (error) return { error: error.message };
+
+  await onOrderStatus(supabase, orderId, status); // loyalty points; never throws
 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
@@ -31,6 +34,8 @@ export async function recordPayment(orderId: string, method: string, amountRupee
     amount_minor,
   });
   if (error) return { error: error.message };
+
+  await onPayment(supabase, orderId); // referral bonus once the first order is paid; never throws
 
   revalidatePath(`/orders/${orderId}`);
   return { ok: true };
