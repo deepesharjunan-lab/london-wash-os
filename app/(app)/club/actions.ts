@@ -2,8 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { adjust, ensureAccount, loadCtx, recordReview, redeem, settleAccount } from "@/lib/loyalty/ledger";
-import type { Account } from "@/lib/loyalty/ledger";
+import { adjust, ensureAccount, loadCtx, recordReview, redeem, runDailyMaintenance, settleAccount } from "@/lib/loyalty/ledger";
+import { createLoginCode } from "@/lib/customer/session";
 
 // Form helpers. Rupee inputs are converted to paise (minor units).
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -82,6 +82,7 @@ export async function saveRules(f: FormData) {
       expiry_reminder_days: intList(str(f, "expiry_reminder_days")),
       app_order_channels: f.getAll("app_order_channels").map(String),
       eligible_service_ids: f.getAll("eligible_service_ids").map(String).filter(Boolean),
+      excluded_item_ids: f.getAll("excluded_item_ids").map(String).filter(Boolean),
       campaigns_stack: bool(f, "campaigns_stack"),
       birthday_stacks_with_campaigns: bool(f, "birthday_stacks_with_campaigns"),
       reverse_on_cancel: bool(f, "reverse_on_cancel"),
@@ -366,38 +367,32 @@ export async function settleMember(f: FormData) {
   done(path, "Wallet checked: due points expired and any birthday bonus added.");
 }
 
+/** Creates a one-time 6-digit code a customer can use to sign in to the customer app (/my). */
+export async function createMemberLoginCode(_prev: { code?: string; error?: string }, f: FormData): Promise<{ code?: string; error?: string }> {
+  const customerId = str(f, "customer_id");
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return { error: "You are not signed in." };
+  // Staff can only issue codes for customers they can see.
+  const { data: cust } = await supabase.from("customer").select("id").eq("id", customerId).maybeSingle();
+  if (!cust) return { error: "Customer not found." };
+  const { data: me } = await supabase.from("user").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
+  try {
+    const code = await createLoginCode(customerId, (me as { id: string } | null)?.id ?? null);
+    return { code };
+  } catch (e) {
+    console.error(e);
+    return { error: "Couldn't create a code. Please try again." };
+  }
+}
+
 /** Runs expiry and birthday checks for every wallet with points or a birthday this month. */
 export async function settleAll() {
   const supabase = createClient();
   const ctx = await loadCtx(supabase);
   if (!ctx) fail("/club", "The Club isn't set up yet.");
-  const accounts: Account[] = [];
-  for (let from = 0; from < 100000; from += 1000) {
-    const { data } = await supabase
-      .from("loyalty_account")
-      .select("id, customer_id, loyalty_tier_id, points_balance, pending_balance, lifetime_points, redeemed_points, expired_points, reversed_points, member_no")
-      .order("id")
-      .range(from, from + 999);
-    const rows = (data ?? []) as Account[];
-    accounts.push(...rows);
-    if (rows.length < 1000) break;
-  }
-  let checked = 0;
-  for (const a of accounts) {
-    if (Number(a.points_balance) > 0) {
-      await settleAccount(ctx, a);
-      checked++;
-    }
-  }
-  // Birthday bonuses for members who have no wallet yet.
-  const month = String(new Date().getMonth() + 1).padStart(2, "0");
-  const { data: bdays } = await supabase.from("customer").select("id, birth_date").not("birth_date", "is", null).is("deleted_at", null);
-  for (const c of (bdays ?? []) as { id: string; birth_date: string }[]) {
-    if (c.birth_date.slice(5, 7) !== month) continue;
-    const acct = await ensureAccount(ctx, c.id);
-    if (acct) await settleAccount(ctx, acct);
-  }
-  done("/club", `Checked ${checked} wallets with points: expired points removed and birthday bonuses added.`);
+  const res = await runDailyMaintenance(ctx);
+  done("/club", `Checked ${res.checked} wallets with points and ${res.birthdays} birthdays this month. The same check runs automatically every night at midnight.`);
 }
 
 /* ---------------- Automations ---------------- */
