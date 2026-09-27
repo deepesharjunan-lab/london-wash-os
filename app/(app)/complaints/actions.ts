@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { onRefund } from "@/lib/loyalty/ledger";
 
 async function getBranchId(supabase: ReturnType<typeof createClient>) {
   const { data: auth } = await supabase.auth.getUser();
@@ -60,7 +61,12 @@ export async function createRefund(formData: FormData) {
   const amount_minor = Math.round(amountRupees * 100);
   const supabase = createClient();
   const processed_by = await getUserId(supabase);
-  const { error } = await supabase.from("refund").insert({ payment_id, amount_minor, reason, processed_by });
+  const { data: refund, error } = await supabase
+    .from("refund")
+    .insert({ payment_id, amount_minor, reason, processed_by })
+    .select("id")
+    .single();
   if (error) console.error(error);
+  if (refund) await onRefund(supabase, (refund as { id: string }).id, payment_id, amount_minor); // reverse loyalty points; never throws
   revalidatePath("/complaints");
 }
