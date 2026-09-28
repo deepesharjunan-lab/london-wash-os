@@ -29,6 +29,8 @@ const ICONS: Record<string, string> = {
   "/expenses": '<path d="M7 4.5h10M7 8.5h10M7 4.5h3.5a4 4 0 0 1 0 8H7l7.5 7"/>',
   "/inventory": '<path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/>',
   "/staff": '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-3.5 3.8-5 7-5s6 1.5 7 5"/>',
+  "/staff/attendance": '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3.5v3M16 3.5v3M4 10h16M8.5 14.5l2 2 4-4"/>',
+  "/owner": '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
   "/approvals": '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   "/purchasing": '<circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M3 4h2.5l2.2 11h10.6L20 8H6.6"/>',
   "/delivery": '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
@@ -53,7 +55,9 @@ export function NavLinks({ groups }: { groups: NavGroup[] }) {
             {group.section}
           </div>
           {group.items.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            const active =
+              pathname === item.href ||
+              (pathname.startsWith(item.href + "/") && !group.items.some((o) => o.href !== item.href && o.href.startsWith(item.href + "/") && pathname.startsWith(o.href)));
             return (
               <Link
                 key={item.href}
