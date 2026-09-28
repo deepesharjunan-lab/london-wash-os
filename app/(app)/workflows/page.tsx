@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createWorkflow, toggleWorkflowActive, createWorkflowStage, deleteWorkflowStage } from "./actions";
+import { roleLabel } from "@/lib/staff/roles";
 
 export default async function WorkflowsPage() {
   const supabase = createClient();
@@ -176,6 +177,7 @@ export default async function WorkflowsPage() {
               <th className="py-2">Stage</th>
               <th className="py-2">Order</th>
               <th className="py-2">SLA</th>
+              <th className="py-2">Staff app role</th>
               <th className="py-2"></th>
             </tr>
           </thead>
@@ -186,6 +188,7 @@ export default async function WorkflowsPage() {
                 <td className="py-2 text-ink/70">{s.name}</td>
                 <td className="py-2 text-ink/70">{s.sort_order}</td>
                 <td className="py-2 text-ink/70">{s.sla_minutes ? s.sla_minutes + " min" : "-"}</td>
+                <td className="py-2 text-ink/70">{s.app_role ? roleLabel(s.app_role) : "-"}</td>
                 <td className="py-2">
                   <form action={deleteWorkflowStage}>
                     <input type="hidden" name="id" value={s.id} />
@@ -198,7 +201,7 @@ export default async function WorkflowsPage() {
             ))}
             {(!stages || stages.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-ink/30">
+                <td colSpan={6} className="py-4 text-center text-ink/30">
                   No stages defined yet.
                 </td>
               </tr>
