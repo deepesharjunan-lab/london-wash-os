@@ -9,7 +9,52 @@ import {
   updatePickupStatus,
   createDelivery,
   updateDeliveryStatus,
+  assignDriver,
 } from "./actions";
+
+function DriverSelect({ drivers, kind, id, current }: { drivers: any[]; kind: "pickup" | "delivery"; id: string; current: string | null }) {
+  return (
+    <form action={assignDriver} className="inline-flex items-center gap-1.5">
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="id" value={id} />
+      <select name="driver_id" defaultValue={current ?? ""} className="border border-black/10 px-1.5 py-1 text-xs">
+        <option value="">Unassigned</option>
+        {drivers
+          .filter((d) => d.is_active || d.id === current)
+          .map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.full_name}
+              {d.employee_id ? "" : " (no app)"}
+            </option>
+          ))}
+      </select>
+      <button type="submit" className="text-xs font-medium text-blue-600 hover:underline">
+        Assign
+      </button>
+    </form>
+  );
+}
+
+function DriverField({ drivers }: { drivers: any[] }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-600">Driver</label>
+      <select name="driver_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
+        <option value="">Unassigned</option>
+        {drivers
+          .filter((d) => d.is_active)
+          .map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.full_name}
+            </option>
+          ))}
+      </select>
+    </div>
+  );
+}
+
+const when = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" }) : "-";
 
 function formatMinor(minor: number | null) {
   if (minor === null || minor === undefined) return "-";
@@ -296,6 +341,7 @@ export default async function DeliveryPage() {
                   ))}
                 </select>
               </div>
+              <DriverField drivers={drivers || []} />
               <div>
                 <label className="block text-xs font-medium text-slate-600">Route</label>
                 <select name="route_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
@@ -337,7 +383,8 @@ export default async function DeliveryPage() {
             <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Order</th>
               <th className="py-2">Customer</th>
-              <th className="py-2">Route</th>
+              <th className="py-2">When</th>
+              <th className="py-2">Driver</th>
               <th className="py-2">Status</th>
               <th className="py-2"></th>
             </tr>
@@ -345,10 +392,22 @@ export default async function DeliveryPage() {
           <tbody>
             {(pickups || []).map((p) => (
               <tr key={p.id} className="border-b border-black/5">
-                <td className="py-2 font-medium text-slate-900">{orderNumber.get(p.order_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{customerName.get(p.customer_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{p.route_id ? routeLabel.get(p.route_id) : "-"}</td>
-                <td className="py-2 text-slate-600">{p.status}</td>
+                <td className="py-2 font-medium text-slate-900">
+                  {orderNumber.get(p.order_id) || (p.source === "app" ? "App request" : "-")}
+                  {(p.services || []).length > 0 && <div className="text-[11.5px] font-normal text-slate-500">{(p.services || []).join(", ")}</div>}
+                </td>
+                <td className="py-2 text-slate-600">
+                  {customerName.get(p.customer_id) || "-"}
+                  {p.customer_address_id && <div className="text-[11.5px] text-slate-500">{addressLabel.get(p.customer_address_id)}</div>}
+                </td>
+                <td className="py-2 text-slate-600">{when(p.scheduled_window_start)}</td>
+                <td className="py-2 text-slate-600">
+                  <DriverSelect drivers={drivers || []} kind="pickup" id={p.id} current={p.driver_id ?? null} />
+                </td>
+                <td className="py-2 text-slate-600">
+                  {p.status}
+                  {p.driver_note && <div className="text-[11.5px] text-slate-500">{p.driver_note}</div>}
+                </td>
                 <td className="py-2 text-right">
                   <form action={updatePickupStatus} className="inline-flex items-center gap-2">
                     <input type="hidden" name="id" value={p.id} />
@@ -368,7 +427,7 @@ export default async function DeliveryPage() {
             ))}
             {(!pickups || pickups.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={6} className="py-4 text-center text-slate-400">
                   No pickups yet.
                 </td>
               </tr>
@@ -398,6 +457,7 @@ export default async function DeliveryPage() {
                   ))}
                 </select>
               </div>
+              <DriverField drivers={drivers || []} />
               <div>
                 <label className="block text-xs font-medium text-slate-600">Route</label>
                 <select name="route_id" className="mt-1 w-full border border-black/10 px-2 py-1.5 text-sm">
@@ -438,7 +498,8 @@ export default async function DeliveryPage() {
           <thead>
             <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
               <th className="py-2">Order</th>
-              <th className="py-2">Route</th>
+              <th className="py-2">When</th>
+              <th className="py-2">Driver</th>
               <th className="py-2">Status</th>
               <th className="py-2">Cash Collected</th>
               <th className="py-2"></th>
@@ -447,9 +508,18 @@ export default async function DeliveryPage() {
           <tbody>
             {(deliveries || []).map((d) => (
               <tr key={d.id} className="border-b border-black/5">
-                <td className="py-2 font-medium text-slate-900">{orderNumber.get(d.order_id) || "-"}</td>
-                <td className="py-2 text-slate-600">{d.route_id ? routeLabel.get(d.route_id) : "-"}</td>
-                <td className="py-2 text-slate-600">{d.status}</td>
+                <td className="py-2 font-medium text-slate-900">
+                  {orderNumber.get(d.order_id) || "-"}
+                  <div className="text-[11.5px] font-normal text-slate-500">{customerName.get(orderCustomer.get(d.order_id)) || ""}</div>
+                </td>
+                <td className="py-2 text-slate-600">{when(d.scheduled_window_start)}</td>
+                <td className="py-2 text-slate-600">
+                  <DriverSelect drivers={drivers || []} kind="delivery" id={d.id} current={d.driver_id ?? null} />
+                </td>
+                <td className="py-2 text-slate-600">
+                  {d.status}
+                  {d.driver_note && <div className="text-[11.5px] text-slate-500">{d.driver_note}</div>}
+                </td>
                 <td className="py-2 text-slate-600">{formatMinor(d.cash_collected_minor)}</td>
                 <td className="py-2 text-right">
                   <form action={updateDeliveryStatus} className="inline-flex items-center gap-2">
@@ -477,7 +547,7 @@ export default async function DeliveryPage() {
             ))}
             {(!deliveries || deliveries.length === 0) && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
+                <td colSpan={6} className="py-4 text-center text-slate-400">
                   No deliveries yet.
                 </td>
               </tr>

@@ -1,6 +1,42 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notify } from "@/lib/notify";
+
+/** Tells the driver (in the staff app) about a pickup or delivery assigned to them. */
+async function tellDriver(supabase: ReturnType<typeof createClient>, kind: "pickup" | "delivery", id: string, driverId: string | null) {
+  if (!driverId) return;
+  const { data: d } = await supabase.from("driver").select("employee_id").eq("id", driverId).maybeSingle();
+  const employeeId = (d as { employee_id: string | null } | null)?.employee_id;
+  if (!employeeId) return;
+  const { data: row } = await supabase
+    .from(kind)
+    .select(kind === "pickup" ? "scheduled_window_start, customer:customer_id(full_name)" : "scheduled_window_start, order:order_id(order_number, customer:customer_id(full_name))")
+    .eq("id", id)
+    .maybeSingle();
+  const r = row as any;
+  const one = (x: any) => (Array.isArray(x) ? x[0] : x);
+  const customer = kind === "pickup" ? one(r?.customer)?.full_name : one(one(r?.order)?.customer)?.full_name;
+  const when = r?.scheduled_window_start
+    ? new Date(r.scheduled_window_start).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })
+    : "no time set";
+  await notify(
+    { employeeIds: [employeeId] },
+    { kind: `${kind}_assigned`, title: `New ${kind} for you`, body: `${customer ?? "Customer"} · ${when}`, staffUrl: "/work/runs" }
+  );
+}
+
+export async function assignDriver(formData: FormData) {
+  const kind = String(formData.get("kind") || "") === "pickup" ? "pickup" : "delivery";
+  const id = String(formData.get("id") || "");
+  const driver_id = String(formData.get("driver_id") || "") || null;
+  if (!id) return;
+  const supabase = createClient();
+  const { error } = await supabase.from(kind).update({ driver_id }).eq("id", id);
+  if (error) console.error(error);
+  else await tellDriver(supabase, kind, id, driver_id);
+  revalidatePath("/delivery");
+}
 
 async function getBranchId(supabase: ReturnType<typeof createClient>) {
   const { data: auth } = await supabase.auth.getUser();
@@ -101,16 +137,23 @@ export async function createPickup(formData: FormData) {
   const { data: order } = await supabase.from("order").select("customer_id").eq("id", order_id).single();
   if (!order) return;
 
-  const { error } = await supabase.from("pickup").insert({
-    order_id,
-    customer_id: order.customer_id,
-    route_id,
-    customer_address_id,
-    scheduled_window_start,
-    scheduled_window_end,
-    status: "scheduled",
-  });
+  const driver_id = String(formData.get("driver_id") || "") || null;
+  const { data: created, error } = await supabase
+    .from("pickup")
+    .insert({
+      order_id,
+      customer_id: order.customer_id,
+      route_id,
+      customer_address_id,
+      scheduled_window_start,
+      scheduled_window_end,
+      status: "scheduled",
+      driver_id,
+    })
+    .select("id")
+    .single();
   if (error) console.error(error);
+  else await tellDriver(supabase, "pickup", (created as { id: string }).id, driver_id);
   revalidatePath("/delivery");
 }
 
@@ -133,15 +176,22 @@ export async function createDelivery(formData: FormData) {
   const scheduled_window_end = String(formData.get("scheduled_window_end") || "") || null;
 
   const supabase = createClient();
-  const { error } = await supabase.from("delivery").insert({
-    order_id,
-    route_id,
-    customer_address_id,
-    scheduled_window_start,
-    scheduled_window_end,
-    status: "scheduled",
-  });
+  const driver_id = String(formData.get("driver_id") || "") || null;
+  const { data: created, error } = await supabase
+    .from("delivery")
+    .insert({
+      order_id,
+      route_id,
+      customer_address_id,
+      scheduled_window_start,
+      scheduled_window_end,
+      status: "scheduled",
+      driver_id,
+    })
+    .select("id")
+    .single();
   if (error) console.error(error);
+  else await tellDriver(supabase, "delivery", (created as { id: string }).id, driver_id);
   revalidatePath("/delivery");
 }
 
