@@ -4,6 +4,7 @@ import { requireMember } from "@/lib/customer/session";
 import { loadMember, STAGES, stageIndex } from "@/lib/customer/member";
 import { campaignStatus, pts } from "@/lib/loyalty/engine";
 import { AppShell, Card, Icon, Notice, TierCard, fmtDate } from "./ui";
+import { InstallHint } from "@/lib/pwa/InstallHint";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "The London Wash Club" };
@@ -66,6 +67,8 @@ export default async function MemberHomePage() {
         rightNote={m.gapText}
         renew={fmtDate(m.renew.toISOString())}
       />
+
+      <InstallHint appName="The London Wash Club" storageKey="lw-club-install-dismissed" />
 
       {m.wallet && m.wallet.expiringSoon > 0 && m.wallet.nextExpiry && (
         <Notice tone="warn">
