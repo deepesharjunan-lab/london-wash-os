@@ -1,0 +1,17 @@
+{
+  "id": "/owner",
+  "name": "London Wash Owner",
+  "short_name": "LW Owner",
+  "description": "Today's orders, production, team attendance and alerts for The London Wash.",
+  "start_url": "/owner",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f5ef",
+  "theme_color": "#15213a",
+  "icons": [
+    { "src": "/appicon/owner-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/owner-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/owner-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

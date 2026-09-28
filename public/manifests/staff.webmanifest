@@ -1,0 +1,17 @@
+{
+  "id": "/work",
+  "name": "London Wash Staff",
+  "short_name": "LW Staff",
+  "description": "Punch in, scan garments, and see your work at The London Wash.",
+  "start_url": "/work",
+  "scope": "/work",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101828",
+  "theme_color": "#101828",
+  "icons": [
+    { "src": "/appicon/staff-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/staff-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/staff-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
