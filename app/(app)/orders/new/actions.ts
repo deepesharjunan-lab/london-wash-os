@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated } from "@/lib/loyalty/ledger";
+import { notify } from "@/lib/notify";
 
 type CartLine = {
   price_list_entry_id: string;
@@ -155,6 +156,19 @@ export async function createOrder(input: {
     });
     if (applied.error) console.error("checkout loyalty failed", order.id, applied.error);
   }
+
+  // Tell the team and the owners a new order is in.
+  const { data: buyer } = await supabase.from("customer").select("full_name").eq("id", input.customer_id).maybeSingle();
+  await notify(
+    { roles: ["receptionist", "washer", "iron_man", "helper"], owners: true, branchId: me.branch_id },
+    {
+      kind: "new_order",
+      title: `New order ${order_number}`,
+      body: `${totalPieces} ${totalPieces === 1 ? "piece" : "pieces"} · ${(buyer as { full_name: string } | null)?.full_name ?? "Customer"}`,
+      staffUrl: `/work/orders/${order.id}`,
+      ownerUrl: `/owner/orders/${order.id}`,
+    }
+  );
 
   revalidatePath("/orders");
   redirect(`/orders/${order.id}`);

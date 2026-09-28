@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/customer/session";
 import { loadMember } from "@/lib/customer/member";
-import { saveBirthdayAction, signOutAction } from "../actions";
+import { removeMemberPushAction, saveBirthdayAction, saveMemberPushAction, signOutAction } from "../actions";
+import { vapidPublicKey } from "@/lib/push";
+import { PushToggle } from "@/lib/pwa/PushToggle";
+import { InstallHint } from "@/lib/pwa/InstallHint";
 import { AppShell, Card, Notice, btn, btnGhost, input } from "../ui";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +16,12 @@ export default async function MemberProfilePage({ searchParams }: { searchParams
   const { customerId, db } = requireMember();
   const m = await loadMember(db, customerId);
   if (!m) redirect("/my/login");
-  const [addrRes, familyRes] = await Promise.all([
+  const [addrRes, familyRes, publicKey] = await Promise.all([
     db.from("customer_address").select("id, label, address_line").eq("customer_id", customerId),
     m.customer.family_account_id
       ? db.from("customer").select("id, full_name").eq("family_account_id", m.customer.family_account_id).neq("id", customerId)
       : Promise.resolve({ data: [] }),
+    vapidPublicKey(db),
   ]);
   const addresses = (addrRes.data ?? []) as { id: string; label: string | null; address_line: string }[];
   const family = (familyRes.data ?? []) as { id: string; full_name: string }[];
@@ -39,6 +43,12 @@ export default async function MemberProfilePage({ searchParams }: { searchParams
           <span className="mt-1 block text-[12px] font-bold uppercase tracking-[0.14em] text-brass">{m.tier.name}</span>
         </span>
       </Card>
+
+      <InstallHint appName="The London Wash Club" storageKey="lw-club-install-dismissed" />
+      <section className="flex flex-col gap-2.5">
+        <h2 className="text-[15px] font-semibold">Order updates</h2>
+        <PushToggle publicKey={publicKey} save={saveMemberPushAction} remove={removeMemberPushAction} />
+      </section>
 
       <section className="flex flex-col gap-2.5">
         <h2 className="text-[15px] font-semibold">Birthday</h2>

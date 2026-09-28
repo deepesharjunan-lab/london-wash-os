@@ -6,7 +6,10 @@ import { NavLinks } from "./NavLinks";
 const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[] = [
   {
     section: "Overview",
-    items: [{ href: "/dashboard", label: "Dashboard" }],
+    items: [
+      { href: "/dashboard", label: "Dashboard" },
+      { href: "/owner", label: "Owner App (mobile)" },
+    ],
   },
   {
     section: "Catalogue",
@@ -55,6 +58,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
     items: [
       { href: "/inventory", label: "Inventory" },
       { href: "/staff", label: "Staff & Attendance" },
+      { href: "/staff/attendance", label: "Attendance Review" },
       { href: "/approvals", label: "Approvals" },
       { href: "/purchasing", label: "Purchasing" },
       { href: "/delivery", label: "Delivery" },

@@ -1,6 +1,9 @@
 "use server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { notify } from "@/lib/notify";
+import { removeSubscription, saveSubscription, type BrowserSubscription } from "@/lib/push";
 import {
   canSendCodes,
   clearMemberSession,
@@ -128,8 +131,31 @@ export async function bookPickupAction(form: FormData) {
     console.error(error);
     redirect("/my/book?error=" + encodeURIComponent("Couldn't book the pickup. Please try again or call us."));
   }
+  const { data: who } = await db.from("customer").select("full_name, branch_id").eq("id", customerId).maybeSingle();
+  const when = start.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", timeZone: "Asia/Kolkata" });
+  await notify(
+    { owners: true, roles: ["receptionist"], branchId: (who as { branch_id: string | null } | null)?.branch_id ?? null },
+    {
+      kind: "pickup_requested",
+      title: "New pickup request",
+      body: `${(who as { full_name: string } | null)?.full_name ?? "A customer"} booked a pickup for ${when}. Assign a driver in the console.`,
+      staffUrl: "/work",
+      ownerUrl: "/delivery",
+    }
+  );
   revalidatePath("/my", "layout");
   redirect("/my/orders?booked=1");
+}
+
+export async function saveMemberPushAction(sub: BrowserSubscription) {
+  const { customerId, db } = requireMember();
+  return saveSubscription(db, { customer_id: customerId }, sub, headers().get("user-agent"));
+}
+
+export async function removeMemberPushAction(endpoint: string) {
+  const { db } = requireMember();
+  await removeSubscription(db, String(endpoint ?? ""));
+  return { ok: true };
 }
 
 export async function saveBirthdayAction(form: FormData) {

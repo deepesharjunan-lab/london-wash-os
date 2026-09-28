@@ -1,0 +1,17 @@
+{
+  "id": "/my",
+  "name": "The London Wash Club",
+  "short_name": "London Wash",
+  "description": "Your London Wash membership, points, rewards and orders.",
+  "start_url": "/my",
+  "scope": "/my",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f5ef",
+  "theme_color": "#f8f5ef",
+  "icons": [
+    { "src": "/appicon/club-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/club-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon/club-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

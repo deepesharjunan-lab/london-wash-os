@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PrintPreviewButton } from "@/lib/print/PrintPreviewButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateOrderStatus, recordPayment } from "./actions";
+import { updateOrderStatus, recordPayment, createGarmentTags } from "./actions";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-black/5 text-ink/60",
@@ -81,6 +81,17 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     .eq("order_id", params.id)
     .order("created_at", { ascending: true });
 
+  const itemIds = (items ?? []).map((it: any) => it.id as string);
+  const { data: garmentRows } = itemIds.length
+    ? await supabase
+        .from("garment")
+        .select("id, tag_code, stage_state, order_item_id, stage:current_stage_id(name)")
+        .in("order_item_id", itemIds)
+        .order("created_at")
+        .order("id")
+    : { data: [] as any[] };
+  const garments = (garmentRows ?? []) as any[];
+
   const paidMinor = (payments ?? [])
     .filter((p: any) => p.status !== "failed" && p.status !== "refunded")
     .reduce((sum: number, p: any) => sum + Number(p.amount_minor), 0);
@@ -91,6 +102,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     const status = String(formData.get("status") || "");
     if (!status) return;
     await updateOrderStatus(params.id, status);
+  }
+
+  async function makeTags() {
+    "use server";
+    await createGarmentTags(params.id);
   }
 
   async function addPayment(formData: FormData) {
@@ -201,6 +217,40 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <span>{formatMinor(Number(order.total_minor))}</span>
               </div>
             </div>
+          </div>
+
+          <div className="overflow-hidden border-2 border-black/10 bg-white">
+            <div className="flex items-center justify-between border-b-2 border-black/10 px-4 py-3">
+              <span className="font-archivo text-[13.5px] font-bold text-ink">Garments &amp; stages</span>
+              <span className="text-[12px] text-ink/50">{garments.length} tagged</span>
+            </div>
+            {garments.length ? (
+              <ul className="divide-y divide-black/5 text-sm">
+                {garments.map((g: any) => {
+                  const stage = Array.isArray(g.stage) ? g.stage[0] : g.stage;
+                  const line = (items ?? []).find((it: any) => it.id === g.order_item_id) as any;
+                  const lineItem = line ? (Array.isArray(line.item) ? line.item[0] : line.item) : null;
+                  return (
+                    <li key={g.id} className="flex items-center justify-between gap-3 px-4 py-2">
+                      <span>
+                        <span className="font-mono text-[12px] text-ink/50">#{g.tag_code}</span> {lineItem?.name ?? "Item"}
+                      </span>
+                      <span className="text-[12.5px] text-ink/70">
+                        {stage?.name ?? "—"}
+                        {g.stage_state === "in_progress" ? " · in progress" : ""}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <form action={makeTags} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-ink/60">
+                <span>No garment tags yet, so staff can&apos;t scan this order.</span>
+                <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110">
+                  Create garment tags
+                </button>
+              </form>
+            )}
           </div>
 
           {(loyaltyRows ?? []).length > 0 && (
