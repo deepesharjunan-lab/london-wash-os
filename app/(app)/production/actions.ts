@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { afterConsoleStatusChange } from "@/lib/staff/flow";
 import { onOrderStatus } from "@/lib/loyalty/ledger";
 
 export async function advanceOrderStatus(orderId: string, nextStatus: string) {
@@ -12,6 +13,7 @@ export async function advanceOrderStatus(orderId: string, nextStatus: string) {
   if (error) return { error: error.message };
 
   await onOrderStatus(supabase, orderId, nextStatus); // loyalty points; never throws
+  await afterConsoleStatusChange(orderId, nextStatus, null); // garment stages + customer alert; never throws
 
   revalidatePath("/production");
   revalidatePath("/orders");
