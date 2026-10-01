@@ -29,7 +29,7 @@ export default async function OrderInvoicePrintPage({ params }: { params: { id: 
   const { data: order } = await supabase
     .from("order")
     .select(
-      "id, order_number, created_at, subtotal_minor, discount_minor, tax_minor, total_minor, customer:customer_id(full_name, phone), branch:branch_id(name, address, city, state, phone), placed_by:placed_by_user_id(full_name)"
+      "id, order_number, created_at, subtotal_minor, discount_minor, tax_minor, total_minor, extra_charges, discount_note, customer:customer_id(full_name, phone), branch:branch_id(name, address, city, state, phone), placed_by:placed_by_user_id(full_name)"
     )
     .eq("id", params.id)
     .single();
@@ -173,6 +173,18 @@ export default async function OrderInvoicePrintPage({ params }: { params: { id: 
               <span>-₹{formatMoney(Number(order.discount_minor))}</span>
             </div>
           )}
+          {(order as any).discount_note && (
+            <div className="inv-row" style={{ fontSize: "0.85em", opacity: 0.75 }}>
+              <span>{String((order as any).discount_note)}</span>
+              <span />
+            </div>
+          )}
+          {(((order as any).extra_charges ?? []) as { label: string; amount_minor: number }[]).map((ch, i) => (
+            <div key={i} className="inv-row">
+              <span>{ch.label}</span>
+              <span>₹{formatMoney(Number(ch.amount_minor))}</span>
+            </div>
+          ))}
           {Number(order.tax_minor) > 0 && (
             <div className="inv-row">
               <span>Tax</span>
