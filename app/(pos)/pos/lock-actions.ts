@@ -2,8 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { OWNER_ROLES } from "@/lib/notify";
-import { checkPosPin, lockPos, setPosPin, setPosUnlocked } from "@/lib/pos/lock";
+import { POS_MANAGER_ROLES, checkPosPin, lockPos, setPosPin, setPosUnlocked } from "@/lib/pos/lock";
 
 export type LockState = { error?: string; ok?: boolean };
 
@@ -17,7 +16,7 @@ async function who() {
   if (!u?.branch_id) return null;
   const { data: roles } = await supabase.from("user_role").select("role:role_id(name)").eq("user_id", u.id);
   const names = ((roles ?? []) as any[]).map((r) => (Array.isArray(r.role) ? r.role[0] : r.role)?.name as string);
-  return { userId: u.id, branchId: u.branch_id, canManage: names.some((n) => OWNER_ROLES.includes(n)) };
+  return { userId: u.id, branchId: u.branch_id, canManage: names.some((n) => POS_MANAGER_ROLES.includes(n)) };
 }
 
 export async function unlockPosAction(_prev: LockState, form: FormData): Promise<LockState> {

@@ -2,8 +2,7 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { OWNER_ROLES } from "@/lib/notify";
-import { hasPosPin, isPosUnlocked } from "@/lib/pos/lock";
+import { POS_MANAGER_ROLES, hasPosPin, isPosUnlocked } from "@/lib/pos/lock";
 import { PosTopBar } from "./PosTopBar";
 import { PosLockScreen } from "./PosLockScreen";
 import { PosIdleLock } from "./PosIdleLock";
@@ -33,7 +32,7 @@ export default async function PosLayout({ children }: { children: React.ReactNod
 
   if (!isPosUnlocked(me.branch_id, me.id)) {
     const { data: roles } = await supabase.from("user_role").select("role:role_id(name)").eq("user_id", me.id);
-    const canManage = ((roles ?? []) as any[]).some((r) => OWNER_ROLES.includes((Array.isArray(r.role) ? r.role[0] : r.role)?.name));
+    const canManage = ((roles ?? []) as any[]).some((r) => POS_MANAGER_ROLES.includes((Array.isArray(r.role) ? r.role[0] : r.role)?.name));
     return <PosLockScreen hasPin={await hasPosPin(me.branch_id)} canManage={canManage} userName={name} branchName={branchName} />;
   }
 
