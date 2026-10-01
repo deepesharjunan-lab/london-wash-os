@@ -38,7 +38,8 @@ export async function createService(formData: FormData) {
   if (!name || !service_category_id) return;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  const { error } = await supabase.from("service").insert({ branch_id: branchId, name, service_category_id, default_unit });
+  const uses_sub_categories = formData.get("uses_sub_categories") === "on";
+  const { error } = await supabase.from("service").insert({ branch_id: branchId, name, service_category_id, default_unit, uses_sub_categories });
   if (error) console.error("createService error:", error.message);
   revalidatePath("/services");
 }
@@ -53,6 +54,39 @@ export async function toggleService(formData: FormData) {
   revalidatePath("/services");
 }
 
+export async function toggleServiceSubCategories(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const next = String(formData.get("next") || "") === "true";
+  if (!id) return;
+  const { supabase } = await getMyBranch();
+  const { error } = await supabase.from("service").update({ uses_sub_categories: next }).eq("id", id);
+  if (error) console.error("toggleServiceSubCategories error:", error.message);
+  revalidatePath("/services");
+}
+
+/* ------------------------------------------------------------------ */
+/* Sub categories                                                       */
+/* ------------------------------------------------------------------ */
+
+const toSubCats = (q: string) => redirect(`/services/sub-categories?${q}`);
+
+export async function saveSubCategory(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "").trim();
+  const description = String(formData.get("description") || "").trim() || null;
+  const is_active = formData.get("is_active") === "on";
+  if (!name) toSubCats(`error=${encodeURIComponent("Enter a name.")}`);
+  const { supabase, branchId } = await getMyBranch();
+  const { error } = id
+    ? await supabase.from("item_sub_category").update({ name, description, is_active }).eq("id", id)
+    : await supabase.from("item_sub_category").insert({ branch_id: branchId, name, description, is_active: true });
+  if (error) {
+    console.error("saveSubCategory error:", error.message);
+    toSubCats(`error=${encodeURIComponent(error.code === "23505" ? `"${name}" already exists.` : "Couldn't save the sub category.")}`);
+  }
+  revalidatePath("/services/sub-categories");
+  toSubCats(`saved=${encodeURIComponent(`${name} saved.`)}`);
+}
 /* ------------------------------------------------------------------ */
 /* Products                                                             */
 /* ------------------------------------------------------------------ */
@@ -66,15 +100,39 @@ function productFields(formData: FormData) {
   const priority = Math.max(0, Math.min(9999, Math.round(Number(formData.get("priority") || 1)) || 1));
   const description = String(formData.get("description") || "").trim() || null;
   const category = String(formData.get("category") || "").trim() || null;
+  const sub_category_id = String(formData.get("sub_category_id") || "") || null;
   const is_multipiece = formData.get("is_multipiece") === "on";
   const pieces = is_multipiece ? Math.max(2, Math.min(50, Math.round(Number(formData.get("pieces") || 2)) || 2)) : 1;
   if (!name) return { error: "Enter the product name." };
   if (!service_id) return { error: "Choose the service type." };
   if (!uom) return { error: "Choose the unit (per piece, per kg or per set)." };
-  return { row: { name, service_id, uom, priority, description, category, is_multipiece, pieces } };
+  return { row: { name, service_id, uom, priority, description, category, is_multipiece, pieces, sub_category_id } };
 }
 
 const toProducts = (q: string) => redirect(`/services/products?${q}`);
+
+/** Laundry services need a sub category (Men, Women...); custom services don't keep one. */
+async function checkSubCategory(supabase: ReturnType<typeof createClient>, row: Record<string, unknown>) {
+  const { data } = await supabase.from("service").select("uses_sub_categories").eq("id", String(row.service_id)).maybeSingle();
+  const uses = !!(data as { uses_sub_categories: boolean } | null)?.uses_sub_categories;
+  if (!uses) row.sub_category_id = null;
+  else if (!row.sub_category_id) return "Choose a sub category (Men, Women, Kids...) for this service.";
+  return null;
+}
+
+/** Sets the sub category of many products at once. */
+export async function bulkSetSubCategory(formData: FormData) {
+  const ids = formData.getAll("ids").map(String).filter(Boolean).slice(0, 500);
+  const sub = String(formData.get("bulk_sub_category_id") || "");
+  const backRaw = String(formData.get("back") || "");
+  const back = backRaw.startsWith("/services/products") ? backRaw : "/services/products"; // stay on this page only
+  if (!ids.length || !sub) redirect(`${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent("Tick some products and choose a sub category.")}`);
+  const { supabase } = await getMyBranch();
+  const { error } = await supabase.from("item").update({ sub_category_id: sub }).in("id", ids);
+  if (error) console.error("bulkSetSubCategory error:", error.message);
+  revalidatePath("/services/products");
+  redirect(`${back}${back.includes("?") ? "&" : "?"}saved=${encodeURIComponent(error ? "Couldn't update the products." : `${ids.length} products updated.`)}`);
+}
 
 export async function createItem(formData: FormData) {
   const f = productFields(formData);
@@ -82,6 +140,8 @@ export async function createItem(formData: FormData) {
   const row = (f as { row: Record<string, unknown> }).row;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
+  const subErr = await checkSubCategory(supabase, row);
+  if (subErr) toProducts(`error=${encodeURIComponent(subErr)}`);
   const { data: created, error } = await supabase.from("item").insert({ branch_id: branchId, ...row }).select("id").single();
   if (error || !created) {
     console.error("createItem error:", error?.message);
@@ -123,6 +183,8 @@ export async function updateItem(formData: FormData) {
   if ("error" in f) toProducts(`error=${encodeURIComponent(f.error!)}`);
   const row = (f as { row: Record<string, unknown> }).row;
   const { supabase } = await getMyBranch();
+  const subErr = await checkSubCategory(supabase, row);
+  if (subErr) toProducts(`error=${encodeURIComponent(subErr)}`);
   const { error } = await supabase.from("item").update(row).eq("id", id);
   if (error) {
     console.error("updateItem error:", error.message);
