@@ -817,7 +817,10 @@ export async function applyCheckout(ctx: Ctx, orderId: string, opts: { points?: 
     redeemedMinor += value;
   }
 
-  const total = Math.max(0, subtotal - discount + (Number(order.tax_minor) || 0));
+  // Additional charges (express, delivery...) are added after discounts.
+  const { data: ch } = await ctx.supabase.from("order").select("extra_charges_minor").eq("id", orderId).maybeSingle();
+  const charges = Number((ch as { extra_charges_minor?: number } | null)?.extra_charges_minor ?? 0) || 0;
+  const total = Math.max(0, subtotal - discount + (Number(order.tax_minor) || 0)) + charges;
   await ctx.supabase.from("order").update({ discount_minor: discount, loyalty_redeemed_minor: redeemedMinor, total_minor: total }).eq("id", orderId);
   return {};
 }
