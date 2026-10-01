@@ -127,7 +127,14 @@ export async function createOrder(input: {
 
   // Auto-create one trackable garment per physical piece so a printable
   // tag (with barcode) is ready the moment the order is placed.
-  const totalPieces = (insertedItems || []).reduce((sum, it: any) => sum + Number(it.quantity), 0);
+  // Multipiece products (e.g. a 3-piece suit) get one tag per piece.
+  const itemIdsForPieces = [...new Set((insertedItems || []).map((it: any) => it.item_id).filter(Boolean))] as string[];
+  const { data: pieceRows } = itemIdsForPieces.length
+    ? await supabase.from("item").select("id, pieces").in("id", itemIdsForPieces)
+    : { data: [] as { id: string; pieces: number }[] };
+  const piecesOf = new Map(((pieceRows ?? []) as { id: string; pieces: number }[]).map((r) => [r.id, Math.max(1, Number(r.pieces) || 1)] as [string, number]));
+  const unitsOf = (it: any) => Number(it.quantity) * (it.item_id ? piecesOf.get(it.item_id) ?? 1 : 1);
+  const totalPieces = (insertedItems || []).reduce((sum, it: any) => sum + unitsOf(it), 0);
   if (totalPieces > 0) {
     const { data: tagCodes, error: tagError } = await supabase.rpc("generate_garment_tags", {
       p_count: totalPieces,
@@ -136,7 +143,7 @@ export async function createOrder(input: {
     if (!tagError && tagCodes) {
       const codes = [...(tagCodes as string[])];
       const garmentsPayload = (insertedItems || []).flatMap((it: any) =>
-        Array.from({ length: Number(it.quantity) }, () => ({
+        Array.from({ length: unitsOf(it) }, () => ({
           order_item_id: it.id,
           item_id: it.item_id,
           tag_code: codes.shift(),
