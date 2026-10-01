@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
-export const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+import { PER_PAGE_OPTIONS } from "./paging";
 
 /** Page numbers plus a "per page" dropdown. Keeps the other query parameters (search etc.). */
 export function Pager({ total, page, per }: { total: number; page: number; per: number }) {
