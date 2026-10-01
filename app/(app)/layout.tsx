@@ -13,7 +13,12 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
   },
   {
     section: "Catalogue",
-    items: [{ href: "/services", label: "Services & Prices" }],
+    items: [
+      { href: "/services", label: "Services" },
+      { href: "/services/products", label: "Products" },
+      { href: "/services/price-lists", label: "Price Lists" },
+      { href: "/services/prices", label: "Add to Price List" },
+    ],
   },
   {
     section: "Sales",
