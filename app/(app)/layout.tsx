@@ -24,6 +24,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
   {
     section: "Sales",
     items: [
+      { href: "/pos", label: "Reception POS" },
       { href: "/orders", label: "Orders" },
       { href: "/customers", label: "Customers" },
       { href: "/corporate", label: "Corporate Accounts" },

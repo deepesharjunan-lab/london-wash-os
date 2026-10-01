@@ -13,6 +13,7 @@ const ICONS: Record<string, string> = {
   "/services/sub-categories": '<rect x="3.5" y="4" width="7" height="7" rx="1"/><rect x="13.5" y="4" width="7" height="7" rx="1"/><rect x="3.5" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h6M17 14.5v6"/>',
   "/services/price-lists": '<rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
   "/services/prices": '<path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8.5 8.5z"/><path d="M8 7v4M6 9h4"/>',
+  "/pos": '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M7 8h4M7 11h7"/>',
   "/orders": '<path d="M5.5 8h13l-1 12.2a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
   "/customers": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 5.3a3 3 0 0 1 0 5.4M17.5 14.8c1.6.6 2.6 2 3 4.2"/>',
   "/corporate": '<rect x="4" y="7" width="16" height="13" rx="1"/><path d="M9 7V4.5h6V7M4 12h16"/>',
