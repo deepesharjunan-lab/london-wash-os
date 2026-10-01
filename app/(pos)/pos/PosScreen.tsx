@@ -156,7 +156,7 @@ export function PosScreen({
     setCart((c) => {
       const next = { ...c };
       if (qty <= 0) delete next[id];
-      else next[id] = { tags: [], text: "", ...c[id], qty: Math.min(999, qty) };
+      else next[id] = { ...(c[id] ?? { tags: [], text: "" }), qty: Math.min(999, qty) };
       return next;
     });
 
