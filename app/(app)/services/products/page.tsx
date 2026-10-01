@@ -2,25 +2,36 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createItem, toggleItem, updateItem } from "../actions";
 import { CatalogueTabs } from "../CatalogueTabs";
+import { PER_PAGE_OPTIONS, Pager } from "../Pager";
 
 const field = "w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent";
 
-export default async function ProductsPage({ searchParams }: { searchParams: { q?: string; show?: string } }) {
+export default async function ProductsPage({ searchParams }: { searchParams: { q?: string; show?: string; page?: string; per?: string } }) {
   const supabase = createClient();
   const q = String(searchParams.q ?? "").trim().slice(0, 60);
   const showHidden = searchParams.show === "all";
+  const per = PER_PAGE_OPTIONS.includes(Number(searchParams.per)) ? Number(searchParams.per) : 25;
+  const page = Math.max(1, Math.floor(Number(searchParams.page) || 1));
 
-  let query = supabase.from("item").select("id, name, category, is_active").is("deleted_at", null).order("category").order("name");
+  let query = supabase
+    .from("item")
+    .select("id, name, category, is_active", { count: "exact" })
+    .is("deleted_at", null)
+    .order("category")
+    .order("name")
+    .range((page - 1) * per, page * per - 1);
   if (q) query = query.or(`name.ilike.%${q.replace(/[%,()]/g, "")}%,category.ilike.%${q.replace(/[%,()]/g, "")}%`);
   if (!showHidden) query = query.eq("is_active", true);
-  const [{ data: items }, { data: entries }] = await Promise.all([
+  const [{ data: items, count }, { data: entries }, { data: cats }] = await Promise.all([
     query,
     supabase.from("price_list_entry").select("item_id").eq("is_active", true).not("item_id", "is", null),
+    supabase.from("item").select("category").is("deleted_at", null).not("category", "is", null),
   ]);
+  const total = count ?? 0;
   const priced = new Map<string, number>();
   ((entries ?? []) as { item_id: string }[]).forEach((e) => priced.set(e.item_id, (priced.get(e.item_id) ?? 0) + 1));
   const list = (items ?? []) as { id: string; name: string; category: string | null; is_active: boolean }[];
-  const categories = [...new Set(list.map((i) => i.category).filter(Boolean))] as string[];
+  const categories = [...new Set(((cats ?? []) as { category: string | null }[]).map((i) => i.category).filter(Boolean))].sort() as string[];
 
   return (
     <div>
@@ -33,15 +44,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
         <div className="overflow-hidden border-2 border-black/10 bg-white">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black/10 px-4 py-3">
             <span className="font-archivo text-[13.5px] font-bold text-ink">
-              Products <span className="font-normal text-ink/50">({list.length})</span>
+              Products <span className="font-normal text-ink/50">({total})</span>
             </span>
             <form className="flex items-center gap-2">
               <input name="q" defaultValue={q} placeholder="Search name or category" className="w-56 border border-black/10 px-3 py-1.5 text-sm" />
               {showHidden && <input type="hidden" name="show" value="all" />}
+              <input type="hidden" name="per" value={per} />
               <button type="submit" className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
                 Search
               </button>
-              <Link href={`/services/products?${q ? `q=${encodeURIComponent(q)}&` : ""}${showHidden ? "" : "show=all"}`} className="text-xs font-semibold text-accent hover:underline">
+              <Link href={`/services/products?per=${per}${q ? `&q=${encodeURIComponent(q)}` : ""}${showHidden ? "" : "&show=all"}`} className="text-xs font-semibold text-accent hover:underline">
                 {showHidden ? "Hide hidden" : "Show hidden"}
               </Link>
             </form>
@@ -92,6 +104,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
               )}
             </tbody>
           </table>
+          {total > 0 && <Pager total={total} page={page} per={per} />}
         </div>
 
         <form action={createItem} className="space-y-2 self-start border-2 border-black/10 bg-white p-4">
