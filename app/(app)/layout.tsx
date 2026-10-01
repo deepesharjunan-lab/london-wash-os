@@ -16,6 +16,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
     items: [
       { href: "/services", label: "Services" },
       { href: "/services/products", label: "Products" },
+      { href: "/services/sub-categories", label: "Sub Categories" },
       { href: "/services/price-lists", label: "Price Lists" },
       { href: "/services/prices", label: "Add to Price List" },
     ],
