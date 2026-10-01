@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createItem, toggleItem, updateItem } from "../actions";
 import { CatalogueTabs } from "../CatalogueTabs";
-import { PER_PAGE_OPTIONS, Pager } from "../Pager";
+import { Pager } from "../Pager";
+import { PER_PAGE_OPTIONS } from "../paging";
 
 const field = "w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent";
 
