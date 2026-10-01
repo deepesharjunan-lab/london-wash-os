@@ -47,7 +47,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const { data: order } = await supabase
     .from("order")
     .select(
-      "id, order_number, status, channel, subtotal_minor, discount_minor, loyalty_redeemed_minor, tax_minor, total_minor, currency, created_at, customer:customer_id(id, full_name, phone, email), price_list_profile:price_list_profile_id(name)"
+      "id, order_number, status, channel, subtotal_minor, discount_minor, loyalty_redeemed_minor, tax_minor, total_minor, extra_charges, extra_charges_minor, discount_note, currency, created_at, customer:customer_id(id, full_name, phone, email), price_list_profile:price_list_profile_id(name)"
     )
     .eq("id", params.id)
     .single();
@@ -208,6 +208,13 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   <span>-{formatMinor(Number((order as any).loyalty_redeemed_minor))}</span>
                 </div>
               )}
+              {(order as any).discount_note && <div className="pl-3 text-[12.5px] text-ink/50">{String((order as any).discount_note)}</div>}
+              {(((order as any).extra_charges ?? []) as { label: string; amount_minor: number }[]).map((ch, i) => (
+                <div key={i} className="flex items-center justify-between text-ink/60">
+                  <span>{ch.label}</span>
+                  <span>+{formatMinor(Number(ch.amount_minor))}</span>
+                </div>
+              ))}
               <div className="flex items-center justify-between text-ink/60">
                 <span>Tax</span>
                 <span>{formatMinor(Number(order.tax_minor))}</span>
