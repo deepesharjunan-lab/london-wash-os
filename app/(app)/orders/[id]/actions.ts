@@ -55,13 +55,17 @@ export async function createGarmentTags(orderId: string) {
   const { count } = await supabase.from("garment").select("id", { count: "exact", head: true }).in("order_item_id", rows.map((r) => r.id));
   if ((count ?? 0) > 0) return { error: "This order already has garment tags." };
 
-  const total = rows.reduce((a, r) => a + Number(r.quantity || 0), 0);
+  const ids = [...new Set(rows.map((r) => r.item_id).filter(Boolean))] as string[];
+  const { data: pieceRows } = ids.length ? await supabase.from("item").select("id, pieces").in("id", ids) : { data: [] as { id: string; pieces: number }[] };
+  const piecesOf = new Map(((pieceRows ?? []) as { id: string; pieces: number }[]).map((p) => [p.id, Math.max(1, Number(p.pieces) || 1)] as [string, number]));
+  const unitsOf = (r: { quantity: number; item_id: string | null }) => Number(r.quantity || 0) * (r.item_id ? piecesOf.get(r.item_id) ?? 1 : 1);
+  const total = rows.reduce((a, r) => a + unitsOf(r), 0);
   if (total <= 0 || total > 500) return { error: "Check the item quantities on this order." };
   const { data: codes, error: codeError } = await supabase.rpc("generate_garment_tags", { p_count: total });
   if (codeError || !codes) return { error: "Couldn't create tag numbers." };
   const list = [...(codes as string[])];
   const { error } = await supabase.from("garment").insert(
-    rows.flatMap((r) => Array.from({ length: Number(r.quantity) }, () => ({ order_item_id: r.id, item_id: r.item_id, tag_code: list.shift() })))
+    rows.flatMap((r) => Array.from({ length: unitsOf(r) }, () => ({ order_item_id: r.id, item_id: r.item_id, tag_code: list.shift() })))
   );
   if (error) return { error: error.message };
   revalidatePath(`/orders/${orderId}`);
