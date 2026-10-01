@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-export type ServiceOption = { id: string; name: string; default_unit: string | null };
+export type ServiceOption = { id: string; name: string; default_unit: string | null; uses_sub_categories?: boolean };
+export type SubCategoryOption = { id: string; name: string };
 export type ProductValues = {
   name?: string;
   priority?: number;
@@ -12,6 +13,7 @@ export type ProductValues = {
   category?: string | null;
   is_multipiece?: boolean;
   pieces?: number;
+  sub_category_id?: string | null;
 };
 
 const UNITS = [
@@ -29,9 +31,21 @@ const req = <span className="text-[#b5651d]">*</span>;
  * The product fields used by Add and Edit: name, priority, service type, unit,
  * description, category and multipiece. Choosing a service fills in its usual unit.
  */
-export function ProductFields({ services, values = {}, idPrefix }: { services: ServiceOption[]; values?: ProductValues; idPrefix: string }) {
+export function ProductFields({
+  services,
+  subCategories,
+  values = {},
+  idPrefix,
+}: {
+  services: ServiceOption[];
+  subCategories: SubCategoryOption[];
+  values?: ProductValues;
+  idPrefix: string;
+}) {
   const [uom, setUom] = useState(normUnit(values.uom) || "");
   const [multi, setMulti] = useState(!!values.is_multipiece);
+  const [serviceId, setServiceId] = useState(values.service_id ?? "");
+  const usesSub = !!services.find((s) => s.id === serviceId)?.uses_sub_categories;
   const id = (s: string) => `${idPrefix}-${s}`;
 
   return (
@@ -48,6 +62,7 @@ export function ProductFields({ services, values = {}, idPrefix }: { services: S
           required
           defaultValue={values.service_id ?? ""}
           onChange={(e) => {
+            setServiceId(e.target.value);
             const s = services.find((x) => x.id === e.target.value);
             if (s?.default_unit) setUom(normUnit(s.default_unit));
           }}
@@ -76,6 +91,21 @@ export function ProductFields({ services, values = {}, idPrefix }: { services: S
           ))}
         </select>
       </label>
+      {usesSub && (
+        <label className={label + " sm:col-span-2"} htmlFor={id("sub")}>
+          Sub category {req}
+          <select id={id("sub")} name="sub_category_id" required defaultValue={values.sub_category_id ?? ""} className={field + " mt-1"}>
+            <option value="" disabled>
+              Select sub category
+            </option>
+            {subCategories.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className={label} htmlFor={id("priority")}>
         Priority
         <input id={id("priority")} name="priority" type="number" min={0} max={9999} defaultValue={values.priority ?? 1} className={field + " mt-1"} />

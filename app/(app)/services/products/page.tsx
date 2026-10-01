@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createItem, toggleItem, updateItem } from "../actions";
+import { bulkSetSubCategory, createItem, toggleItem, updateItem } from "../actions";
 import { CatalogueTabs } from "../CatalogueTabs";
 import { Pager } from "../Pager";
 import { PER_PAGE_OPTIONS } from "../paging";
-import { ProductFields, type ServiceOption } from "./ProductFields";
+import { ProductFields, type ServiceOption, type SubCategoryOption } from "./ProductFields";
 
 const UOM_LABEL: Record<string, string> = { per_piece: "Per piece", per_kg: "Per kg", per_set: "Per set" };
 
@@ -19,23 +19,25 @@ type Product = {
   description: string | null;
   is_multipiece: boolean;
   pieces: number;
+  sub_category_id: string | null;
 };
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: { q?: string; show?: string; page?: string; per?: string; service?: string; saved?: string; error?: string };
+  searchParams: { q?: string; show?: string; page?: string; per?: string; service?: string; sub?: string; saved?: string; error?: string };
 }) {
   const supabase = createClient();
   const q = String(searchParams.q ?? "").trim().slice(0, 60);
   const showHidden = searchParams.show === "all";
   const serviceFilter = String(searchParams.service ?? "");
+  const subFilter = String(searchParams.sub ?? "");
   const per = PER_PAGE_OPTIONS.includes(Number(searchParams.per)) ? Number(searchParams.per) : 25;
   const page = Math.max(1, Math.floor(Number(searchParams.page) || 1));
 
   let query = supabase
     .from("item")
-    .select("id, name, category, is_active, service_id, uom, priority, description, is_multipiece, pieces", { count: "exact" })
+    .select("id, name, category, is_active, service_id, uom, priority, description, is_multipiece, pieces, sub_category_id", { count: "exact" })
     .is("deleted_at", null)
     .order("priority")
     .order("name")
@@ -43,14 +45,19 @@ export default async function ProductsPage({
   if (q) query = query.or(`name.ilike.%${q.replace(/[%,()]/g, "")}%,category.ilike.%${q.replace(/[%,()]/g, "")}%`);
   if (!showHidden) query = query.eq("is_active", true);
   if (serviceFilter) query = query.eq("service_id", serviceFilter);
+  if (subFilter === "none") query = query.is("sub_category_id", null);
+  else if (subFilter) query = query.eq("sub_category_id", subFilter);
 
-  const [{ data: items, count }, { data: entries }, { data: cats }, { data: svc }, { data: lists }] = await Promise.all([
+  const [{ data: items, count }, { data: entries }, { data: cats }, { data: svc }, { data: lists }, { data: subs }] = await Promise.all([
     query,
     supabase.from("price_list_entry").select("item_id").eq("is_active", true).not("item_id", "is", null),
     supabase.from("item").select("category").is("deleted_at", null).not("category", "is", null),
-    supabase.from("service").select("id, name, default_unit, is_active").is("deleted_at", null).order("name"),
+    supabase.from("service").select("id, name, default_unit, is_active, uses_sub_categories").is("deleted_at", null).order("name"),
     supabase.from("price_list_profile").select("id, name, is_default").eq("is_active", true).order("is_default", { ascending: false }).order("name"),
+    supabase.from("item_sub_category").select("id, name").eq("is_active", true).order("sort_order").order("name"),
   ]);
+  const subCategories = (subs ?? []) as SubCategoryOption[];
+  const subName = new Map(subCategories.map((s) => [s.id, s.name] as [string, string]));
   const total = count ?? 0;
   const priced = new Map<string, number>();
   ((entries ?? []) as { item_id: string }[]).forEach((e) => priced.set(e.item_id, (priced.get(e.item_id) ?? 0) + 1));
@@ -59,7 +66,8 @@ export default async function ProductsPage({
   const services = ((svc ?? []) as (ServiceOption & { is_active: boolean })[]).filter((s) => s.is_active);
   const serviceName = new Map(((svc ?? []) as { id: string; name: string }[]).map((s) => [s.id, s.name] as [string, string]));
   const priceLists = (lists ?? []) as { id: string; name: string; is_default: boolean }[];
-  const keep = (extra: string) => `/services/products?per=${per}${q ? `&q=${encodeURIComponent(q)}` : ""}${serviceFilter ? `&service=${serviceFilter}` : ""}${extra}`;
+  const keep = (extra: string) => `/services/products?per=${per}${q ? `&q=${encodeURIComponent(q)}` : ""}${serviceFilter ? `&service=${serviceFilter}` : ""}${subFilter ? `&sub=${subFilter}` : ""}${extra}`;
+  const usesSub = new Set(services.filter((s) => s.uses_sub_categories).map((s) => s.id));
 
   return (
     <div>
@@ -75,7 +83,7 @@ export default async function ProductsPage({
       <details className="mb-6 border-2 border-black/10 bg-white" open={total === 0}>
         <summary className="cursor-pointer select-none px-5 py-3 text-[13.5px] font-semibold text-ink">+ Add product</summary>
         <form action={createItem} className="space-y-4 border-t border-black/5 px-5 py-4">
-          <ProductFields services={services} idPrefix="new" />
+          <ProductFields services={services} subCategories={subCategories} idPrefix="new" />
           <div className="grid gap-3 border-t border-black/5 pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="block text-[12px] font-semibold text-ink/60">
               Price (₹, optional)
@@ -115,6 +123,15 @@ export default async function ProductsPage({
                 </option>
               ))}
             </select>
+            <select name="sub" defaultValue={subFilter} className="border border-black/10 px-2 py-1.5 text-sm" aria-label="Filter by sub category">
+              <option value="">All sub categories</option>
+              {subCategories.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+              <option value="none">Not set</option>
+            </select>
             {showHidden && <input type="hidden" name="show" value="all" />}
             <input type="hidden" name="per" value={per} />
             <button type="submit" className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
@@ -126,12 +143,16 @@ export default async function ProductsPage({
           </form>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
               <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
+                <th className="w-8 px-4 py-2">
+                  <span className="sr-only">Select</span>
+                </th>
                 <th className="px-4 py-2">Priority</th>
                 <th className="px-4 py-2">Product</th>
                 <th className="px-4 py-2">Service type</th>
+                <th className="px-4 py-2">Sub category</th>
                 <th className="px-4 py-2">UOM</th>
                 <th className="px-4 py-2">Pieces</th>
                 <th className="px-4 py-2">In price lists</th>
@@ -141,6 +162,9 @@ export default async function ProductsPage({
             <tbody>
               {list.map((i) => (
                 <tr key={i.id} className={"border-b border-black/5 align-top last:border-0 " + (i.is_active ? "" : "opacity-50")}>
+                  <td className="px-4 py-2.5">
+                    <input type="checkbox" name="ids" value={i.id} form="bulk-sub" aria-label={`Select ${i.name}`} className="h-4 w-4" />
+                  </td>
                   <td className="px-4 py-2.5 text-ink/60">{i.priority}</td>
                   <td className="px-4 py-2.5">
                     <div className="font-medium text-ink">{i.name}</div>
@@ -149,6 +173,9 @@ export default async function ProductsPage({
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-ink/70">{i.service_id ? serviceName.get(i.service_id) ?? "—" : <span className="text-[#8a5a12]">Not set</span>}</td>
+                  <td className="px-4 py-2.5 text-ink/70">
+                    {i.sub_category_id ? subName.get(i.sub_category_id) ?? "—" : i.service_id && usesSub.has(i.service_id) ? <span className="text-[#8a5a12]">Not set</span> : <span className="text-ink/30">—</span>}
+                  </td>
                   <td className="px-4 py-2.5 text-ink/70">{UOM_LABEL[i.uom ?? ""] ?? "—"}</td>
                   <td className="px-4 py-2.5 text-ink/70">{i.is_multipiece ? `${i.pieces} pcs` : "1"}</td>
                   <td className="px-4 py-2.5 text-ink/60">{priced.get(i.id) ? `${priced.get(i.id)} prices` : <span className="text-[#8a5a12]">Not priced</span>}</td>
@@ -157,7 +184,7 @@ export default async function ProductsPage({
                       <summary className="cursor-pointer list-none text-xs font-semibold text-accent hover:underline">Edit</summary>
                       <form action={updateItem} className="absolute right-0 z-10 mt-2 w-[520px] max-w-[90vw] space-y-3 border-2 border-black/10 bg-white p-4 shadow-lg">
                         <input type="hidden" name="id" value={i.id} />
-                        <ProductFields services={services} values={i} idPrefix={`e-${i.id}`} />
+                        <ProductFields services={services} subCategories={subCategories} values={i} idPrefix={`e-${i.id}`} />
                         <button type="submit" className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white">
                           Save
                         </button>
@@ -175,14 +202,33 @@ export default async function ProductsPage({
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-sm text-ink/40">
-                    {q || serviceFilter ? "No products match." : "No products yet. Add your first one above."}
+                  <td colSpan={9} className="px-4 py-6 text-center text-sm text-ink/40">
+                    {q || serviceFilter || subFilter ? "No products match." : "No products yet. Add your first one above."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        {list.length > 0 && (
+          <form id="bulk-sub" action={bulkSetSubCategory} className="flex flex-wrap items-center gap-2 border-t border-black/5 bg-[#faf8f4] px-4 py-2.5 text-[13px] text-ink/70">
+            <input type="hidden" name="back" value={keep(`&page=${page}`)} />
+            Ticked products: set sub category to
+            <select name="bulk_sub_category_id" defaultValue="" className="border border-black/10 px-2 py-1 text-sm" aria-label="Sub category for ticked products">
+              <option value="" disabled>
+                Choose…
+              </option>
+              {subCategories.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="rounded-md bg-slate-900 px-3 py-1 text-sm font-medium text-white">
+              Apply
+            </button>
+          </form>
+        )}
         {total > 0 && <Pager total={total} page={page} per={per} />}
       </div>
       <datalist id="item-categories">
