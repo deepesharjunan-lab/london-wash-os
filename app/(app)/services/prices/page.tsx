@@ -10,13 +10,13 @@ const UNIT_LABEL: Record<string, string> = { per_piece: "per piece", per_kg: "pe
 export default async function AddToPriceListPage({
   searchParams,
 }: {
-  searchParams: { list?: string; service?: string; q?: string; saved?: string; error?: string };
+  searchParams: { list?: string; service?: string; q?: string; all?: string; saved?: string; error?: string };
 }) {
   const supabase = createClient();
   const [{ data: profiles }, { data: services }, { data: items }] = await Promise.all([
     supabase.from("price_list_profile").select("id, name, is_default, is_active").order("is_default", { ascending: false }).order("name"),
     supabase.from("service").select("id, name, default_unit, is_active").is("deleted_at", null).order("name"),
-    supabase.from("item").select("id, name, category").eq("is_active", true).is("deleted_at", null).order("category").order("name"),
+    supabase.from("item").select("id, name, category, service_id, uom").eq("is_active", true).is("deleted_at", null).order("priority").order("name"),
   ]);
   const lists = ((profiles ?? []) as any[]).filter((p) => p.is_active || p.id === searchParams.list);
   const svcs = ((services ?? []) as any[]).filter((s) => s.is_active || s.id === searchParams.service);
@@ -35,9 +35,16 @@ export default async function AddToPriceListPage({
   const forService = service ? all.filter((e) => e.service_id === service.id) : [];
   const byItem = new Map(forService.map((e) => [e.item_id ?? "any", e] as [string, any]));
   const unit = forService[0]?.unit ?? (["per_piece", "per_kg", "per_set"].includes(service?.default_unit) ? service.default_unit : "per_piece");
-  const products = ((items ?? []) as { id: string; name: string; category: string | null }[]).filter(
-    (i) => !q || i.name.toLowerCase().includes(q) || (i.category ?? "").toLowerCase().includes(q)
+  const showAll = searchParams.all === "1";
+  type Prod = { id: string; name: string; category: string | null; service_id: string | null; uom: string | null };
+  const allProducts = (items ?? []) as Prod[];
+  // By default show the products of this service (plus any already priced here, and products without a service yet).
+  const products = allProducts.filter(
+    (i) =>
+      (!q || i.name.toLowerCase().includes(q) || (i.category ?? "").toLowerCase().includes(q)) &&
+      (showAll || !service || !i.service_id || i.service_id === service.id || byItem.has(i.id))
   );
+  const hiddenCount = allProducts.length - allProducts.filter((i) => showAll || !service || !i.service_id || i.service_id === service.id || byItem.has(i.id)).length;
   const perService = new Map<string, number>();
   all.forEach((e) => perService.set(e.service_id, (perService.get(e.service_id) ?? 0) + 1));
   const listName = lists.find((p) => p.id === listId)?.name ?? "";
@@ -107,7 +114,7 @@ export default async function AddToPriceListPage({
                 </span>
                 <span className="flex items-center gap-3">
                   <label className="flex items-center gap-2 text-[12.5px] text-ink/60">
-                    Charged
+                    Default unit
                     <select name="unit" defaultValue={unit} className="border border-black/10 px-2 py-1 text-sm">
                       <option value="per_piece">per piece</option>
                       <option value="per_kg">per kg</option>
@@ -122,6 +129,15 @@ export default async function AddToPriceListPage({
               </div>
               <p className="border-b border-black/5 px-4 py-2 text-[12.5px] text-ink/50">
                 Type a price (₹) next to each product this service applies to. Leave the rest blank. Existing prices are filled in and can be changed.
+                {!showAll && hiddenCount > 0 && (
+                  <>
+                    {" "}
+                    Showing products of this service.{" "}
+                    <Link href={`/services/prices?list=${listId}&service=${service.id}&all=1`} className="font-semibold text-accent hover:underline">
+                      Show all {allProducts.length} products
+                    </Link>
+                  </>
+                )}
               </p>
               <table className="w-full text-sm">
                 <thead>
@@ -129,11 +145,12 @@ export default async function AddToPriceListPage({
                     <th className="px-4 py-2">Product</th>
                     <th className="px-4 py-2">Category</th>
                     <th className="px-4 py-2">Price (₹)</th>
+                    <th className="px-4 py-2">Charged</th>
                     <th className="px-4 py-2"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[{ id: "any", name: "Any item (one price for the service, e.g. per kg)", category: null as string | null }, ...products].map((p) => {
+                  {[{ id: "any", name: "Any item (one price for the service, e.g. per kg)", category: null as string | null, service_id: null, uom: null } as Prod, ...products].map((p) => {
                     const e = byItem.get(p.id);
                     return (
                       <tr key={p.id} className={"border-b border-black/5 last:border-0 " + (e ? "bg-[#f7faf8]" : "")}>
@@ -152,6 +169,13 @@ export default async function AddToPriceListPage({
                             className="w-28 border border-black/10 px-2 py-1.5 text-sm"
                           />
                         </td>
+                        <td className="px-4 py-2">
+                          <select name={`unit__${p.id}`} defaultValue={e?.unit ?? p.uom ?? unit} aria-label={`Unit for ${p.name}`} className="border border-black/10 px-2 py-1.5 text-sm">
+                            <option value="per_piece">per piece</option>
+                            <option value="per_kg">per kg</option>
+                            <option value="per_set">per set</option>
+                          </select>
+                        </td>
                         <td className="px-4 py-2 text-right">
                           {e && (
                             <button type="submit" formAction={removePriceEntry} name="id" value={e.id} className="text-xs font-semibold text-[#9c3326] hover:underline">
@@ -164,7 +188,7 @@ export default async function AddToPriceListPage({
                   })}
                   {products.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-4 text-center text-sm text-ink/40">
+                      <td colSpan={5} className="px-4 py-4 text-center text-sm text-ink/40">
                         {q ? "No products match the filter." : (
                           <>
                             No products yet. Add them on{" "}
