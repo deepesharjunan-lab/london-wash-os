@@ -57,28 +57,80 @@ export async function toggleService(formData: FormData) {
 /* Products                                                             */
 /* ------------------------------------------------------------------ */
 
-export async function createItem(formData: FormData) {
+/** Reads the product fields shared by Add and Edit. Returns an error message or the row. */
+function productFields(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  const category = String(formData.get("category") || "").trim();
-  if (!name) return;
+  const service_id = String(formData.get("service_id") || "");
+  const uomRaw = String(formData.get("uom") || "");
+  const uom = UNITS.includes(uomRaw) ? uomRaw : "";
+  const priority = Math.max(0, Math.min(9999, Math.round(Number(formData.get("priority") || 1)) || 1));
+  const description = String(formData.get("description") || "").trim() || null;
+  const category = String(formData.get("category") || "").trim() || null;
+  const is_multipiece = formData.get("is_multipiece") === "on";
+  const pieces = is_multipiece ? Math.max(2, Math.min(50, Math.round(Number(formData.get("pieces") || 2)) || 2)) : 1;
+  if (!name) return { error: "Enter the product name." };
+  if (!service_id) return { error: "Choose the service type." };
+  if (!uom) return { error: "Choose the unit (per piece, per kg or per set)." };
+  return { row: { name, service_id, uom, priority, description, category, is_multipiece, pieces } };
+}
+
+const toProducts = (q: string) => redirect(`/services/products?${q}`);
+
+export async function createItem(formData: FormData) {
+  const f = productFields(formData);
+  if ("error" in f) toProducts(`error=${encodeURIComponent(f.error!)}`);
+  const row = (f as { row: Record<string, unknown> }).row;
   const { supabase, branchId } = await getMyBranch();
   if (!branchId) return;
-  const { error } = await supabase.from("item").insert({ branch_id: branchId, name, category: category || null });
-  if (error) console.error("createItem error:", error.message);
+  const { data: created, error } = await supabase.from("item").insert({ branch_id: branchId, ...row }).select("id").single();
+  if (error || !created) {
+    console.error("createItem error:", error?.message);
+    toProducts(`error=${encodeURIComponent("Couldn't add the product.")}`);
+  }
+
+  // Optional price: put the product straight into a price list.
+  const priceRaw = String(formData.get("price") || "").trim();
+  let priced = "";
+  if (priceRaw) {
+    const rupees = Number(priceRaw);
+    let listId = String(formData.get("price_list_profile_id") || "");
+    if (!listId) {
+      const { data: def } = await supabase.from("price_list_profile").select("id").eq("is_default", true).eq("is_active", true).limit(1).maybeSingle();
+      listId = (def as { id: string } | null)?.id ?? "";
+    }
+    if (Number.isFinite(rupees) && rupees >= 0 && listId) {
+      const { error: pErr } = await supabase.from("price_list_entry").insert({
+        price_list_profile_id: listId,
+        service_id: row.service_id,
+        item_id: (created as { id: string }).id,
+        price_minor: Math.round(rupees * 100),
+        unit: row.uom,
+      });
+      priced = pErr ? " The price couldn't be saved; add it on Add to Price List." : " Price added to the price list.";
+      if (pErr) console.error("createItem price error:", pErr.message);
+    } else {
+      priced = " No price list to add the price to; add it on Add to Price List.";
+    }
+  }
   revalidatePath("/services/products");
+  toProducts(`saved=${encodeURIComponent(`${row.name} added.${priced}`)}`);
 }
 
 export async function updateItem(formData: FormData) {
   const id = String(formData.get("id") || "");
-  const name = String(formData.get("name") || "").trim();
-  const category = String(formData.get("category") || "").trim();
-  if (!id || !name) return;
+  if (!id) return;
+  const f = productFields(formData);
+  if ("error" in f) toProducts(`error=${encodeURIComponent(f.error!)}`);
+  const row = (f as { row: Record<string, unknown> }).row;
   const { supabase } = await getMyBranch();
-  const { error } = await supabase.from("item").update({ name, category: category || null }).eq("id", id);
-  if (error) console.error("updateItem error:", error.message);
+  const { error } = await supabase.from("item").update(row).eq("id", id);
+  if (error) {
+    console.error("updateItem error:", error.message);
+    toProducts(`error=${encodeURIComponent("Couldn't save the product.")}`);
+  }
   revalidatePath("/services/products");
+  toProducts(`saved=${encodeURIComponent(`${row.name} saved.`)}`);
 }
-
 export async function toggleItem(formData: FormData) {
   const id = String(formData.get("id") || "");
   const next = String(formData.get("next_active") || "") === "true";
@@ -152,7 +204,7 @@ export async function savePrices(formData: FormData) {
   const back = (q: string) => redirect(`/services/prices?list=${listId}&service=${serviceId}&${q}`);
   if (!listId || !serviceId) redirect("/services/prices");
 
-  const wanted: { itemId: string | null; minor: number }[] = [];
+  const wanted: { itemId: string | null; minor: number; unit: string }[] = [];
   let invalid = 0;
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("price__")) continue;
@@ -164,7 +216,8 @@ export async function savePrices(formData: FormData) {
       continue;
     }
     const id = key.slice("price__".length);
-    wanted.push({ itemId: id === "any" ? null : id, minor: Math.round(rupees * 100) });
+    const rowUnit = String(formData.get(`unit__${id}`) || "");
+    wanted.push({ itemId: id === "any" ? null : id, minor: Math.round(rupees * 100), unit: UNITS.includes(rowUnit) ? rowUnit : unit });
   }
   if (invalid) back(`error=${encodeURIComponent(`${invalid} price(s) weren't numbers. Nothing was saved.`)}`);
   if (!wanted.length) back(`error=${encodeURIComponent("Enter at least one price.")}`);
@@ -184,11 +237,11 @@ export async function savePrices(formData: FormData) {
   for (const w of wanted) {
     const id = existing.get(w.itemId ?? "any");
     if (id) {
-      const { error } = await supabase.from("price_list_entry").update({ price_minor: w.minor, unit, is_active: true }).eq("id", id);
+      const { error } = await supabase.from("price_list_entry").update({ price_minor: w.minor, unit: w.unit, is_active: true }).eq("id", id);
       if (error) console.error("savePrices update error:", error.message);
       else updated++;
     } else {
-      inserts.push({ price_list_profile_id: listId, service_id: serviceId, item_id: w.itemId, price_minor: w.minor, unit });
+      inserts.push({ price_list_profile_id: listId, service_id: serviceId, item_id: w.itemId, price_minor: w.minor, unit: w.unit });
     }
   }
   if (inserts.length) {
