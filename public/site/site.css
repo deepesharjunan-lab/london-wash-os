@@ -1052,6 +1052,14 @@ a { color: var(--lw-elephant); }
 .lw-burger { display: none; background: none; border: 0; color: var(--lw-elephant); padding: 8px; cursor: pointer; }
 .lw-burger svg { width: 28px; height: 28px; display: block; }
 .lw-header a:focus-visible, .lw-burger:focus-visible { outline: 3px solid var(--lw-saffron); outline-offset: 3px; }
+/* Google rating badge and directions link */
+.lw-rating { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.85); font-size: 14px; text-decoration: none; }
+.lw-rating:hover { background: rgba(255,255,255,.14); color: #fff; }
+.lw-rating strong { color: #fff; }
+.lw-stars { color: var(--lw-saffron); letter-spacing: 2px; }
+.lw-contact-list a.lw-directions { display: flex; width: fit-content; align-items: center; gap: 6px; margin-top: 6px; font-size: 14px; color: var(--lw-saffron-deep); }
+.lw-directions svg { width: 16px; height: 16px; }
+
 @media (max-width: 960px) {
   .lw-header > .lw-wrap { min-height: 68px; }
   .lw-header-logo img { height: 44px; }
