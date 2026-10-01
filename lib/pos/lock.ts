@@ -8,6 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // re-locks itself after 15 minutes without use (see PosIdleLock).
 // Server-only.
 
+/** Console roles that may set or change the POS PIN. */
+export const POS_MANAGER_ROLES = ["Admin", "Manager"];
+
 const COOKIE = "lw_pos";
 const MAX_HOURS = 12;
 const MAX_FAILS = 5;
