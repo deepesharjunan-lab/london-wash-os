@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { onOrderStatus, onPayment } from "@/lib/loyalty/ledger";
 import { afterConsoleStatusChange } from "@/lib/staff/flow";
+import { validateCoupon, type CouponResult } from "@/lib/pos/pricing";
 
 export type CustomerHit = { id: string; full_name: string; phone: string | null; orders: number };
 
@@ -63,4 +64,21 @@ export async function handOverAtCounter(formData: FormData) {
   }
   revalidatePath("/pos/orders");
   back(`done=${encodeURIComponent(`${order!.order_number} handed over.`)}`);
+}
+
+/** Checks a coupon code for the POS before the order is placed. */
+export async function checkCouponAction(code: string, subtotalMinor: number): Promise<CouponResult> {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return { ok: false, error: "You are not signed in." };
+  return validateCoupon(supabase, code, Math.max(0, Math.round(Number(subtotalMinor) || 0)));
+}
+
+/** The customer's store-credit wallet balance (paise), or 0. */
+export async function walletBalanceAction(customerId: string): Promise<number> {
+  const supabase = createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user || !customerId) return 0;
+  const { data } = await supabase.from("wallet").select("balance_minor").eq("customer_id", customerId).maybeSingle();
+  return Number((data as { balance_minor: number } | null)?.balance_minor ?? 0);
 }

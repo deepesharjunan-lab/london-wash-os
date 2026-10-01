@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createCustomerQuick, createOrder, getCheckoutLoyalty } from "@/app/(app)/orders/new/actions";
-import { searchCustomers, type CustomerHit } from "./actions";
+import { checkCouponAction, searchCustomers, walletBalanceAction, type CustomerHit } from "./actions";
+import { garmentIcon, serviceIcon } from "@/lib/pos/garmentIcons";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                                */
@@ -113,6 +114,17 @@ export function PosScreen({
   const [loyalty, setLoyalty] = useState<Loyalty | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Adjustments
+  const [walletMinor, setWalletMinor] = useState(0);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; label: string; discountMinor: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [discKind, setDiscKind] = useState<"percent" | "amount">("percent");
+  const [discValue, setDiscValue] = useState("");
+  const [discNote, setDiscNote] = useState("");
+  const [charges, setCharges] = useState<{ key: number; label: string; amount: string }[]>([]);
+  const [open, setOpen] = useState<"" | "coupon" | "discount" | "charges">("");
 
   const serviceById = useMemo(() => new Map(services.map((s) => [s.id, s] as [string, PosService])), [services]);
   const subName = useMemo(() => new Map(subCategories.map((s) => [s.id, s.name] as [string, string])), [subCategories]);
@@ -166,7 +178,11 @@ export function PosScreen({
     setLoyalty(null);
     setRedeemPoints(0);
     setVoucherCode("");
+    setWalletMinor(0);
     if (!customer) return;
+    walletBalanceAction(customer.id)
+      .then((w) => !cancelled && setWalletMinor(w))
+      .catch(() => undefined);
     getCheckoutLoyalty(customer.id)
       .then((l) => !cancelled && setLoyalty(l as Loyalty | null))
       .catch(() => !cancelled && setLoyalty(null));
@@ -174,15 +190,22 @@ export function PosScreen({
       cancelled = true;
     };
   }, [customer]);
+  const couponMinor = coupon ? Math.min(coupon.discountMinor, subtotal) : 0;
+  const discNum = Number(discValue) || 0;
+  const manualMinor =
+    discNum > 0 ? Math.max(0, Math.min(subtotal - couponMinor, discKind === "percent" ? Math.round(((subtotal - couponMinor) * Math.min(discNum, 100)) / 100) : Math.round(discNum * 100))) : 0;
+  const chargeRows = charges.map((ch) => ({ ...ch, minor: Math.max(0, Math.round((Number(ch.amount) || 0) * 100)) }));
+  const chargesMinor = chargeRows.reduce((a, ch) => a + (ch.label.trim() ? ch.minor : 0), 0);
+  const afterCounter = subtotal - couponMinor - manualMinor;
   const voucher = loyalty?.vouchers.find((v) => v.code === voucherCode) ?? null;
-  const voucherMinor = voucher && subtotal >= voucher.minOrderMinor ? Math.min(voucher.valueMinor, subtotal) : 0;
+  const voucherMinor = voucher && subtotal >= voucher.minOrderMinor ? Math.min(voucher.valueMinor, afterCounter) : 0;
   const pointOptions = loyalty
     ? loyalty.denominations.filter(
         (d) =>
           loyalty.available >= loyalty.minRedeem &&
           d <= loyalty.available &&
           Math.round(d * loyalty.pointValueMinor) <= Math.floor((subtotal * loyalty.maxRedeemPct) / 100) &&
-          Math.round(d * loyalty.pointValueMinor) <= subtotal - voucherMinor
+          Math.round(d * loyalty.pointValueMinor) <= afterCounter - voucherMinor
       )
     : [];
   useEffect(() => {
@@ -190,9 +213,43 @@ export function PosScreen({
     if (voucher && subtotal < voucher.minOrderMinor) setVoucherCode("");
   }, [subtotal, redeemPoints, pointOptions, voucher]);
   const pointsMinor = loyalty ? Math.round(redeemPoints * loyalty.pointValueMinor) : 0;
-  const total = Math.max(0, subtotal - voucherMinor - pointsMinor);
-  const payNowMinor = payMethod ? Math.min(total, Math.round((Number(payTouched ? payAmount : total / 100) || 0) * 100)) : 0;
+  const total = Math.max(0, afterCounter - voucherMinor - pointsMinor) + chargesMinor;
+  const payCap = payMethod === "wallet" ? Math.min(total, walletMinor) : total;
+  const payNowMinor = payMethod ? Math.min(payCap, Math.round((Number(payTouched ? payAmount : payCap / 100) || 0) * 100)) : 0;
   const due = total - payNowMinor;
+
+  async function applyCoupon(code: string) {
+    setCouponError(null);
+    if (!code.trim()) return;
+    setCouponBusy(true);
+    try {
+      const res = await checkCouponAction(code, subtotal);
+      if (res.ok) {
+        setCoupon({ code: res.code, label: res.label, discountMinor: res.discountMinor });
+        setCouponInput("");
+      } else {
+        setCoupon(null);
+        setCouponError(res.error);
+      }
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+  useEffect(() => {
+    if (!coupon) return;
+    const t = setTimeout(() => {
+      checkCouponAction(coupon.code, subtotal).then((res) => {
+        if (res.ok) setCoupon({ code: res.code, label: res.label, discountMinor: res.discountMinor });
+        else {
+          setCoupon(null);
+          setCouponError(res.error);
+        }
+      });
+    }, 400);
+    return () => clearTimeout(t);
+    // only when the subtotal changes
+    // eslint-disable-next-line
+  }, [subtotal]);
 
   function changeList(id: string) {
     if (lines.length && !confirm("Changing the price list clears the items in this order. Continue?")) return;
@@ -205,6 +262,12 @@ export function PosScreen({
   function clearOrder() {
     setCart({});
     setCustomer(null);
+    setCoupon(null);
+    setCouponError(null);
+    setDiscValue("");
+    setDiscNote("");
+    setCharges([]);
+    setOpen("");
     setPayMethod("");
     setPayTouched(false);
     setPayAmount("");
@@ -215,6 +278,9 @@ export function PosScreen({
     setError(null);
     if (!customer) return setError("Choose or add a customer first.");
     if (!lines.length) return setError("Add at least one item.");
+    if (manualMinor > 0 && !discNote.trim()) return setError("Give a reason for the discount.");
+    if (charges.some((ch) => ch.label.trim() && !(Number(ch.amount) > 0))) return setError("Enter an amount for each additional charge.");
+    if (payMethod === "wallet" && payNowMinor > walletMinor) return setError("Not enough wallet balance.");
     startTransition(async () => {
       const res = await createOrder({
         customer_id: customer.id,
@@ -233,6 +299,9 @@ export function PosScreen({
         voucher_code: voucherCode || undefined,
         payment: payMethod && payNowMinor > 0 ? { method: payMethod, amount_minor: payNowMinor } : null,
         return_to: "pos",
+        coupon_code: coupon?.code ?? null,
+        manual_discount: manualMinor > 0 ? { kind: discKind, value: discNum, note: discNote.trim() } : null,
+        charges: chargeRows.filter((ch) => ch.label.trim() && ch.minor > 0).map((ch) => ({ label: ch.label.trim(), amount_minor: ch.minor })),
       });
       // On success the server sends us to the confirmation screen; we only get here on an error.
       if (res && "error" in res && res.error) setError(res.error);
@@ -298,7 +367,7 @@ export function PosScreen({
                   <span className={"text-[11.5px] " + (active ? "text-white/60" : "text-ink-3")}>{count} items</span>
                 </span>
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold" style={{ background: active ? "rgba(255,255,255,.14)" : bg, color: active ? "#e3d2ac" : fg }}>
-                  {s.id ? monogram(s.name) : "∗"}
+                  <Icon d={s.id ? serviceIcon(s.name) : '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'} className="h-[18px] w-[18px]" />
                 </span>
               </button>
             );
@@ -343,7 +412,7 @@ export function PosScreen({
                   >
                     <button type="button" onClick={() => setQty(e.id, qty + 1)} className="flex flex-1 flex-col text-left" aria-label={`Add ${label}`}>
                       <span className="relative grid h-[74px] place-items-center" style={{ background: bg, color: fg }}>
-                        <span className="font-display text-[26px] font-medium tracking-tight">{monogram(label)}</span>
+                        <Icon d={garmentIcon(e.name, { serviceLevel: e.name === null })} className="h-10 w-10" />
                         {e.pieces > 1 && e.unit !== "per_kg" && (
                           <span className="absolute right-2 top-2 rounded-full bg-white/80 px-2 py-0.5 text-[10.5px] font-bold text-ink">{e.pieces} pcs</span>
                         )}
@@ -398,6 +467,18 @@ export function PosScreen({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5">
           <CustomerPicker customer={customer} onChange={setCustomer} loyalty={loyalty} />
+          {customer && (
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[12.5px]">
+              <div className={"rounded-lg px-3 py-2 " + (walletMinor > 0 ? "bg-[#e2eee7] text-[#2c6a4e]" : "bg-beige text-ink-3")}>
+                <span className="block text-[10.5px] font-semibold uppercase tracking-[0.1em] opacity-70">Wallet balance</span>
+                <b className="text-[15px] tabular-nums">{rupees(walletMinor)}</b>
+              </div>
+              <div className={"rounded-lg px-3 py-2 " + (loyalty && loyalty.available > 0 ? "bg-[#fbf7ef] text-[#6f5c36]" : "bg-beige text-ink-3")}>
+                <span className="block text-[10.5px] font-semibold uppercase tracking-[0.1em] opacity-70">Club points</span>
+                <b className="text-[15px] tabular-nums">{loyalty ? loyalty.available.toLocaleString("en-IN") : "—"}</b>
+              </div>
+            </div>
+          )}
 
           <div className="mt-3 grid grid-cols-3 gap-1 rounded-xl bg-beige p-1" role="radiogroup" aria-label="Order taken by">
             {[
@@ -435,8 +516,8 @@ export function PosScreen({
                 return (
                   <li key={id} className="rounded-xl border border-hair p-2.5">
                     <div className="flex items-start gap-2.5">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[12px] font-bold" style={{ background: bg, color: fg }}>
-                        {monogram(label)}
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: bg, color: fg }}>
+                        <Icon d={garmentIcon(e.name, { serviceLevel: e.name === null })} className="h-6 w-6" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <b className="block truncate text-[13.5px]">{label}</b>
@@ -505,6 +586,144 @@ export function PosScreen({
             </ul>
           )}
 
+          {lines.length > 0 && (
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["coupon", coupon ? `Coupon ${coupon.code}` : "+ Coupon"],
+                    ["discount", manualMinor > 0 ? `Discount −${rupees(manualMinor)}` : "+ Discount"],
+                    ["charges", chargesMinor > 0 ? `Charges +${rupees(chargesMinor)}` : "+ Additional charge"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-expanded={open === k}
+                    onClick={() => setOpen(open === k ? "" : k)}
+                    className={
+                      "rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition " +
+                      (open === k ? "bg-navy text-white" : (k === "coupon" && coupon) || (k === "discount" && manualMinor > 0) || (k === "charges" && chargesMinor > 0) ? "bg-[#e2e9f2] text-[#2b5584]" : "border border-hair text-ink-2 hover:bg-beige")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {open === "coupon" && (
+                <div className="mt-2 rounded-xl border border-hair p-3">
+                  {coupon ? (
+                    <div className="flex items-center justify-between gap-2 text-[13px]">
+                      <span>
+                        <b>{coupon.code}</b> · {coupon.label}
+                        <span className="block text-[#2c6a4e]">−{rupees(couponMinor)}</span>
+                      </span>
+                      <button type="button" onClick={() => setCoupon(null)} className="text-[12.5px] font-semibold text-[#9c3326]">
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(ev) => {
+                        ev.preventDefault();
+                        applyCoupon(couponInput);
+                      }}
+                    >
+                      <input
+                        value={couponInput}
+                        onChange={(ev) => setCouponInput(ev.target.value.toUpperCase())}
+                        placeholder="Coupon code"
+                        aria-label="Coupon code"
+                        className="h-9 min-w-0 flex-1 rounded-lg border border-hair px-3 font-mono text-[13.5px] uppercase tracking-wider outline-none focus:border-brass"
+                      />
+                      <button type="submit" disabled={couponBusy || !couponInput.trim()} className="h-9 rounded-lg bg-navy px-3 text-[13px] font-semibold text-white disabled:opacity-40">
+                        {couponBusy ? "…" : "Apply"}
+                      </button>
+                    </form>
+                  )}
+                  {couponError && <p className="mt-1.5 text-[12.5px] text-[#9c3326]">{couponError}</p>}
+                </div>
+              )}
+
+              {open === "discount" && (
+                <div className="mt-2 space-y-2 rounded-xl border border-hair p-3">
+                  <div className="flex gap-2">
+                    <span className="grid grid-cols-2 rounded-lg bg-beige p-0.5" role="radiogroup" aria-label="Discount type">
+                      {(
+                        [
+                          ["percent", "%"],
+                          ["amount", "₹"],
+                        ] as const
+                      ).map(([k, l]) => (
+                        <button key={k} type="button" role="radio" aria-checked={discKind === k} onClick={() => setDiscKind(k)} className={"h-8 w-10 rounded-md text-[13px] font-bold " + (discKind === k ? "bg-white shadow-sm" : "text-ink-3")}>
+                          {l}
+                        </button>
+                      ))}
+                    </span>
+                    <input
+                      value={discValue}
+                      onChange={(ev) => setDiscValue(ev.target.value.replace(/[^\d.]/g, ""))}
+                      inputMode="decimal"
+                      placeholder={discKind === "percent" ? "e.g. 10" : "e.g. 50"}
+                      aria-label="Discount"
+                      className="h-9 w-24 rounded-lg border border-hair px-2.5 text-right text-[14px] font-semibold outline-none focus:border-brass"
+                    />
+                    <span className="self-center text-[12.5px] text-[#2c6a4e]">{manualMinor > 0 ? `−${rupees(manualMinor)}` : ""}</span>
+                  </div>
+                  <input
+                    value={discNote}
+                    onChange={(ev) => setDiscNote(ev.target.value.slice(0, 200))}
+                    placeholder="Reason (required), e.g. regular customer, delay"
+                    aria-label="Reason for discount"
+                    className="h-9 w-full rounded-lg border border-hair px-2.5 text-[13px] outline-none focus:border-brass"
+                  />
+                </div>
+              )}
+
+              {open === "charges" && (
+                <div className="mt-2 space-y-2 rounded-xl border border-hair p-3">
+                  <div className="flex flex-wrap gap-1">
+                    {["Express service", "Delivery charge", "Packing / hanger", "Stain treatment", "Other"].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setCharges((cs) => [...cs, { key: Date.now() + Math.random(), label: p === "Other" ? "" : p, amount: "" }])}
+                        className="rounded-full border border-hair px-2.5 py-1 text-[11.5px] font-semibold text-ink-2 hover:bg-beige"
+                      >
+                        + {p}
+                      </button>
+                    ))}
+                  </div>
+                  {charges.map((ch) => (
+                    <div key={ch.key} className="flex gap-2">
+                      <input
+                        value={ch.label}
+                        onChange={(ev) => setCharges((cs) => cs.map((x) => (x.key === ch.key ? { ...x, label: ev.target.value.slice(0, 60) } : x)))}
+                        placeholder="Charge name"
+                        aria-label="Charge name"
+                        className="h-9 min-w-0 flex-1 rounded-lg border border-hair px-2.5 text-[13px] outline-none focus:border-brass"
+                      />
+                      <input
+                        value={ch.amount}
+                        onChange={(ev) => setCharges((cs) => cs.map((x) => (x.key === ch.key ? { ...x, amount: ev.target.value.replace(/[^\d.]/g, "") } : x)))}
+                        inputMode="decimal"
+                        placeholder="₹"
+                        aria-label={`Amount for ${ch.label || "charge"}`}
+                        className="h-9 w-20 rounded-lg border border-hair px-2 text-right text-[13.5px] font-semibold outline-none focus:border-brass"
+                      />
+                      <button type="button" onClick={() => setCharges((cs) => cs.filter((x) => x.key !== ch.key))} aria-label="Remove charge" className="grid h-9 w-9 place-items-center rounded-lg text-ink-3 hover:bg-beige hover:text-[#9c3326]">
+                        <Icon d={I.x} className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {!charges.length && <p className="text-[12px] text-ink-3">Pick a charge above, or Other for your own.</p>}
+                </div>
+              )}
+            </div>
+          )}
+
           {customer && loyalty && (pointOptions.length > 0 || loyalty.vouchers.length > 0) && (
             <div className="mt-4 rounded-xl border border-brass/30 bg-[#fbf7ef] p-3">
               <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-[#6f5c36]">
@@ -535,8 +754,13 @@ export function PosScreen({
 
         {/* Totals + pay */}
         <div className="border-t border-hair px-5 pb-4 pt-3">
-          <div className="mb-2 grid grid-cols-4 gap-1 rounded-xl bg-beige p-1" role="radiogroup" aria-label="Payment now">
-            {PAY.map((p) => (
+          <div
+            className="mb-2 grid gap-1 rounded-xl bg-beige p-1"
+            style={{ gridTemplateColumns: `repeat(${walletMinor > 0 ? 5 : 4}, minmax(0, 1fr))` }}
+            role="radiogroup"
+            aria-label="Payment now"
+          >
+            {[...PAY, ...(walletMinor > 0 ? [{ v: "wallet", l: "Wallet" }] : [])].map((p) => (
               <button
                 key={p.v || "later"}
                 type="button"
@@ -554,9 +778,9 @@ export function PosScreen({
           </div>
           {payMethod && (
             <label className="mb-2 flex items-center justify-between gap-2 text-[13px] text-ink-2">
-              Amount received (₹)
+              {payMethod === "wallet" ? `From wallet (max ${rupees(Math.min(total, walletMinor))})` : "Amount received (₹)"}
               <input
-                value={payTouched ? payAmount : String(total / 100)}
+                value={payTouched ? payAmount : String(payCap / 100)}
                 onChange={(e) => {
                   setPayTouched(true);
                   setPayAmount(e.target.value.replace(/[^\d.]/g, ""));
@@ -572,10 +796,28 @@ export function PosScreen({
               <dt>Subtotal</dt>
               <dd className="tabular-nums">{rupees(subtotal)}</dd>
             </div>
+            {couponMinor > 0 && (
+              <div className="flex justify-between text-[#2c6a4e]">
+                <dt>Coupon {coupon?.code}</dt>
+                <dd className="tabular-nums">−{rupees(couponMinor)}</dd>
+              </div>
+            )}
+            {manualMinor > 0 && (
+              <div className="flex justify-between text-[#2c6a4e]">
+                <dt>Discount{discKind === "percent" ? ` ${discNum}%` : ""}</dt>
+                <dd className="tabular-nums">−{rupees(manualMinor)}</dd>
+              </div>
+            )}
             {voucherMinor + pointsMinor > 0 && (
               <div className="flex justify-between text-[#2c6a4e]">
                 <dt>Club discount</dt>
                 <dd className="tabular-nums">−{rupees(voucherMinor + pointsMinor)}</dd>
+              </div>
+            )}
+            {chargesMinor > 0 && (
+              <div className="flex justify-between text-ink-2">
+                <dt>Additional charges</dt>
+                <dd className="tabular-nums">+{rupees(chargesMinor)}</dd>
               </div>
             )}
             <div className="flex justify-between border-t border-hair pt-1.5 text-[16px] font-bold">

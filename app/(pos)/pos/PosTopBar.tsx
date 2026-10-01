@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { lockPosAction } from "./lock-actions";
 
 const TABS = [
   { href: "/pos", label: "New Order", icon: '<path d="M12 5v14M5 12h14"/>' },
@@ -84,6 +85,12 @@ export function PosTopBar({ userName, branchName }: { userName: string; branchNa
       <Link href="/dashboard" className="hidden shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-[12.5px] font-semibold text-white/70 hover:bg-white/10 sm:block">
         Console
       </Link>
+      <form action={lockPosAction}>
+        <button type="submit" title="Lock the POS" className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-[12.5px] font-semibold text-white/70 hover:bg-white/10">
+          <Icon d='<rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>' className="h-4 w-4" />
+          <span className="hidden sm:inline">Lock</span>
+        </button>
+      </form>
       <span className="flex shrink-0 items-center gap-2">
         <span className="grid h-9 w-9 place-items-center rounded-full bg-[#c7b58f] text-[12px] font-bold text-[#15213a]">{initials || "?"}</span>
         <span className="hidden max-w-[140px] truncate text-[12.5px] font-semibold xl:block">{userName}</span>
