@@ -8,7 +8,7 @@ export default async function NewOrderPage({
 }) {
   const supabase = createClient();
 
-  const [{ data: customers }, { data: profiles }, { data: entries }] = await Promise.all([
+  const [{ data: customers }, { data: profiles }, { data: entries }, { data: subs }] = await Promise.all([
     supabase.from("customer").select("id, full_name, phone").order("full_name").limit(500),
     supabase
       .from("price_list_profile")
@@ -18,9 +18,10 @@ export default async function NewOrderPage({
     supabase
       .from("price_list_entry")
       .select(
-        "id, price_list_profile_id, service_id, item_id, unit, price_minor, service:service_id(name), item:item_id(name)"
+        "id, price_list_profile_id, service_id, item_id, unit, price_minor, service:service_id(name, uses_sub_categories), item:item_id(name, sub_category_id, priority)"
       )
       .eq("is_active", true),
+    supabase.from("item_sub_category").select("id, name").eq("is_active", true).order("sort_order").order("name"),
   ]);
 
   const priceEntries = (entries ?? []).map((e: any) => ({
@@ -30,6 +31,9 @@ export default async function NewOrderPage({
     service_name: e.service?.name ?? "Service",
     item_id: e.item_id,
     item_name: e.item?.name ?? null,
+    item_sub_category_id: e.item?.sub_category_id ?? null,
+    item_priority: Number(e.item?.priority ?? 1),
+    service_uses_sub: !!e.service?.uses_sub_categories,
     unit: e.unit,
     price_minor: Number(e.price_minor),
   }));
@@ -52,6 +56,7 @@ export default async function NewOrderPage({
           customers={customers ?? []}
           priceListProfiles={profiles ?? []}
           priceEntries={priceEntries}
+          subCategories={(subs ?? []) as { id: string; name: string }[]}
           defaultCustomerId={searchParams.customer}
         />
       )}

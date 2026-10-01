@@ -22,6 +22,9 @@ type PriceEntry = {
   service_name: string;
   item_id: string | null;
   item_name: string | null;
+  item_sub_category_id?: string | null;
+  item_priority?: number;
+  service_uses_sub?: boolean;
   unit: string;
   price_minor: number;
 };
@@ -47,11 +50,13 @@ export default function OrderForm({
   priceListProfiles,
   priceEntries,
   defaultCustomerId,
+  subCategories = [],
 }: {
   customers: Customer[];
   priceListProfiles: PriceListProfile[];
   priceEntries: PriceEntry[];
   defaultCustomerId?: string;
+  subCategories?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -67,6 +72,7 @@ export default function OrderForm({
   const [cart, setCart] = useState<CartLine[]>([]);
   const [lineServiceId, setLineServiceId] = useState("");
   const [lineItemId, setLineItemId] = useState("");
+  const [lineSubId, setLineSubId] = useState(""); // "" = all sub categories
   const [lineQty, setLineQty] = useState("1");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -86,16 +92,28 @@ export default function OrderForm({
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [entriesForProfile]);
 
+  // Laundry services group their products by sub category (Men, Women, Kids...).
+  const lineUsesSub = useMemo(
+    () => entriesForProfile.some((e) => e.service_id === lineServiceId && e.service_uses_sub),
+    [entriesForProfile, lineServiceId]
+  );
+  const subTabs = useMemo(() => {
+    if (!lineUsesSub) return [];
+    const present = new Set(entriesForProfile.filter((e) => e.service_id === lineServiceId && e.item_id).map((e) => e.item_sub_category_id ?? ""));
+    return subCategories.filter((s) => present.has(s.id));
+  }, [lineUsesSub, entriesForProfile, lineServiceId, subCategories]);
+
   const itemsForLineService = useMemo(() => {
-    const opts: { id: string; name: string }[] = [];
+    const opts: { id: string; name: string; priority: number }[] = [];
     let hasAny = false;
     for (const e of entriesForProfile) {
       if (e.service_id !== lineServiceId) continue;
       if (e.item_id === null) hasAny = true;
-      else opts.push({ id: e.item_id, name: e.item_name ?? "Item" });
+      else if (!lineSubId || e.item_sub_category_id === lineSubId) opts.push({ id: e.item_id, name: e.item_name ?? "Item", priority: e.item_priority ?? 1 });
     }
+    opts.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
     return { hasAny, opts };
-  }, [entriesForProfile, lineServiceId]);
+  }, [entriesForProfile, lineServiceId, lineSubId]);
 
   const subtotalMinor = cart.reduce((sum, l) => sum + l.unit_price_minor * l.quantity, 0);
 
@@ -184,9 +202,9 @@ export default function OrderForm({
         quantity: qty,
       },
     ]);
-    setLineServiceId("");
     setLineItemId("");
     setLineQty("1");
+    // Keep the service and sub category selected, so the next garment of the same kind is quick to add.
   }
 
   function removeLine(key: string) {
@@ -319,6 +337,7 @@ export default function OrderForm({
                   setPriceListProfileId(e.target.value);
                   setLineServiceId("");
                   setLineItemId("");
+                  setLineSubId("");
                 }}
                 className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
               >
@@ -348,12 +367,35 @@ export default function OrderForm({
 
         <div className="rounded-lg border border-black/5 bg-white p-4 shadow-sm">
           <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/50">Add item</div>
+          {subTabs.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Sub category">
+              {[{ id: "", name: "All" }, ...subTabs].map((s) => (
+                <button
+                  key={s.id || "all"}
+                  type="button"
+                  role="tab"
+                  aria-selected={lineSubId === s.id}
+                  onClick={() => {
+                    setLineSubId(s.id);
+                    setLineItemId("");
+                  }}
+                  className={
+                    "rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition " +
+                    (lineSubId === s.id ? "bg-navy text-[#f8f5ef]" : "border border-black/10 bg-white text-ink/70 hover:bg-beige")
+                  }
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_100px_auto]">
             <select
               value={lineServiceId}
               onChange={(e) => {
                 setLineServiceId(e.target.value);
                 setLineItemId("");
+                setLineSubId("");
               }}
               className="w-full rounded-md border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
             >

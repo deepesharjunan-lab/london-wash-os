@@ -24,9 +24,12 @@ export type Message = {
   customerUrl?: string;
 };
 
+/** Console roles that may use the owner app and receive owner alerts. */
+export const OWNER_ROLES = ["Admin", "Manager"];
+
 export async function ownerUserIds(): Promise<string[]> {
   const db = createAdminClient();
-  const { data: roles } = await db.from("role").select("id").in("name", ["Owner", "Admin", "Manager"]).is("deleted_at", null);
+  const { data: roles } = await db.from("role").select("id").in("name", OWNER_ROLES).is("deleted_at", null);
   let ids: string[] = [];
   if ((roles ?? []).length) {
     const { data } = await db.from("user_role").select("user_id").in("role_id", (roles ?? []).map((r: any) => r.id));

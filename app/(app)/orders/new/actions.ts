@@ -2,8 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated } from "@/lib/loyalty/ledger";
+import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated, onPayment } from "@/lib/loyalty/ledger";
 import { notify } from "@/lib/notify";
+import { cleanCharges, manualDiscountMinor, validateCoupon, type Charge, type ManualDiscount } from "@/lib/pos/pricing";
 
 type CartLine = {
   price_list_entry_id: string;
@@ -12,7 +13,10 @@ type CartLine = {
   unit: string;
   unit_price_minor: number;
   quantity: number;
+  notes?: string | null; // stains, damage etc. noted at the counter
 };
+
+const PAY_METHODS = ["cash", "card", "upi", "wallet", "bank_transfer"];
 
 /** Points balance, redemption amounts and active vouchers for the selected customer. */
 export async function getCheckoutLoyalty(customerId: string) {
@@ -30,6 +34,16 @@ export async function createOrder(input: {
   lines: CartLine[];
   redeem_points?: number;
   voucher_code?: string;
+  /** Advance taken at the counter. */
+  payment?: { method: string; amount_minor: number } | null;
+  /** "pos" returns to the reception POS instead of the console order page. */
+  return_to?: "pos";
+  /** Coupon code from Coupons & Promotions. */
+  coupon_code?: string | null;
+  /** Discount given at the counter, with a reason. */
+  manual_discount?: ManualDiscount | null;
+  /** Express service, delivery, packing... added after discounts. */
+  charges?: Charge[] | null;
 }) {
   if (!input.customer_id) {
     return { error: "Select a customer." };
@@ -40,14 +54,33 @@ export async function createOrder(input: {
 
   const supabase = createClient();
 
+  // Coupon and counter discount come first; Club points/vouchers apply to what's left.
+  const linesSubtotal = input.lines.reduce((s, l) => s + Math.round(l.unit_price_minor) * l.quantity, 0);
+  let couponId: string | null = null;
+  let couponMinor = 0;
+  let couponLabel = "";
+  if (input.coupon_code) {
+    const c = await validateCoupon(supabase, input.coupon_code, linesSubtotal);
+    if (!c.ok) return { error: c.error };
+    couponId = c.couponId;
+    couponMinor = c.discountMinor;
+    couponLabel = `Coupon ${c.code}`;
+  }
+  const manualMinor = manualDiscountMinor(input.manual_discount, linesSubtotal - couponMinor);
+  const manualNote = (input.manual_discount?.note ?? "").trim().slice(0, 200);
+  if (manualMinor > 0 && !manualNote) return { error: "Give a reason for the discount." };
+  const charges = cleanCharges(input.charges);
+  const chargesMinor = charges.reduce((a, c) => a + c.amount_minor, 0);
+  const preDiscount = couponMinor + manualMinor;
+
   // Check points and voucher before creating anything, so a bad choice never leaves a half-made order.
   const wantsLoyalty = (input.redeem_points ?? 0) > 0 || !!input.voucher_code;
   const loyaltyCtx = wantsLoyalty ? await loadCtx(supabase) : null;
   if (wantsLoyalty) {
     if (!loyaltyCtx) return { error: "Loyalty Club isn't set up, so points and vouchers can't be used." };
     const opts = await checkoutOptions(loyaltyCtx, input.customer_id);
-    const subtotal = input.lines.reduce((s, l) => s + Math.round(l.unit_price_minor) * l.quantity, 0);
-    let remaining = subtotal;
+    const subtotal = linesSubtotal;
+    let remaining = subtotal - preDiscount;
     if (input.voucher_code) {
       const v = opts.vouchers.find((x) => x.code === input.voucher_code);
       if (!v) return { error: "That voucher isn't active for this customer." };
@@ -94,9 +127,13 @@ export async function createOrder(input: {
       channel: input.channel || "pos_counter",
       status: "draft",
       subtotal_minor,
-      discount_minor: 0,
+      discount_minor: preDiscount,
       tax_minor: 0,
-      total_minor: subtotal_minor,
+      total_minor: Math.max(0, subtotal_minor - preDiscount) + chargesMinor,
+      coupon_id: couponId,
+      extra_charges: charges,
+      extra_charges_minor: chargesMinor,
+      discount_note: [couponLabel, manualMinor > 0 ? `Discount: ${manualNote}` : ""].filter(Boolean).join(" · ") || null,
       placed_by_user_id: me.id,
     })
     .select("id")
@@ -104,6 +141,11 @@ export async function createOrder(input: {
 
   if (orderError || !order) {
     return { error: orderError?.message || "Failed to create the order." };
+  }
+
+  if (couponId) {
+    const { data: cp } = await supabase.from("coupon").select("redemptions_count").eq("id", couponId).single();
+    await supabase.from("coupon").update({ redemptions_count: Number((cp as { redemptions_count: number } | null)?.redemptions_count ?? 0) + 1 }).eq("id", couponId);
   }
 
   const itemsPayload = input.lines.map((l) => ({
@@ -114,6 +156,7 @@ export async function createOrder(input: {
     quantity: l.quantity,
     unit_price_minor: Math.round(l.unit_price_minor),
     line_total_minor: Math.round(l.unit_price_minor) * l.quantity,
+    notes: (l.notes ?? "").trim().slice(0, 300) || null,
   }));
 
   const { data: insertedItems, error: itemsError } = await supabase
@@ -127,7 +170,14 @@ export async function createOrder(input: {
 
   // Auto-create one trackable garment per physical piece so a printable
   // tag (with barcode) is ready the moment the order is placed.
-  const totalPieces = (insertedItems || []).reduce((sum, it: any) => sum + Number(it.quantity), 0);
+  // Multipiece products (e.g. a 3-piece suit) get one tag per piece.
+  const itemIdsForPieces = [...new Set((insertedItems || []).map((it: any) => it.item_id).filter(Boolean))] as string[];
+  const { data: pieceRows } = itemIdsForPieces.length
+    ? await supabase.from("item").select("id, pieces").in("id", itemIdsForPieces)
+    : { data: [] as { id: string; pieces: number }[] };
+  const piecesOf = new Map(((pieceRows ?? []) as { id: string; pieces: number }[]).map((r) => [r.id, Math.max(1, Number(r.pieces) || 1)] as [string, number]));
+  const unitsOf = (it: any) => Number(it.quantity) * (it.item_id ? piecesOf.get(it.item_id) ?? 1 : 1);
+  const totalPieces = (insertedItems || []).reduce((sum, it: any) => sum + unitsOf(it), 0);
   if (totalPieces > 0) {
     const { data: tagCodes, error: tagError } = await supabase.rpc("generate_garment_tags", {
       p_count: totalPieces,
@@ -136,7 +186,7 @@ export async function createOrder(input: {
     if (!tagError && tagCodes) {
       const codes = [...(tagCodes as string[])];
       const garmentsPayload = (insertedItems || []).flatMap((it: any) =>
-        Array.from({ length: Number(it.quantity) }, () => ({
+        Array.from({ length: unitsOf(it) }, () => ({
           order_item_id: it.id,
           item_id: it.item_id,
           tag_code: codes.shift(),
@@ -170,8 +220,37 @@ export async function createOrder(input: {
     }
   );
 
+  // Payment taken at the counter (never more than what's owed).
+  if (input.payment && PAY_METHODS.includes(input.payment.method) && input.payment.amount_minor > 0) {
+    const { data: totals } = await supabase.from("order").select("total_minor").eq("id", order.id).single();
+    const amount = Math.min(Math.round(input.payment.amount_minor), Number((totals as { total_minor: number } | null)?.total_minor ?? 0));
+    let ok = amount > 0;
+    if (ok && input.payment.method === "wallet") ok = await debitWallet(supabase, input.customer_id, order.id, order_number, amount);
+    if (ok) {
+      const { error: payError } = await supabase.from("payment").insert({ order_id: order.id, method: input.payment.method, amount_minor: amount });
+      if (payError) console.error("counter payment failed", order.id, payError.message);
+      else await onPayment(supabase, order.id); // referral bonus on first paid order; never throws
+    }
+  }
+
   revalidatePath("/orders");
-  redirect(`/orders/${order.id}`);
+  redirect(input.return_to === "pos" ? `/pos/done/${order.id}` : `/orders/${order.id}`);
+}
+
+/** Takes money from the customer's store-credit wallet. False if the balance isn't enough. */
+async function debitWallet(supabase: ReturnType<typeof createClient>, customerId: string, orderId: string, orderNumber: string, amount: number) {
+  const { data: w } = await supabase.from("wallet").select("id, balance_minor").eq("customer_id", customerId).maybeSingle();
+  const wallet = w as { id: string; balance_minor: number } | null;
+  if (!wallet || Number(wallet.balance_minor) < amount) return false;
+  const after = Number(wallet.balance_minor) - amount;
+  // Only take it if the balance hasn't changed since we read it.
+  const { data: moved } = await supabase.from("wallet").update({ balance_minor: after }).eq("id", wallet.id).eq("balance_minor", wallet.balance_minor).select("id");
+  if (!(moved ?? []).length) return false;
+  const { error } = await supabase
+    .from("wallet_transaction")
+    .insert({ wallet_id: wallet.id, order_id: orderId, type: "debit", amount_minor: amount, balance_after_minor: after, note: `Paid for ${orderNumber}` });
+  if (error) console.error("wallet transaction failed", orderId, error.message);
+  return true;
 }
 
 export async function createCustomerQuick(input: { full_name: string; phone: string }) {

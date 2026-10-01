@@ -1,48 +1,119 @@
 import { createClient } from "@/lib/supabase/server";
-import {
-  createServiceCategory,
-  createService,
-  createItem,
-  createPriceListProfile,
-  createPriceListEntry,
-} from "./actions";
+import { createServiceCategory, createService, toggleService, toggleServiceSubCategories } from "./actions";
+import { CatalogueTabs } from "./CatalogueTabs";
 
-function formatMinor(minor: number) {
-  return `₹${(minor / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-}
+const field = "w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent";
+const addBtn = "w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110";
 
 export default async function ServicesPage() {
   const supabase = createClient();
 
-  const [
-    { data: categories },
-    { data: services },
-    { data: items },
-    { data: profiles },
-    { data: entries },
-  ] = await Promise.all([
-    supabase.from("service_category").select("id, name").order("sort_order", { ascending: true }),
+  const [{ data: categories }, { data: services }] = await Promise.all([
+    supabase.from("service_category").select("id, name").is("deleted_at", null).order("sort_order", { ascending: true }),
     supabase
       .from("service")
-      .select("id, name, default_unit, service_category:service_category_id(name)")
+      .select("id, name, default_unit, is_active, uses_sub_categories, service_category:service_category_id(name)")
+      .is("deleted_at", null)
       .order("name"),
-    supabase.from("item").select("id, name, category").order("name"),
-    supabase.from("price_list_profile").select("id, name, is_default").order("name"),
-    supabase
-      .from("price_list_entry")
-      .select(
-        "id, price_minor, unit, service:service_id(name), item:item_id(name), price_list_profile:price_list_profile_id(name)"
-      )
-      .order("created_at", { ascending: false })
-      .limit(50),
   ]);
 
   return (
     <div>
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Catalogue</div>
-      <h1 className="mb-6 font-archivo text-2xl font-extrabold text-ink">Services &amp; Prices</h1>
+      <h1 className="mb-4 font-archivo text-2xl font-extrabold text-ink">Services</h1>
+      <CatalogueTabs />
+      <p className="-mt-2 mb-6 text-sm text-ink/60">What you do to a garment: wash, dry clean, iron… grouped into categories. Prices are set per price list.</p>
 
       <div className="space-y-8">
+        <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
+          <div className="overflow-hidden border-2 border-black/10 bg-white">
+            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Services</div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">Category</th>
+                  <th className="px-4 py-2">Unit</th>
+                  <th className="px-4 py-2">Sub categories</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(services ?? []).map((s: any) => {
+                  const cat = Array.isArray(s.service_category) ? s.service_category[0] : s.service_category;
+                  return (
+                    <tr key={s.id} className="border-b border-black/5 last:border-0">
+                      <td className="px-4 py-2.5 font-medium text-ink">{s.name}</td>
+                      <td className="px-4 py-2.5 text-ink/60">{cat?.name ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-ink/60">{String(s.default_unit).replace("per_", "per ")}</td>
+                      <td className="px-4 py-2.5">
+                        <form action={toggleServiceSubCategories} className="inline">
+                          <input type="hidden" name="id" value={s.id} />
+                          <input type="hidden" name="next" value={s.uses_sub_categories ? "false" : "true"} />
+                          <button
+                            type="submit"
+                            title={s.uses_sub_categories ? "Products of this service are grouped by Men, Women, Kids… Click to turn off." : "Click to group this service's products by Men, Women, Kids…"}
+                            className={"rounded-full px-2.5 py-0.5 text-[11px] font-semibold " + (s.uses_sub_categories ? "bg-navy text-[#f8f5ef]" : "border border-black/10 text-ink/50")}
+                          >
+                            {s.uses_sub_categories ? "On" : "Off"}
+                          </button>
+                        </form>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className={"px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide " + (s.is_active ? "bg-ok/10 text-ok" : "bg-black/5 text-ink/50")}>
+                          {s.is_active ? "Active" : "Hidden"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <form action={toggleService}>
+                          <input type="hidden" name="id" value={s.id} />
+                          <input type="hidden" name="next_active" value={s.is_active ? "false" : "true"} />
+                          <button type="submit" className="text-xs font-semibold text-accent hover:underline">
+                            {s.is_active ? "Hide" : "Show"}
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {(services ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-ink/40">
+                      No services yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <form action={createService} className="space-y-2 self-start border-2 border-black/10 bg-white p-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add service</div>
+            <input name="name" required placeholder="e.g. Wash & Iron" className={field} />
+            <select name="service_category_id" required defaultValue="" className={field}>
+              <option value="" disabled>
+                Category...
+              </option>
+              {(categories ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select name="default_unit" defaultValue="per_piece" className={field}>
+              <option value="per_piece">Per piece</option>
+              <option value="per_kg">Per kg</option>
+              <option value="per_set">Per set</option>
+            </select>
+            <label className="flex items-center gap-2 text-sm text-ink/70">
+              <input type="checkbox" name="uses_sub_categories" /> Uses sub categories (Men, Women…)
+            </label>
+            <button type="submit" className={addBtn}>
+              Add
+            </button>
+          </form>
+        </section>
+
         <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
           <div className="overflow-hidden border-2 border-black/10 bg-white">
             <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Service categories</div>
@@ -51,6 +122,9 @@ export default async function ServicesPage() {
                 {(categories ?? []).map((c) => (
                   <tr key={c.id} className="border-b border-black/5 last:border-0">
                     <td className="px-4 py-2.5 text-ink">{c.name}</td>
+                    <td className="px-4 py-2.5 text-right text-ink/50">
+                      {(services ?? []).filter((s: any) => (Array.isArray(s.service_category) ? s.service_category[0] : s.service_category)?.name === c.name).length} services
+                    </td>
                   </tr>
                 ))}
                 {(categories ?? []).length === 0 && (
@@ -61,296 +135,10 @@ export default async function ServicesPage() {
               </tbody>
             </table>
           </div>
-          <form
-            action={createServiceCategory}
-            className="space-y-2 border-2 border-black/10 bg-white p-4"
-          >
+          <form action={createServiceCategory} className="space-y-2 self-start border-2 border-black/10 bg-white p-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add category</div>
-            <input
-              name="name"
-              required
-              placeholder="e.g. Laundry"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
-              Add
-            </button>
-          </form>
-        </section>
-
-        <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
-          <div className="overflow-hidden border-2 border-black/10 bg-white">
-            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Services</div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Category</th>
-                  <th className="px-4 py-2">Unit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(services ?? []).map((s: any) => (
-                  <tr key={s.id} className="border-b border-black/5 last:border-0">
-                    <td className="px-4 py-2.5 font-medium text-ink">{s.name}</td>
-                    <td className="px-4 py-2.5 text-ink/60">{s.service_category?.name ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-ink/60">{s.default_unit}</td>
-                  </tr>
-                ))}
-                {(services ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-sm text-ink/40">
-                      No services yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <form action={createService} className="space-y-2 border-2 border-black/10 bg-white p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add service</div>
-            <input
-              name="name"
-              required
-              placeholder="e.g. Wash & Fold"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <select
-              name="service_category_id"
-              required
-              defaultValue=""
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="" disabled>
-                Category...
-              </option>
-              {(categories ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="default_unit"
-              defaultValue="piece"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="piece">Per piece</option>
-              <option value="kg">Per kg</option>
-              <option value="set">Per set</option>
-            </select>
-            <button
-              type="submit"
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
-              Add
-            </button>
-          </form>
-        </section>
-
-        <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
-          <div className="overflow-hidden border-2 border-black/10 bg-white">
-            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Garment items</div>
-            <table className="w-full text-sm">
-              <tbody>
-                {(items ?? []).map((i) => (
-                  <tr key={i.id} className="border-b border-black/5 last:border-0">
-                    <td className="px-4 py-2.5 font-medium text-ink">{i.name}</td>
-                    <td className="px-4 py-2.5 text-ink/60">{i.category ?? "—"}</td>
-                  </tr>
-                ))}
-                {(items ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-sm text-ink/40">
-                      No items yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <form action={createItem} className="space-y-2 border-2 border-black/10 bg-white p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add item</div>
-            <input
-              name="name"
-              required
-              placeholder="e.g. Shirt"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <input
-              name="category"
-              placeholder="e.g. Apparel"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
-              Add
-            </button>
-          </form>
-        </section>
-
-        <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
-          <div className="overflow-hidden border-2 border-black/10 bg-white">
-            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Price lists</div>
-            <table className="w-full text-sm">
-              <tbody>
-                {(profiles ?? []).map((p) => (
-                  <tr key={p.id} className="border-b border-black/5 last:border-0">
-                    <td className="px-4 py-2.5 font-medium text-ink">{p.name}</td>
-                    <td className="px-4 py-2.5">
-                      {p.is_default && (
-                        <span className="inline-flex bg-ok/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ok">
-                          Default
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {(profiles ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-sm text-ink/40">
-                      No price lists yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <form
-            action={createPriceListProfile}
-            className="space-y-2 border-2 border-black/10 bg-white p-4"
-          >
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add price list</div>
-            <input
-              name="name"
-              required
-              placeholder="e.g. Standard"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <input
-              name="description"
-              placeholder="Description (optional)"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <label className="flex items-center gap-2 text-sm text-ink/70">
-              <input type="checkbox" name="is_default" className="rounded border-black/20" />
-              Set as default
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
-              Add
-            </button>
-          </form>
-        </section>
-
-        <section className="grid gap-4 sm:grid-cols-[1fr_280px]">
-          <div className="overflow-hidden border-2 border-black/10 bg-white">
-            <div className="border-b-2 border-black/10 px-4 py-3 font-archivo text-[13.5px] font-bold text-ink">Prices</div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-black/10 text-left text-[11px] uppercase tracking-wide text-ink/50">
-                  <th className="px-4 py-2">Price list</th>
-                  <th className="px-4 py-2">Service</th>
-                  <th className="px-4 py-2">Item</th>
-                  <th className="px-4 py-2 text-right">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(entries ?? []).map((e: any) => (
-                  <tr key={e.id} className="border-b border-black/5 last:border-0">
-                    <td className="px-4 py-2.5 text-ink/70">{e.price_list_profile?.name}</td>
-                    <td className="px-4 py-2.5 font-medium text-ink">{e.service?.name}</td>
-                    <td className="px-4 py-2.5 text-ink/60">{e.item?.name ?? "Any item"}</td>
-                    <td className="px-4 py-2.5 text-right text-ink">
-                      {formatMinor(Number(e.price_minor))} / {e.unit}
-                    </td>
-                  </tr>
-                ))}
-                {(entries ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-ink/40">
-                      No prices set yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <form
-            action={createPriceListEntry}
-            className="space-y-2 border-2 border-black/10 bg-white p-4"
-          >
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Add price</div>
-            <select
-              name="price_list_profile_id"
-              required
-              defaultValue=""
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="" disabled>
-                Price list...
-              </option>
-              {(profiles ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="service_id"
-              required
-              defaultValue=""
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="" disabled>
-                Service...
-              </option>
-              {(services ?? []).map((s: any) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <select
-              name="item_id"
-              defaultValue=""
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="">Any item</option>
-              {(items ?? []).map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-            <input
-              name="price"
-              type="number"
-              step="0.01"
-              required
-              placeholder="Price in ₹"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            />
-            <select
-              name="unit"
-              defaultValue="per_piece"
-              className="w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent"
-            >
-              <option value="per_piece">Per piece</option>
-              <option value="per_kg">Per kg</option>
-              <option value="per_set">Per set</option>
-            </select>
-            <button
-              type="submit"
-              className="w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
+            <input name="name" required placeholder="e.g. Laundry" className={field} />
+            <button type="submit" className={addBtn}>
               Add
             </button>
           </form>
