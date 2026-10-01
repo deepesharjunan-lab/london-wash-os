@@ -68,7 +68,7 @@ export default async function MemberWalletPage({ params, searchParams }: { param
         <Link href={`/customers/${cust.id}`} className="font-semibold text-ink hover:underline">Customer record</Link>
       </div>
 
-      <Card title="Customer app" sub="Customers sign in at london-wash-os.vercel.app/my with their mobile number and a 6-digit code. Until SMS/WhatsApp is connected, create the code here and give it to the customer in person, by phone or on WhatsApp.">
+      <Card title="Customer app" sub="Customers sign in at club.thelondonwash.com with their mobile number and a 6-digit code. Until SMS/WhatsApp is connected, create the code here and give it to the customer in person, by phone or on WhatsApp.">
         <LoginCodeButton customerId={cust.id} />
       </Card>
 
