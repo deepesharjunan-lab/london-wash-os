@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated } from "@/lib/loyalty/ledger";
+import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated, onPayment } from "@/lib/loyalty/ledger";
 import { notify } from "@/lib/notify";
 
 type CartLine = {
@@ -12,7 +12,10 @@ type CartLine = {
   unit: string;
   unit_price_minor: number;
   quantity: number;
+  notes?: string | null; // stains, damage etc. noted at the counter
 };
+
+const PAY_METHODS = ["cash", "card", "upi", "wallet", "bank_transfer"];
 
 /** Points balance, redemption amounts and active vouchers for the selected customer. */
 export async function getCheckoutLoyalty(customerId: string) {
@@ -30,6 +33,10 @@ export async function createOrder(input: {
   lines: CartLine[];
   redeem_points?: number;
   voucher_code?: string;
+  /** Advance taken at the counter. */
+  payment?: { method: string; amount_minor: number } | null;
+  /** "pos" returns to the reception POS instead of the console order page. */
+  return_to?: "pos";
 }) {
   if (!input.customer_id) {
     return { error: "Select a customer." };
@@ -114,6 +121,7 @@ export async function createOrder(input: {
     quantity: l.quantity,
     unit_price_minor: Math.round(l.unit_price_minor),
     line_total_minor: Math.round(l.unit_price_minor) * l.quantity,
+    notes: (l.notes ?? "").trim().slice(0, 300) || null,
   }));
 
   const { data: insertedItems, error: itemsError } = await supabase
@@ -177,8 +185,19 @@ export async function createOrder(input: {
     }
   );
 
+  // Payment taken at the counter (never more than what's owed).
+  if (input.payment && PAY_METHODS.includes(input.payment.method) && input.payment.amount_minor > 0) {
+    const { data: totals } = await supabase.from("order").select("total_minor").eq("id", order.id).single();
+    const amount = Math.min(Math.round(input.payment.amount_minor), Number((totals as { total_minor: number } | null)?.total_minor ?? 0));
+    if (amount > 0) {
+      const { error: payError } = await supabase.from("payment").insert({ order_id: order.id, method: input.payment.method, amount_minor: amount });
+      if (payError) console.error("counter payment failed", order.id, payError.message);
+      else await onPayment(supabase, order.id); // referral bonus on first paid order; never throws
+    }
+  }
+
   revalidatePath("/orders");
-  redirect(`/orders/${order.id}`);
+  redirect(input.return_to === "pos" ? `/pos/done/${order.id}` : `/orders/${order.id}`);
 }
 
 export async function createCustomerQuick(input: { full_name: string; phone: string }) {
