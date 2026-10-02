@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Logo } from "@/lib/brand/Logo";
 
 type BIP = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -40,7 +41,9 @@ export function InstallHint({ appName, storageKey }: { appName: string; storageK
   if (mode === "hidden") return null;
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-brass/40 bg-[#fbf7ef] px-4 py-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-navy font-display text-[15px] text-[#e3d2ac]">LW</span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-navy">
+        <Logo variant="monogram" alt="" className="h-auto w-7" />
+      </span>
       <span className="min-w-0 flex-1 text-[13px] leading-snug text-ink-2">
         <b className="block text-[14px] text-ink">Install {appName}</b>
         {mode === "prompt" ? "Add it to your home screen for one-tap access and alerts." : "Tap Share, then “Add to Home Screen”."}

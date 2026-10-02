@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { requireMember } from "@/lib/customer/session";
 import { loadMember } from "@/lib/customer/member";
 import { AppShell, cardStyle, fmtDate } from "../ui";
+import { Logo } from "@/lib/brand/Logo";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Membership card · The London Wash Club" };
@@ -28,21 +29,7 @@ export default async function MemberCardPage() {
         style={{ background: c.bg, color: c.ink, boxShadow: `inset 0 0 0 1px ${c.edge}, 0 20px 40px -24px rgba(10,14,24,.55)` }}
       >
         <div className="flex items-start justify-between gap-2">
-          <span className="flex items-stretch gap-2 leading-[0.92]">
-            <span className="font-archivo text-[11px] font-extrabold uppercase tracking-[0.06em]">
-              The
-              <br />
-              London
-              <br />
-              Wash
-            </span>
-            <span className="w-px bg-current opacity-50" />
-            <span className="self-center font-display text-[11.5px] italic leading-[1.02]">
-              the art
-              <br />
-              of laundry
-            </span>
-          </span>
+          <Logo tone={c.ink.toUpperCase() === "#15213A" ? "dark" : "light"} className="h-auto w-[132px]" />
           <span className="text-[10px] font-semibold uppercase tracking-[0.24em] opacity-75">Club member</span>
         </div>
         <div className="font-display text-[24px] font-medium uppercase tracking-[0.2em]" style={{ color: c.accent }}>

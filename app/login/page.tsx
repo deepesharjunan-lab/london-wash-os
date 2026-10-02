@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { signIn } from "./actions";
 import { useSearchParams } from "next/navigation";
+import { Logo } from "@/lib/brand/Logo";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -68,21 +69,7 @@ export default function LoginPage() {
   return (
     <main className="lw-login flex min-h-screen items-center justify-center bg-[radial-gradient(90%_60%_at_50%_35%,#1e2d4d_0%,#101828_70%)] px-4">
       <div className="w-full max-w-sm rounded-[20px] border border-white/10 bg-[#141d31]/90 p-8 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.8)]">
-        <div className="mb-8 flex items-stretch gap-3 leading-[0.92] text-[#efe8da]">
-          <span className="font-archivo text-[15px] font-extrabold uppercase tracking-[0.06em]">
-            The
-            <br />
-            London
-            <br />
-            Wash
-          </span>
-          <span className="w-px bg-current opacity-50" />
-          <span className="self-center font-display text-[15px] italic leading-[1.02]">
-            the art
-            <br />
-            of laundry
-          </span>
-        </div>
+        <Logo tone="light" className="mb-8 h-auto w-[230px]" />
         <h1 className="mb-1 font-display text-[30px] font-medium leading-tight text-[#efe8da]">Sign in</h1>
         <p className="mb-6 text-sm text-white/50">Operations console &middot; staff access only</p>
 

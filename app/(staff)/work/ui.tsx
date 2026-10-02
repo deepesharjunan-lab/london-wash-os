@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/app/(customer)/my/ui";
 import type { AppRole } from "@/lib/staff/roles";
+import { Logo } from "@/lib/brand/Logo";
 
 export { Card, Icon, Notice, btn, btnGhost, input } from "@/app/(customer)/my/ui";
 
@@ -58,8 +59,8 @@ export function StaffShell({
             <Icon d='<path d="m15 6-6 6 6 6"/>' />
           </Link>
         ) : (
-          <span className="grid h-11 w-11 place-items-center font-display text-[20px] text-brass" aria-hidden="true">
-            LW
+          <span className="grid h-11 w-11 place-items-center" aria-hidden="true">
+            <Logo variant="monogram" alt="" className="h-auto w-9" />
           </span>
         )}
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-semibold">{title ?? "London Wash Staff"}</h1>

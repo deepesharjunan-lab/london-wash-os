@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { lockPosAction } from "./lock-actions";
+import { Logo } from "@/lib/brand/Logo";
 
 const TABS = [
   { href: "/pos", label: "New Order", icon: '<path d="M12 5v14M5 12h14"/>' },
@@ -38,8 +39,9 @@ export function PosTopBar({ userName, branchName }: { userName: string; branchNa
   return (
     <header className="flex h-[64px] shrink-0 items-center gap-4 bg-[#101828] px-4 text-[#e8e2d6] sm:px-5">
       <Link href="/pos" className="flex shrink-0 items-center gap-2.5" aria-label="New order">
-        <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#1c2a45] font-display text-[17px] text-[#e3d2ac]">LW</span>
-        <span className="hidden leading-tight lg:block">
+        <Logo variant="mark" tone="light" alt="The London Wash" className="hidden h-auto w-[132px] sm:block" />
+        <Logo variant="monogram" alt="The London Wash" className="h-auto w-10 sm:hidden" />
+        <span className="hidden border-l border-white/15 pl-3 leading-tight lg:block">
           <b className="block text-[14px] font-bold tracking-wide text-white">Reception POS</b>
           <span className="text-[11px] text-white/50">{branchName}</span>
         </span>
