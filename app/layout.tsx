@@ -11,6 +11,7 @@ const mono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--
 export const metadata: Metadata = {
   title: "The London Wash OS",
   description: "Laundry operating system for The Art of Laundry, Kerala.",
+  icons: { icon: "/appicon/club-192.png", apple: "/appicon/apple-club-180.png" },
 };
 
 export default function RootLayout({
