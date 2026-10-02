@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
+import { Logo } from "@/lib/brand/Logo";
 
 const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[] = [
   {
@@ -130,21 +131,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="lw-console flex min-h-screen flex-col lg:flex-row">
       <aside className="flex shrink-0 flex-col bg-sidebar text-[#d9d3c6] lg:sticky lg:top-0 lg:h-screen lg:w-[248px]">
         <Link href="/dashboard" className="block px-5 pb-4 pt-5 lg:pb-5 lg:pt-6" aria-label="The London Wash, the art of laundry. Go to dashboard">
-          <span className="flex items-stretch gap-3 leading-[0.92] text-[#efe8da]">
-            <span className="font-archivo text-[15px] font-extrabold uppercase tracking-[0.06em]">
-              The
-              <br />
-              London
-              <br />
-              Wash
-            </span>
-            <span className="w-px bg-current opacity-50" />
-            <span className="self-center font-display text-[15px] italic leading-[1.02]">
-              the art
-              <br />
-              of laundry
-            </span>
-          </span>
+          <Logo tone="light" alt="" className="h-auto w-[196px]" />
           <span className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.22em] text-brass-2">
             Operations Console
           </span>
