@@ -76,7 +76,7 @@ export default async function OrderInvoicePrintPage({ params }: { params: { id: 
           color: #000;
         }
         .inv-center { text-align: center; }
-        .inv-logo { max-width: 32mm; display: block; margin: 0 auto 1mm; }
+        .inv-logo { width: 58mm; max-width: 100%; height: auto; display: block; margin: 0 auto 1.5mm; }
         .inv-org { font-size: 11pt; font-weight: 800; }
         .inv-small { font-size: 7.5pt; }
         .inv-dashed { border-top: 1px dashed #000; margin: 1.5mm 0; }
@@ -101,8 +101,7 @@ export default async function OrderInvoicePrintPage({ params }: { params: { id: 
 
       <div className="inv">
         <div className="inv-center">
-          <img src={LOGO_DATA_URI} alt={ORG_NAME} className="inv-logo" />
-          <div className="inv-org">{ORG_NAME}</div>
+          <img src={LOGO_DATA_URI} alt={`${ORG_NAME}, the art of laundry`} className="inv-logo" />
           {branchAddressLine && <div className="inv-small">{branchAddressLine}</div>}
           {branch?.phone && <div className="inv-small">Mobile: {branch.phone}</div>}
           <div className="inv-small">Email: {ORG_EMAIL}</div>
