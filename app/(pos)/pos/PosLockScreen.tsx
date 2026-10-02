@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setPosPinAction, unlockPosAction } from "./lock-actions";
+import { Logo } from "@/lib/brand/Logo";
 
 type Mode = "unlock" | "set" | "confirm";
 
@@ -70,10 +71,8 @@ export function PosLockScreen({ hasPin, canManage, userName, branchName }: { has
   return (
     <div className="grid h-screen place-items-center bg-[radial-gradient(90%_70%_at_50%_30%,#1e2d4d_0%,#101828_70%)] px-5 text-[#efe8da]">
       <div className="flex w-full max-w-[340px] flex-col items-center gap-6">
-        <div className="flex flex-col items-center gap-2">
-          <span className="font-display text-[52px] leading-none text-[#e3d2ac]" aria-hidden="true">
-            LW
-          </span>
+        <div className="flex flex-col items-center gap-3">
+          <Logo variant="mark" tone="light" className="h-auto w-[200px]" />
           <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/55">Reception POS · {branchName}</span>
         </div>
 
