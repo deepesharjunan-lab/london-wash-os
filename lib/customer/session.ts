@@ -2,6 +2,7 @@ import { createHash, createHmac, randomInt, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendLoginCodeWhatsApp, waCodesOn } from "@/lib/whatsapp/templates";
 
 // Customer app session. Customers never get a Supabase session (the staff
 // RLS policies are branch-based and would not restrict them). Instead they
@@ -126,16 +127,16 @@ export async function verifyLoginCode(phone: string, code: string): Promise<stri
   return null;
 }
 
-/** True once an SMS or WhatsApp provider is connected in sendLoginCode below. */
+/** True when sign-in codes go out by WhatsApp (Vercel WHATSAPP_LOGIN_CODES=1 and the API configured). */
 export function canSendCodes() {
-  return false;
+  return waCodesOn();
 }
 
 /**
- * Sends a sign-in code by SMS or WhatsApp. No provider is connected yet, so
- * this returns false and the app tells the customer to ask the store for a
- * code. Connect the provider here when the API details are available.
+ * Sends a sign-in code with the approved WhatsApp template "lw_login_code".
+ * Returns false if it couldn't be sent; the app then tells the customer to
+ * ask the store for a code.
  */
-export async function sendLoginCode(_phone: string, _code: string): Promise<boolean> {
-  return false;
+export async function sendLoginCode(phone: string, code: string): Promise<boolean> {
+  return sendLoginCodeWhatsApp(phone, code);
 }
