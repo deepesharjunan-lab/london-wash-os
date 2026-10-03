@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { onOrderStatus } from "@/lib/loyalty/ledger";
 import { notify } from "@/lib/notify";
+import { sendOrderUpdateWhatsApp } from "@/lib/whatsapp/templates";
 import { ROLE_LABEL, isAppRole, type AppRole } from "./roles";
 
 // Garment stages for the staff app. Every garment sits at one stage, either
@@ -301,6 +302,7 @@ export async function moveOrderGarments(db: Supa, orderId: string, stageCode: st
 
 /** Tells the customer (and owners, when useful) about an order status change. Never throws. */
 export async function notifyOrderStatus(orderId: string, status: string) {
+  await sendOrderUpdateWhatsApp(orderId, status); // only when WHATSAPP_NOTIFY=1; never throws
   try {
     const db = createAdminClient();
     const { data } = await db.from("order").select("id, order_number, customer_id, branch_id, customer:customer_id(full_name)").eq("id", orderId).maybeSingle();
