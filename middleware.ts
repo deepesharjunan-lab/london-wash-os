@@ -32,7 +32,10 @@ export async function middleware(request: NextRequest) {
     if (pathname === "/") {
       return NextResponse.rewrite(new URL("/site/index.html", request.url));
     }
-    if (pathname.startsWith("/site/")) return NextResponse.next();
+    if (pathname === "/privacy") {
+      return NextResponse.rewrite(new URL("/site/privacy.html", request.url));
+    }
+    if (pathname.startsWith("/site/") || pathname.startsWith("/api/public/")) return NextResponse.next();
     const url = new URL(pathname + request.nextUrl.search, `https://${subdomainFor(pathname)}.${ROOT_DOMAIN}`);
     return NextResponse.redirect(url);
   }

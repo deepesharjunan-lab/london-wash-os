@@ -1052,6 +1052,14 @@ a { color: var(--lw-elephant); }
 .lw-burger { display: none; background: none; border: 0; color: var(--lw-elephant); padding: 8px; cursor: pointer; }
 .lw-burger svg { width: 28px; height: 28px; display: block; }
 .lw-header a:focus-visible, .lw-burger:focus-visible { outline: 3px solid var(--lw-saffron); outline-offset: 3px; }
+/* Legal pages (privacy policy) */
+.lw-legal .lw-wrap { max-width: 820px; }
+.lw-legal h2 { font-size: 20px; margin: 30px 0 8px; color: var(--lw-elephant); }
+.lw-legal p, .lw-legal li { font-size: 15.5px; line-height: 1.7; color: var(--lw-ink-2); }
+.lw-legal ul { padding-left: 20px; }
+.lw-legal a, .lw-footer-bottom a { color: inherit; text-decoration: underline; }
+.lw-footer-bottom a:hover { color: var(--lw-saffron); }
+
 /* Google rating badge and directions link */
 .lw-rating { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: rgba(255,255,255,.85); font-size: 14px; text-decoration: none; }
 .lw-rating:hover { background: rgba(255,255,255,.14); color: #fff; }
