@@ -15,6 +15,7 @@ import {
   verifyLoginCode,
 } from "@/lib/customer/session";
 import { loadCtx, recordReview, redeem } from "@/lib/loyalty/ledger";
+import { sendPickupBookedWhatsApp } from "@/lib/whatsapp/templates";
 
 // Every action below that reads or changes data first calls requireMember(),
 // which checks the signed session cookie, and then only touches rows that
@@ -143,6 +144,7 @@ export async function bookPickupAction(form: FormData) {
       ownerUrl: "/delivery",
     }
   );
+  await sendPickupBookedWhatsApp(customerId, when); // only when WHATSAPP_NOTIFY=1; never throws
   revalidatePath("/my", "layout");
   redirect("/my/orders?booked=1");
 }
