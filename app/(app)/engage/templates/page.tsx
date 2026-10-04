@@ -72,10 +72,12 @@ export default async function TemplatesPage({ searchParams }: { searchParams: { 
   const { data: auth } = await createClient().auth.getUser();
   if (!auth?.user) return <p className="text-sm text-ink/60">Sign in to see templates.</p>;
 
-  const [{ rows, accounts, failed }, { data: metaRows }] = await Promise.all([
+  const [{ rows: allRows, accounts, failed }, { data: metaRows }] = await Promise.all([
     listTemplates(),
     createAdminClient().from("whatsapp_template_meta").select("name, variables, header_image_url"),
   ]);
+  // Meta adds sample templates (hello_world, jaspers_market_…) to the test account; hide them.
+  const rows = allRows.filter((r) => !/^(hello_world|jaspers_market_)/.test(r.name));
   const metaByName = new Map(((metaRows ?? []) as Meta[]).map((m) => [m.name, m]));
   const selected = rows.find((r) => `${r.name}|${r.language}` === searchParams.t) ?? null;
   const sending = accounts.find((a) => a.sending);
