@@ -1,0 +1,359 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { markUnreadAction, setBotAction } from "./actions";
+import { AutoRefresh, Composer, ScrollToEnd } from "./ui";
+
+// WhatsApp inbox: every conversation on The London Wash WhatsApp number, with
+// the bot's replies and the team's. Staff reply here; while they do, the bot
+// stays quiet (whatsapp_contact.handoff_until). The WhatsApp tables are
+// service-role only, so this page checks for a console sign-in and then reads
+// them with the admin client.
+
+export const dynamic = "force-dynamic";
+
+const WINDOW_MS = 24 * 3600000;
+const LIST_LIMIT = 80;
+const MESSAGE_LIMIT = 300;
+
+type Contact = {
+  wa_id: string;
+  profile_name: string | null;
+  customer_id: string | null;
+  last_message_at: string | null;
+  last_preview: string | null;
+  last_direction: string | null;
+  unread_count: number;
+  handoff_until: string | null;
+  last_inbound_at: string | null;
+  customer: { full_name: string | null; phone: string | null } | { full_name: string | null; phone: string | null }[] | null;
+};
+type Message = {
+  id: string;
+  direction: "in" | "out";
+  msg_type: string | null;
+  body: string | null;
+  status: string | null;
+  sent_by_user_id: string | null;
+  created_at: string;
+};
+
+const CONTACT_COLS =
+  "wa_id, profile_name, customer_id, last_message_at, last_preview, last_direction, unread_count, handoff_until, last_inbound_at, customer:customer_id(full_name, phone)";
+
+const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? x[0] ?? null : x);
+const clean = (s: string) => s.replace(/[%,()*]/g, "").trim().slice(0, 60);
+const phone = (wa: string) => (wa.length === 12 && wa.startsWith("91") ? `+91 ${wa.slice(2, 7)} ${wa.slice(7)}` : `+${wa}`);
+const nameOf = (c: Contact) => one(c.customer)?.full_name || c.profile_name || phone(c.wa_id);
+const staffHandling = (c: Contact) => !!c.handoff_until && new Date(c.handoff_until).getTime() > Date.now();
+
+const tz = { timeZone: "Asia/Kolkata" } as const;
+const time = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", ...tz });
+const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", ...tz });
+function listWhen(iso: string | null) {
+  if (!iso) return "";
+  return day(iso) === day(new Date().toISOString()) ? time(iso) : new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", ...tz });
+}
+
+const TICKS: Record<string, string> = { sent: "✓", delivered: "✓✓", read: "✓✓ read", failed: "not delivered" };
+const ORDER_STATUS: Record<string, string> = {
+  draft: "Draft",
+  confirmed: "Received",
+  in_production: "Being cleaned",
+  ready: "Ready",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+export default async function WhatsAppInboxPage({ searchParams }: { searchParams: { c?: string; f?: string; q?: string } }) {
+  const { data: auth } = await createClient().auth.getUser();
+  if (!auth?.user) return <p className="text-sm text-ink/60">Sign in to see the WhatsApp inbox.</p>;
+
+  const db = createAdminClient() as any;
+  const filter = searchParams.f === "unread" || searchParams.f === "staff" ? searchParams.f : "all";
+  const q = clean(searchParams.q ?? "");
+  const selectedId = (searchParams.c ?? "").replace(/\D/g, "").slice(0, 20) || null;
+
+  const href = (p: { c?: string | null; f?: string; q?: string }) => {
+    const sp = new URLSearchParams();
+    if (p.f && p.f !== "all") sp.set("f", p.f);
+    if (p.q) sp.set("q", p.q);
+    if (p.c) sp.set("c", p.c);
+    const s = sp.toString();
+    return `/whatsapp${s ? `?${s}` : ""}`;
+  };
+
+  // Conversation list.
+  let list = db.from("whatsapp_contact").select(CONTACT_COLS).order("last_message_at", { ascending: false, nullsFirst: false }).limit(LIST_LIMIT);
+  if (filter === "unread") list = list.gt("unread_count", 0);
+  if (filter === "staff") list = list.gt("handoff_until", new Date().toISOString());
+  if (q) {
+    const digits = q.replace(/\D/g, "");
+    const { data: matches } = await db.from("customer").select("id").ilike("full_name", `%${q}%`).limit(50);
+    const ids = ((matches ?? []) as { id: string }[]).map((m) => m.id);
+    const ors = [`profile_name.ilike.%${q}%`];
+    if (digits.length >= 3) ors.push(`wa_id.ilike.%${digits}%`);
+    if (ids.length) ors.push(`customer_id.in.(${ids.join(",")})`);
+    list = list.or(ors.join(","));
+  }
+  const { data: listData } = await list;
+  const contacts = (listData ?? []) as Contact[];
+
+  const [{ count: unreadChats }, { count: staffChats }] = await Promise.all([
+    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0),
+    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("handoff_until", new Date().toISOString()),
+  ]);
+
+  // Open conversation.
+  let selected: Contact | null = null;
+  let messages: Message[] = [];
+  let orders: { id: string; order_number: string; status: string; created_at: string }[] = [];
+  const staffNames = new Map<string, string>();
+  if (selectedId) {
+    const { data: c } = await db.from("whatsapp_contact").select(CONTACT_COLS).eq("wa_id", selectedId).maybeSingle();
+    selected = (c as Contact | null) ?? null;
+    if (selected) {
+      const { data: m } = await db
+        .from("whatsapp_message")
+        .select("id, direction, msg_type, body, status, sent_by_user_id, created_at")
+        .eq("wa_id", selectedId)
+        .order("created_at", { ascending: false })
+        .limit(MESSAGE_LIMIT);
+      messages = ((m ?? []) as Message[]).reverse();
+
+      const userIds = [...new Set(messages.map((x) => x.sent_by_user_id).filter(Boolean) as string[])];
+      if (userIds.length) {
+        const { data: users } = await db.from("user").select("id, full_name").in("id", userIds);
+        for (const u of (users ?? []) as { id: string; full_name: string }[]) staffNames.set(u.id, u.full_name);
+      }
+      if (selected.customer_id) {
+        const { data: o } = await db
+          .from("order")
+          .select("id, order_number, status, created_at")
+          .eq("customer_id", selected.customer_id)
+          .neq("status", "draft")
+          .order("created_at", { ascending: false })
+          .limit(4);
+        orders = (o ?? []) as typeof orders;
+      }
+      // Opening a chat marks it read.
+      if (selected.unread_count > 0) {
+        await db.from("whatsapp_contact").update({ unread_count: 0, staff_read_at: new Date().toISOString() }).eq("wa_id", selectedId);
+        const row = contacts.find((x) => x.wa_id === selectedId);
+        if (row) row.unread_count = 0;
+      }
+    }
+  }
+
+  const windowEnds = selected?.last_inbound_at ? new Date(selected.last_inbound_at).getTime() + WINDOW_MS : 0;
+  const blockedReason = !selected
+    ? null
+    : !windowEnds || windowEnds < Date.now()
+      ? "This customer last messaged more than 24 hours ago. WhatsApp only delivers a normal reply within 24 hours of their last message, so call them or wait for them to write again."
+      : null;
+
+  const chip = (active: boolean) =>
+    `rounded-full border px-3 py-1 text-[12.5px] font-medium transition ${active ? "border-navy bg-navy text-white" : "border-black/10 bg-white text-ink hover:border-navy/40"}`;
+
+  return (
+    <div>
+      <AutoRefresh />
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
+      <h1 className="mb-2 font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
+      <p className="mb-5 text-sm text-ink/60">
+        Customer chats on our WhatsApp number. The bot answers first; when a customer asks for a person, or you reply here, the bot stays quiet for 4 hours.
+      </p>
+
+      <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
+        {/* Conversation list */}
+        <section className={`border-2 border-black/10 bg-white ${selected ? "hidden lg:block" : ""}`}>
+          <div className="border-b border-black/10 p-3">
+            <form action="/whatsapp" className="mb-2.5 flex gap-2">
+              {filter !== "all" && <input type="hidden" name="f" value={filter} />}
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Search name or number"
+                className="min-w-0 flex-1 border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+              <button type="submit" className="rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white">
+                Search
+              </button>
+            </form>
+            <div className="flex flex-wrap gap-1.5">
+              <Link href={href({ q })} className={chip(filter === "all")}>
+                All
+              </Link>
+              <Link href={href({ f: "unread", q })} className={chip(filter === "unread")}>
+                Unread {unreadChats ? <b className="ml-0.5">{unreadChats}</b> : null}
+              </Link>
+              <Link href={href({ f: "staff", q })} className={chip(filter === "staff")}>
+                With staff {staffChats ? <b className="ml-0.5">{staffChats}</b> : null}
+              </Link>
+            </div>
+          </div>
+          <ul className="max-h-[70vh] overflow-y-auto">
+            {contacts.map((c) => {
+              const active = c.wa_id === selectedId;
+              return (
+                <li key={c.wa_id}>
+                  <Link
+                    href={href({ c: c.wa_id, f: filter, q })}
+                    className={`block border-b border-black/5 px-4 py-3 transition ${active ? "bg-[#fbf7ef]" : "hover:bg-black/[0.02]"}`}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className={`truncate text-[14px] ${c.unread_count ? "font-bold text-ink" : "font-semibold text-ink/85"}`}>{nameOf(c)}</span>
+                      <span className="shrink-0 text-[11.5px] text-ink/45">{listWhen(c.last_message_at)}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span className={`min-w-0 flex-1 truncate text-[12.5px] ${c.unread_count ? "text-ink/80" : "text-ink/50"}`}>
+                        {c.last_direction === "out" ? "You: " : ""}
+                        {c.last_preview ?? ""}
+                      </span>
+                      {staffHandling(c) && <span className="shrink-0 rounded-full bg-[#fdf0dc] px-2 py-0.5 text-[10.5px] font-semibold text-[#8a5a12]">Staff</span>}
+                      {c.unread_count > 0 && (
+                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#1f7a4d] px-1.5 text-[11px] font-bold text-white">{c.unread_count}</span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+            {!contacts.length && (
+              <li className="px-4 py-10 text-center text-sm text-ink/40">
+                {q ? `No chats found for “${q}”.` : filter === "unread" ? "No unread chats." : filter === "staff" ? "No chats waiting for staff." : "No WhatsApp chats yet."}
+              </li>
+            )}
+          </ul>
+        </section>
+
+        {/* Conversation */}
+        {selected ? (
+          <section className="flex min-h-[70vh] flex-col border-2 border-black/10 bg-white">
+            <header className="flex flex-wrap items-start justify-between gap-3 border-b border-black/10 px-4 py-3">
+              <div className="min-w-0">
+                <Link href={href({ f: filter, q })} className="mb-1 inline-block text-[12.5px] text-accent hover:underline lg:hidden">
+                  ← All chats
+                </Link>
+                <h2 className="truncate text-[17px] font-bold text-ink">{nameOf(selected)}</h2>
+                <div className="text-[13px] text-ink/60">
+                  {phone(selected.wa_id)}
+                  {selected.profile_name && one(selected.customer)?.full_name && selected.profile_name !== one(selected.customer)?.full_name
+                    ? ` · WhatsApp name “${selected.profile_name}”`
+                    : ""}
+                  {selected.customer_id ? (
+                    <>
+                      {" · "}
+                      <Link href={`/customers/${selected.customer_id}`} className="text-accent hover:underline">
+                        Customer profile
+                      </Link>
+                    </>
+                  ) : (
+                    " · not matched to a customer"
+                  )}
+                </div>
+                {orders.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {orders.map((o) => (
+                      <Link key={o.id} href={`/orders/${o.id}`} className="rounded-full border border-black/10 px-2.5 py-0.5 text-[12px] text-ink/75 hover:border-navy/40">
+                        {o.order_number} · {ORDER_STATUS[o.status] ?? o.status}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                {staffHandling(selected) ? (
+                  <>
+                    <span className="rounded-full bg-[#fdf0dc] px-2.5 py-1 text-[12px] font-semibold text-[#8a5a12]">
+                      Bot paused until {time(selected.handoff_until!)}
+                    </span>
+                    <form action={setBotAction}>
+                      <input type="hidden" name="wa_id" value={selected.wa_id} />
+                      <input type="hidden" name="mode" value="resume" />
+                      <button type="submit" className="rounded-md border border-black/10 bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-navy/40">
+                        Hand back to bot
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <span className="rounded-full bg-[#e2eee7] px-2.5 py-1 text-[12px] font-semibold text-[#2c6a4e]">Bot is answering</span>
+                    <form action={setBotAction}>
+                      <input type="hidden" name="wa_id" value={selected.wa_id} />
+                      <input type="hidden" name="mode" value="pause" />
+                      <button type="submit" className="rounded-md border border-black/10 bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-navy/40">
+                        Pause bot, I'll reply
+                      </button>
+                    </form>
+                  </>
+                )}
+                <form action={markUnreadAction}>
+                  <input type="hidden" name="wa_id" value={selected.wa_id} />
+                  <button type="submit" className="text-[12px] text-ink/50 hover:text-ink hover:underline">
+                    Mark as unread
+                  </button>
+                </form>
+              </div>
+            </header>
+
+            <div className="flex-1 space-y-2 overflow-y-auto bg-[#f4efe6] px-3 py-4 sm:px-5" style={{ maxHeight: "60vh" }}>
+              {messages.length === MESSAGE_LIMIT && <p className="text-center text-[12px] text-ink/45">Showing the latest {MESSAGE_LIMIT} messages.</p>}
+              {messages.map((m, i) => {
+                const newDay = i === 0 || day(messages[i - 1].created_at) !== day(m.created_at);
+                const out = m.direction === "out";
+                const staff = out && m.sent_by_user_id;
+                const isMedia = !out && m.body?.startsWith("[") && m.body.endsWith("]");
+                return (
+                  <div key={m.id}>
+                    {newDay && (
+                      <div className="my-3 text-center">
+                        <span className="rounded-full bg-white/70 px-3 py-1 text-[11.5px] font-medium text-ink/55">{day(m.created_at)}</span>
+                      </div>
+                    )}
+                    <div className={`flex ${out ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-[13.5px] shadow-sm ${
+                          staff ? "bg-[#d9f2e3] text-ink" : out ? "bg-white/80 text-ink/80" : "bg-white text-ink"
+                        }`}
+                      >
+                        {out && (
+                          <div className={`mb-0.5 text-[11px] font-semibold ${staff ? "text-[#1f7a4d]" : "text-ink/45"}`}>
+                            {staff ? staffNames.get(m.sent_by_user_id!) ?? "Staff" : m.msg_type === "template" ? "Automatic message" : "Bot"}
+                          </div>
+                        )}
+                        {isMedia ? (
+                          <span className="italic text-ink/55">
+                            {m.body!.slice(1, -1)} received. It can't be shown here; open WhatsApp on the shop phone to see it.
+                          </span>
+                        ) : (
+                          <span className="whitespace-pre-wrap break-words">{m.body}</span>
+                        )}
+                        <div className="mt-1 text-right text-[10.5px] text-ink/45">
+                          {time(m.created_at)}
+                          {out && m.status ? <span className={m.status === "failed" ? "ml-1.5 text-[#9c3326]" : "ml-1.5"}>{TICKS[m.status] ?? m.status}</span> : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {!messages.length && <p className="py-10 text-center text-sm text-ink/40">No messages in this chat yet.</p>}
+              <ScrollToEnd marker={messages[messages.length - 1]?.id ?? ""} />
+            </div>
+
+            {!blockedReason && windowEnds - Date.now() < 3 * 3600000 && (
+              <p className="border-t border-black/10 bg-white px-4 py-1.5 text-[12px] text-[#8a5a12]">Reply window closes at {time(new Date(windowEnds).toISOString())}.</p>
+            )}
+            <Composer waId={selected.wa_id} blockedReason={blockedReason} />
+          </section>
+        ) : (
+          <section className="hidden min-h-[50vh] place-items-center border-2 border-dashed border-black/10 bg-white/50 p-8 text-center text-sm text-ink/45 lg:grid">
+            Choose a chat on the left to read it and reply.
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
