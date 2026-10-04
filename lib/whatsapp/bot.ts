@@ -3,7 +3,7 @@ import { customersByPhone } from "@/lib/customer/session";
 import { loadMember } from "@/lib/customer/member";
 import { loadStages } from "@/lib/staff/flow";
 import { notify } from "@/lib/notify";
-import { logMessage, markRead, sendButtons, sendLink, sendList, sendText } from "./client";
+import { MEDIA_LABEL, logMessage, markRead, sendButtons, sendLink, sendList, sendText } from "./client";
 
 // The London Wash WhatsApp assistant. Customers get a menu: track orders
 // (live garment stages), book a pickup, prices, Club points, store hours, or
@@ -33,6 +33,7 @@ const MENU_ROWS = [
   { id: "staff", title: "Talk to our team", description: "A person will reply here" },
 ];
 
+type IncomingMedia = { id: string; mime_type?: string; caption?: string; filename?: string };
 type Incoming = {
   id: string;
   from: string;
@@ -40,7 +41,31 @@ type Incoming = {
   text?: { body?: string };
   interactive?: { list_reply?: { id: string; title: string }; button_reply?: { id: string; title: string } };
   button?: { payload?: string; text?: string };
+  image?: IncomingMedia;
+  video?: IncomingMedia;
+  audio?: IncomingMedia;
+  document?: IncomingMedia;
+  sticker?: IncomingMedia;
+  location?: { latitude: number; longitude: number; name?: string; address?: string };
+  reaction?: { message_id?: string; emoji?: string };
 };
+
+const MEDIA_TYPES = ["image", "video", "audio", "document", "sticker"] as const;
+
+/** The file attached to a message, if any, and a readable line for the inbox. */
+function readMedia(m: Incoming): { media: IncomingMedia | null; label: string | null } {
+  if (m.type === "reaction") return { media: null, label: m.reaction?.emoji ? `Reacted ${m.reaction.emoji}` : "Removed a reaction" };
+  if (m.type === "location" && m.location) {
+    const { latitude, longitude, name, address } = m.location;
+    const place = [name, address].filter(Boolean).join(", ");
+    return { media: null, label: `📍 Location${place ? `: ${place}` : ""}\nhttps://maps.google.com/?q=${latitude},${longitude}` };
+  }
+  if (!(MEDIA_TYPES as readonly string[]).includes(m.type)) return { media: null, label: null };
+  const media = (m as any)[m.type] as IncomingMedia | undefined;
+  if (!media?.id) return { media: null, label: null };
+  const caption = media.caption?.trim();
+  return { media, label: [MEDIA_LABEL[m.type] ?? m.type, media.filename, caption].filter(Boolean).join(" · ") };
+}
 
 function readInput(m: Incoming): { action: string | null; text: string } {
   const reply = m.interactive?.list_reply ?? m.interactive?.button_reply;
@@ -67,7 +92,17 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
   try {
     const from = m.from;
     const { action, text } = readInput(m);
-    const fresh = await logMessage({ wa_id: from, direction: "in", msg_type: m.type, body: text || `[${m.type}]`, wa_message_id: m.id });
+    const { media, label } = readMedia(m);
+    const fresh = await logMessage({
+      wa_id: from,
+      direction: "in",
+      msg_type: m.type,
+      body: label ?? (text || `[${m.type}]`),
+      wa_message_id: m.id,
+      media_id: media?.id ?? null,
+      media_mime: media?.mime_type ?? null,
+      media_name: media?.filename ?? null,
+    });
     if (!fresh) return; // already handled (Meta retries webhooks)
     await markRead(m.id);
 
@@ -81,6 +116,15 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     // unless the customer taps a menu button or types "menu".
     const staffHandling = !!contact.handoffUntil && contact.handoffUntil > Date.now();
     if (staffHandling && !action && text.toLowerCase() !== "menu") return;
+
+    // Emoji reactions and system notices don't need an answer.
+    if (["reaction", "system", "unsupported", "ephemeral"].includes(m.type)) return;
+
+    // Photos, voice notes, documents and locations need a person: pass the chat to the team.
+    if (label) {
+      const what = m.type === "image" ? "photo" : m.type === "audio" ? "voice message" : m.type === "location" ? "location" : m.type === "sticker" ? "message" : "file";
+      return handoff(db, from, customer, profileName, `Customer sent a ${what} on WhatsApp`, `Thanks, we've received your ${what}. A member of our team will reply here shortly (Mon–Sat 9–9, Sun 11–6).`);
+    }
 
     const intent = action ?? intentFromText(text);
     if (!intent) return menu(from, firstName, true);

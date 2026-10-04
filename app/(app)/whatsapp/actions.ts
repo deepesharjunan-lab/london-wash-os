@@ -2,13 +2,14 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendText, waConfigured } from "@/lib/whatsapp/client";
+import { mediaKindFor, sendMedia, sendText, uploadMedia, waConfigured } from "@/lib/whatsapp/client";
 import { HANDOFF_HOURS } from "@/lib/whatsapp/bot";
 
 // WhatsApp inbox actions. The WhatsApp tables are service-role only, so each
 // action first checks that a console user is signed in, then uses the admin client.
 
 const WINDOW_MS = 24 * 3600000; // WhatsApp only allows free-text replies within 24 h of the customer's last message
+const MAX_UPLOAD = 4.3 * 1024 * 1024; // Vercel accepts request bodies up to 4.5 MB
 const waId = (v: FormDataEntryValue | null) => String(v ?? "").replace(/\D/g, "").slice(0, 20);
 
 async function consoleUserId(): Promise<string | null> {
@@ -26,8 +27,11 @@ export async function sendReplyAction(_prev: ReplyState, form: FormData): Promis
   if (!userId) return { error: "Your session has ended. Sign in again." };
   const to = waId(form.get("wa_id"));
   const body = String(form.get("body") ?? "").trim();
-  if (!to || !body) return { error: "Type a message first." };
+  const upload = form.get("file");
+  const file = upload instanceof File && upload.size > 0 ? upload : null;
+  if (!to || (!body && !file)) return { error: "Type a message or attach a file first." };
   if (body.length > 4000) return { error: "That message is too long for WhatsApp (4,000 characters max)." };
+  if (file && file.size > MAX_UPLOAD) return { error: "That file is over 4 MB. Send bigger files from the shop phone." };
   if (!waConfigured()) return { error: "WhatsApp isn't connected (check the Vercel settings)." };
 
   const db = createAdminClient();
@@ -37,8 +41,23 @@ export async function sendReplyAction(_prev: ReplyState, form: FormData): Promis
     return { error: "It's been more than 24 hours since this customer last messaged, so WhatsApp won't deliver a normal reply. Call them, or wait until they message again." };
   }
 
-  const res = await sendText(to, body, userId);
-  if (!res.ok) return { error: `WhatsApp didn't accept the message: ${res.error}` };
+  if (file) {
+    const mime = file.type || "application/octet-stream";
+    const kind = mediaKindFor(mime);
+    const filename = (file.name || "file").replace(/[\\/\r\n]/g, "_").slice(0, 200);
+    const up = await uploadMedia(file, mime, filename);
+    if (!up.ok) return { error: `WhatsApp didn't accept the file: ${up.error}` };
+    const sent = await sendMedia(to, kind, { id: up.id, mime, filename, caption: kind === "audio" ? undefined : body }, userId);
+    if (!sent.ok) return { error: `WhatsApp didn't accept the file: ${sent.error}` };
+    // Voice messages can't carry a caption, so any text goes as its own message.
+    if (kind === "audio" && body) {
+      const res = await sendText(to, body, userId);
+      if (!res.ok) return { error: `The voice message was sent, but the text wasn't: ${res.error}` };
+    }
+  } else {
+    const res = await sendText(to, body, userId);
+    if (!res.ok) return { error: `WhatsApp didn't accept the message: ${res.error}` };
+  }
 
   // A person is talking now: keep the bot quiet and mark the chat as read.
   await db
