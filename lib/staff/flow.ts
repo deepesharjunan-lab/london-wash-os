@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { onOrderStatus } from "@/lib/loyalty/ledger";
 import { notify } from "@/lib/notify";
 import { sendOrderUpdateWhatsApp } from "@/lib/whatsapp/templates";
+import { onAutomationEvent } from "@/lib/engage/automations";
 import { ROLE_LABEL, isAppRole, type AppRole } from "./roles";
 
 // Garment stages for the staff app. Every garment sits at one stage, either
@@ -302,6 +303,8 @@ export async function moveOrderGarments(db: Supa, orderId: string, stageCode: st
 
 /** Tells the customer (and owners, when useful) about an order status change. Never throws. */
 export async function notifyOrderStatus(orderId: string, status: string) {
+  const trigger = ({ ready: "order_ready", out_for_delivery: "out_for_delivery", delivered: "order_delivered" } as const)[status as "ready"];
+  if (trigger) await onAutomationEvent(trigger, { orderId }); // ENGAGE automations; never throws
   await sendOrderUpdateWhatsApp(orderId, status); // only when WHATSAPP_NOTIFY=1; never throws
   try {
     const db = createAdminClient();
