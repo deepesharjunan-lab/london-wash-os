@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import { staffChatCount } from "@/lib/whatsapp/inbox";
+import { waitingChatCount } from "@/lib/whatsapp/inbox";
 
-// The sidebar polls this for the WhatsApp Inbox badge (open chats with the team).
+// Number of WhatsApp chats waiting for the team (the sidebar badge). The
+// console gets live updates through Supabase Realtime; this is for checks and tools.
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { data: auth } = await createClient().auth.getUser();
-  if (!auth?.user) return Response.json({ staff: 0 }, { status: 401 });
-  return Response.json({ staff: await staffChatCount() }, { headers: { "Cache-Control": "no-store" } });
+  if (!auth?.user) return Response.json({ waiting: 0 }, { status: 401 });
+  return Response.json({ waiting: await waitingChatCount() }, { headers: { "Cache-Control": "no-store" } });
 }
