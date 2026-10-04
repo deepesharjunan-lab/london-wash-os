@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { playChime, subscribePulse, unlockSound, type Pulse } from "@/lib/whatsapp/pulse-client";
 
 type NavGroup = { section: string; items: { href: string; label: string; badge?: number }[] };
 
@@ -52,38 +53,39 @@ const ICONS: Record<string, string> = {
 };
 const FALLBACK = '<circle cx="12" cy="12" r="3"/>';
 
-/** Keeps the WhatsApp Inbox badge current on every console page (open chats with the team). */
-function useStaffChats(initial: number) {
+/**
+ * WhatsApp Inbox badge, live on every console page: open chats with the team
+ * that have unread customer messages. Plays a chime when a chat is handed to
+ * the team or a customer writes in one, and shows the count in the tab title.
+ */
+function useWaitingChats(initial: number) {
   const [count, setCount] = useState(initial);
   useEffect(() => setCount(initial), [initial]);
   useEffect(() => {
-    let stop = false;
-    const load = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const res = await fetch("/whatsapp/count", { cache: "no-store" });
-        if (!res.ok) return;
-        const json = (await res.json()) as { staff?: number };
-        if (!stop && typeof json.staff === "number") setCount(json.staff);
-      } catch {
-        // badge only
+    unlockSound();
+    let last: Pulse | null = null;
+    const off = subscribePulse((p) => {
+      setCount(p.waiting);
+      if (last) {
+        const newHandOff = p.waiting > last.waiting;
+        const newMessage = !!p.alert_at && (!last.alert_at || new Date(p.alert_at) > new Date(last.alert_at));
+        if (newHandOff || newMessage) playChime();
       }
-    };
-    const t = setInterval(load, 20000);
-    document.addEventListener("visibilitychange", load);
-    return () => {
-      stop = true;
-      clearInterval(t);
-      document.removeEventListener("visibilitychange", load);
-    };
+      last = p;
+    });
+    return off;
   }, []);
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\+?\) /, "");
+    document.title = count > 0 ? `(${count > 99 ? "99+" : count}) ${base}` : base;
+  }, [count]);
   return count;
 }
 
 export function NavLinks({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname() || "";
-  const initialStaff = groups.flatMap((g) => g.items).find((i) => i.href === "/whatsapp")?.badge ?? 0;
-  const staffChats = useStaffChats(initialStaff);
+  const initialWaiting = groups.flatMap((g) => g.items).find((i) => i.href === "/whatsapp")?.badge ?? 0;
+  const waitingChats = useWaitingChats(initialWaiting);
   return (
     <nav className="lw-nav flex flex-1 gap-1 overflow-x-auto px-3 pb-3 lg:block lg:overflow-y-auto lg:overflow-x-hidden lg:py-2" aria-label="Console">
       {groups.map((group) => (
@@ -120,12 +122,12 @@ export function NavLinks({ groups }: { groups: NavGroup[] }) {
                 />
                 {item.label}
                 {(() => {
-                  const n = item.href === "/whatsapp" ? staffChats : item.badge ?? 0;
+                  const n = item.href === "/whatsapp" ? waitingChats : item.badge ?? 0;
                   return n > 0 ? (
                     <span
                       className="ml-auto grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#1fa855] px-1.5 text-[11.5px] font-bold leading-none text-white"
-                      aria-label={`${n} open ${n === 1 ? "chat" : "chats"} with the team`}
-                      title={`${n} open ${n === 1 ? "chat" : "chats"} with the team`}
+                      aria-label={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
+                      title={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
                     >
                       {n > 99 ? "99+" : n}
                     </span>
