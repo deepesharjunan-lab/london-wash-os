@@ -101,8 +101,9 @@ export const sendLink = (to: string, body: string, label: string, url: string) =
   );
 
 /** Approved template (needed to message someone first, or after 24 hours of silence). */
-export const sendTemplate = (to: string, name: string, lang = "en", components: unknown[] = []) =>
-  post({ to, type: "template", template: { name, language: { code: lang }, components } }, { to, type: "template", body: name });
+/** `logText` is what the WhatsApp inbox shows for this message (defaults to the template name). */
+export const sendTemplate = (to: string, name: string, lang = "en", components: unknown[] = [], logText?: string) =>
+  post({ to, type: "template", template: { name, language: { code: lang }, components } }, { to, type: "template", body: logText || name });
 
 export const markRead = (messageId: string) => post({ status: "read", message_id: messageId });
 
@@ -242,6 +243,9 @@ export async function recordStatus(s: { id?: string; status?: string; recipient_
     await db.from("whatsapp_message").update({ status: s.status }).eq("wa_message_id", s.id);
     // Touch the chat so open inboxes show the new tick straight away (live pulse).
     if (s.recipient_id) await db.from("whatsapp_contact").update({ updated_at: new Date().toISOString() }).eq("wa_id", s.recipient_id);
+    // Campaign delivery tracking (Engage → Campaigns).
+    const { recordCampaignStatus } = await import("@/lib/engage/campaigns");
+    await recordCampaignStatus(s.id, s.status);
   } catch {
     // logging only
   }
