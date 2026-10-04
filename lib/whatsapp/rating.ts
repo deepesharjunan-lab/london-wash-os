@@ -7,7 +7,7 @@ import { sendLink, sendList, sendText } from "./client";
 // Google review link; low ratings ask what went wrong, alert the owners and
 // reopen the chat for the team. Server-only.
 
-const MAP = "https://maps.app.goo.gl/ao1QecaaEpGTqgj58";
+const REVIEW_URL = "https://g.page/r/CTraiq6EbHBIEBM/review"; // opens the Google review box directly
 const HANDOFF_MS = 4 * 3600000; // same as the bot's hand-off
 const FEEDBACK_MS = 3600000; // how long we wait for the comment after a low rating
 const TYPED_RATING_MS = 24 * 3600000; // a typed "1".."5" counts as a rating this long after the request
@@ -66,7 +66,7 @@ export async function handleRating(
         .update({ closed_at: contact?.closed_at ?? new Date().toISOString(), closed_by_user_id: contact?.closed_by_user_id ?? null, unread_count: 0, rating_requested_at: null })
         .eq("wa_id", from);
       await sendText(from, `Thank you so much for the ${stars(rating)}! 🤍 We're glad we could help.`);
-      await sendLink(from, "If you have a moment, a Google review helps other families find us. It only takes a minute.", "Review on Google", MAP);
+      await sendLink(from, "If you have a moment, a Google review helps other families find us. It only takes a minute.", "Review on Google", REVIEW_URL);
       return;
     }
 
