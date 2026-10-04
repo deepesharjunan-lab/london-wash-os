@@ -4,6 +4,7 @@ import { loadMember } from "@/lib/customer/member";
 import { loadStages } from "@/lib/staff/flow";
 import { notify } from "@/lib/notify";
 import { MEDIA_LABEL, logMessage, markRead, sendButtons, sendLink, sendList, sendText } from "./client";
+import { captureFeedback, handleRating, ratingFrom } from "./rating";
 
 // The London Wash WhatsApp assistant. Customers get a menu: track orders
 // (live garment stages), book a pickup, prices, Club points, store hours, or
@@ -93,6 +94,13 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     const from = m.from;
     const { action, text } = readInput(m);
     const { media, label } = readMedia(m);
+    // The chat as it was before this message (saving the message reopens a closed chat).
+    const { data: before } = await createAdminClient()
+      .from("whatsapp_contact")
+      .select("closed_at, closed_by_user_id, rating_requested_at, feedback_until")
+      .eq("wa_id", from)
+      .maybeSingle();
+    const prior = (before as { closed_at: string | null; closed_by_user_id: string | null; rating_requested_at: string | null; feedback_until: string | null } | null) ?? null;
     const fresh = await logMessage({
       wa_id: from,
       direction: "in",
@@ -111,6 +119,12 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     const customer = customers[0] ?? null;
     const contact = await touchContact(from, profileName ?? null, customer?.id ?? null);
     const firstName = (customer?.full_name ?? profileName ?? "").split(" ")[0];
+
+    // Rating after a closed chat (tapped, or a typed 1-5 soon after the request).
+    const rating = ratingFrom(action, text, prior);
+    if (rating) return handleRating(from, rating, prior, customer, profileName);
+    // After a low rating, the next message is the customer's comment for the manager.
+    if (!label && (await captureFeedback(from, text, prior))) return;
 
     // Staff are handling this chat (from the console WhatsApp inbox): stay quiet
     // unless the customer taps a menu button or types "menu".
