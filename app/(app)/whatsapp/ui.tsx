@@ -5,17 +5,55 @@ import { useRouter } from "next/navigation";
 import { useFormState } from "react-dom";
 import { sendReplyAction, type ReplyState } from "./actions";
 import { webmOpusToOgg } from "./ogg";
+import { playChime, setSoundEnabled, soundEnabled, subscribePulse } from "@/lib/whatsapp/pulse-client";
 
-/** Re-loads the inbox every few seconds while the tab is visible, so new messages appear. */
-export function AutoRefresh({ seconds = 8 }: { seconds?: number }) {
+/**
+ * Reloads the inbox the moment any chat changes (new message, delivery tick,
+ * someone else replying or closing), using the live pulse from the database.
+ * A slow timer is kept only as a safety net.
+ */
+export function LiveRefresh() {
   const router = useRouter();
   useEffect(() => {
-    const t = setInterval(() => {
-      if (document.visibilityState === "visible") router.refresh();
-    }, seconds * 1000);
-    return () => clearInterval(t);
-  }, [router, seconds]);
+    let version: number | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => router.refresh(), 150); // several changes in a burst load once
+    };
+    const off = subscribePulse((p) => {
+      if (version !== null && p.version !== version) refresh();
+      version = p.version;
+    });
+    const safety = setInterval(() => document.visibilityState === "visible" && router.refresh(), 45000);
+    return () => {
+      off();
+      clearInterval(safety);
+      if (timer) clearTimeout(timer);
+    };
+  }, [router]);
   return null;
+}
+
+/** Turns the new-message chime on or off on this computer. */
+export function SoundToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => setOn(soundEnabled()), []);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const next = !on;
+        setSoundEnabled(next);
+        setOn(next);
+        if (next) playChime();
+      }}
+      className="rounded-full border border-black/10 bg-white px-3 py-1 text-[12.5px] font-medium text-ink/70 hover:border-navy/40"
+      title="Play a sound when a customer writes to the team"
+    >
+      {on ? "🔔 Sound on" : "🔕 Sound off"}
+    </button>
+  );
 }
 
 /** Keeps the conversation box scrolled to the newest message when it changes (the page itself doesn't move). */
