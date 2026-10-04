@@ -125,29 +125,31 @@ export default async function DashboardPage({
   const prevOrderIds = (prevOrders ?? []).map((o) => o.id);
   const allOrderIds = Array.from(new Set([...orderIds, ...prevOrderIds]));
 
-  const { data: items } = allOrderIds.length
-    ? await supabase
-        .from("order_item")
-        .select(
-          "id, order_id, item_id, service_id, quantity, line_total_minor, item:item_id(name), service:service_id(name)"
-        )
-        .in("order_id", allOrderIds)
-    : { data: [] as any[] };
-
-  const { data: payments } = orderIds.length
-    ? await supabase
-        .from("payment")
-        .select("order_id, amount_minor, status")
-        .in("order_id", orderIds)
-        .eq("status", "captured")
-    : { data: [] as any[] };
-
   const customerIds = Array.from(
     new Set([...(orders ?? []), ...(prevOrders ?? [])].map((o) => o.customer_id).filter(Boolean))
   ) as string[];
-  const { data: customerRows } = customerIds.length
-    ? await supabase.from("customer").select("id, full_name, tier").in("id", customerIds)
-    : { data: [] as any[] };
+
+  // Order lines, payments and customers don't depend on each other: load them together.
+  const [{ data: items }, { data: payments }, { data: customerRows }] = await Promise.all([
+    allOrderIds.length
+      ? supabase
+          .from("order_item")
+          .select(
+            "id, order_id, item_id, service_id, quantity, line_total_minor, item:item_id(name), service:service_id(name)"
+          )
+          .in("order_id", allOrderIds)
+      : Promise.resolve({ data: [] as any[] }),
+    orderIds.length
+      ? supabase
+          .from("payment")
+          .select("order_id, amount_minor, status")
+          .in("order_id", orderIds)
+          .eq("status", "captured")
+      : Promise.resolve({ data: [] as any[] }),
+    customerIds.length
+      ? supabase.from("customer").select("id, full_name, tier").in("id", customerIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
   const customerById = new Map((customerRows ?? []).map((c: any) => [c.id, c]));
 
   const currentItems = (items ?? []).filter((i: any) => orderIds.includes(i.order_id));

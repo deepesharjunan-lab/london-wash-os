@@ -14,6 +14,10 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
     ],
   },
   {
+    section: "Inbox",
+    items: [{ href: "/whatsapp", label: "WhatsApp Inbox" }],
+  },
+  {
     section: "Catalogue",
     items: [
       { href: "/services", label: "Services" },
@@ -28,7 +32,6 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
     items: [
       { href: "/pos", label: "Reception POS" },
       { href: "/orders", label: "Orders" },
-      { href: "/whatsapp", label: "WhatsApp Inbox" },
       { href: "/customers", label: "Customers" },
       { href: "/corporate", label: "Corporate Accounts" },
       { href: "/crm", label: "Customer CRM" },
@@ -100,16 +103,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = user
-    ? await supabase
-        .from("user")
-        .select("full_name, branch:branch_id(name)")
-        .eq("auth_user_id", user.id)
-        .maybeSingle()
-    : { data: null };
-
-  // WhatsApp chats waiting for the team (unread), shown on the sidebar link; NavLinks keeps it live.
-  const waitingChats = user ? await waitingChatCount() : 0;
+  // Profile and the WhatsApp badge load together. The badge counts chats waiting for
+  // the team (unread), shown on the sidebar link; NavLinks keeps it live.
+  const [{ data: profile }, waitingChats] = user
+    ? await Promise.all([
+        supabase.from("user").select("full_name, branch:branch_id(name)").eq("auth_user_id", user.id).maybeSingle(),
+        waitingChatCount(),
+      ])
+    : [{ data: null }, 0];
   const navGroups = NAV_GROUPS.map((g) => ({
     ...g,
     items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: waitingChats } : i)),

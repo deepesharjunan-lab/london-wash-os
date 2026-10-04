@@ -193,7 +193,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
   return (
     <div>
       <LiveRefresh />
-      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Inbox</div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
         <div className="flex items-center gap-2">

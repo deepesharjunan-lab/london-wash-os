@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { fastSession } from "@/lib/supabase/fast-session";
 
 // The public website and each app have their own address on the domain.
 // thelondonwash.com (and www) serve the static website in public/site;
@@ -20,10 +21,11 @@ function subdomainFor(path: string) {
   return "admin";
 }
 
-// Runs on every request. Routes the domain's addresses, refreshes the
-// Supabase auth cookie and enforces the login gate: signed-out visitors are
-// bounced to /login, and a signed-in visitor hitting /login is sent
-// straight to /dashboard.
+// Runs on every request. Routes the domain's addresses, enforces the console
+// login gate (signed-out visitors go to /login, a signed-in visitor hitting
+// /login goes to /dashboard) and refreshes the Supabase auth cookie when it is
+// about to expire. Normal clicks verify the token locally (lib/supabase/fast-session.ts);
+// only expiring or unusual tokens take the full Supabase check.
 export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").toLowerCase().split(":")[0];
   const pathname = request.nextUrl.pathname;
@@ -45,6 +47,48 @@ export async function middleware(request: NextRequest) {
     if (home) return NextResponse.redirect(new URL(home, request.url));
   }
 
+  const path = request.nextUrl.pathname;
+  // /my is the customer app and /work the staff app (each has its own sign-in
+  // and session), /api/cron is the nightly job (it checks Vercel's cron
+  // credentials), and the service worker, manifests and icons must load
+  // before anyone signs in.
+  const isCustomerApp = path === "/my" || path.startsWith("/my/");
+  const isStaffApp = path === "/work" || path.startsWith("/work/");
+  const isAppShell = path === "/sw.js" || path.startsWith("/manifests/") || path.startsWith("/appicon/");
+  const isWebsite = path.startsWith("/site/");
+  const isPublic =
+    path === "/login" ||
+    path.startsWith("/_next") ||
+    path.startsWith("/api/public") ||
+    path.startsWith("/api/cron/") ||
+    isCustomerApp ||
+    isStaffApp ||
+    isAppShell ||
+    isWebsite;
+
+  // Public pages don't use the console sign-in, so skip it entirely.
+  if (isPublic && path !== "/login") return NextResponse.next();
+
+  // Fast path: verify the console sign-in token locally (no call to Supabase).
+  const fast = await fastSession(request);
+  if (fast.state === "none") {
+    if (path === "/login") return NextResponse.next();
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+  if (fast.state === "valid") {
+    if (path === "/login") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  // Full check (token about to expire, or anything unusual): asks Supabase and refreshes the cookie.
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -74,25 +118,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-  // /my is the customer app and /work the staff app (each has its own sign-in
-  // and session), /api/cron is the nightly job (it checks Vercel's cron
-  // credentials), and the service worker, manifests and icons must load
-  // before anyone signs in.
-  const isCustomerApp = path === "/my" || path.startsWith("/my/");
-  const isStaffApp = path === "/work" || path.startsWith("/work/");
-  const isAppShell = path === "/sw.js" || path.startsWith("/manifests/") || path.startsWith("/appicon/");
-  const isWebsite = path.startsWith("/site/");
-  const isPublic =
-    path === "/login" ||
-    path.startsWith("/_next") ||
-    path.startsWith("/api/public") ||
-    path.startsWith("/api/cron/") ||
-    isCustomerApp ||
-    isStaffApp ||
-    isAppShell ||
-    isWebsite;
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
