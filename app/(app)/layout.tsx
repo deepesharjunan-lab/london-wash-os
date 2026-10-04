@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signOut } from "./actions";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
 import { Logo } from "@/lib/brand/Logo";
 
-const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[] = [
+const NAV_GROUPS: { section: string; items: { href: string; label: string; badge?: number }[] }[] = [
   {
     section: "Overview",
     items: [
@@ -27,6 +28,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string }[] }[
     items: [
       { href: "/pos", label: "Reception POS" },
       { href: "/orders", label: "Orders" },
+      { href: "/whatsapp", label: "WhatsApp Inbox" },
       { href: "/customers", label: "Customers" },
       { href: "/corporate", label: "Corporate Accounts" },
       { href: "/crm", label: "Customer CRM" },
@@ -106,6 +108,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .maybeSingle()
     : { data: null };
 
+  // Unread WhatsApp chats, shown on the sidebar link (WhatsApp tables are service-role only).
+  let unreadChats = 0;
+  if (user) {
+    try {
+      const { count } = await createAdminClient().from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0);
+      unreadChats = count ?? 0;
+    } catch {
+      // badge only
+    }
+  }
+  const navGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: unreadChats } : i)),
+  }));
+
   const branchName =
     profile?.branch && Array.isArray(profile.branch)
       ? (profile.branch[0] as { name?: string })?.name
@@ -137,7 +154,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </span>
         </Link>
 
-        <NavLinks groups={NAV_GROUPS} />
+        <NavLinks groups={navGroups} />
 
         <div className="hidden items-center gap-2.5 border-t border-white/10 px-5 py-3.5 lg:flex">
           <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[rgba(199,181,143,0.18)] font-archivo text-[11px] font-bold tracking-wide text-[#e3d2ac]">
