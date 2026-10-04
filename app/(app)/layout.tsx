@@ -19,7 +19,10 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
   },
   {
     section: "Engage",
-    items: [{ href: "/engage/templates", label: "WhatsApp Templates" }],
+    items: [
+      { href: "/engage/audiences", label: "Audiences" },
+      { href: "/engage/templates", label: "WhatsApp Templates" },
+    ],
   },
   {
     section: "Catalogue",

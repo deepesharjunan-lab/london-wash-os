@@ -256,6 +256,10 @@ export function TemplateBuilder() {
         </div>
 
         {state.error && <p className="rounded-md bg-[#f6e4df] px-3 py-2 text-[13px] text-[#9c3326]">{state.error}</p>}
+        <p className="rounded-md bg-[#e8eef5] px-3 py-2 text-[12.5px] text-[#2c4a6a]">
+          Will be created on <b>both</b> WhatsApp accounts: <b>The London Wash</b> (+91 85900 00868) and Meta's <b>Test account</b>, so it's ready on the real
+          number as soon as it's connected.
+        </p>
         <div className="flex items-center gap-3">
           <button type="button" onClick={submit} disabled={pending} className="rounded-md bg-[#1f7a4d] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#19663f] disabled:opacity-50">
             {pending ? "Submitting…" : "Submit for approval"}
