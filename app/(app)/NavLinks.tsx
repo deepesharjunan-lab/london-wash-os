@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavGroup = { section: string; items: { href: string; label: string }[] };
+type NavGroup = { section: string; items: { href: string; label: string; badge?: number }[] };
 
 // 24px line icons, 1.6 stroke, keyed by route.
 const ICONS: Record<string, string> = {
@@ -15,6 +15,7 @@ const ICONS: Record<string, string> = {
   "/services/prices": '<path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8.5 8.5z"/><path d="M8 7v4M6 9h4"/>',
   "/pos": '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M7 8h4M7 11h7"/>',
   "/orders": '<path d="M5.5 8h13l-1 12.2a1 1 0 0 1-1 .8H7.5a1 1 0 0 1-1-.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+  "/whatsapp": '<path d="M4.5 19.5 5.6 16A7.8 7.8 0 1 1 8.4 18.6z"/><path d="M9.3 9.2c.3 2.4 2.1 4.3 4.6 4.8l1-1.1 1.6.8-.4 1.5c-3.6.2-7.2-3.3-7-7l1.5-.4.8 1.6z"/>',
   "/customers": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 5.3a3 3 0 0 1 0 5.4M17.5 14.8c1.6.6 2.6 2 3 4.2"/>',
   "/corporate": '<rect x="4" y="7" width="16" height="13" rx="1"/><path d="M9 7V4.5h6V7M4 12h16"/>',
   "/crm": '<path d="M4.5 19.5 5.6 16A7.8 7.8 0 1 1 8.4 18.6z"/><path d="M9 10h6M9 13h4"/>',
@@ -87,6 +88,9 @@ export function NavLinks({ groups }: { groups: NavGroup[] }) {
                   dangerouslySetInnerHTML={{ __html: ICONS[item.href] || FALLBACK }}
                 />
                 {item.label}
+                {item.badge ? (
+                  <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-[#1f7a4d] px-1.5 text-[11px] font-bold text-white">{item.badge}</span>
+                ) : null}
               </Link>
             );
           })}

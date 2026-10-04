@@ -13,7 +13,7 @@ import { logMessage, markRead, sendButtons, sendLink, sendList, sendText } from 
 const APP = "https://club.thelondonwash.com/my";
 const SITE = "https://www.thelondonwash.com";
 const MAP = "https://maps.app.goo.gl/ao1QecaaEpGTqgj58";
-const HANDOFF_HOURS = 4;
+export const HANDOFF_HOURS = 4;
 const ACTIVE = ["confirmed", "in_production", "ready", "out_for_delivery"];
 const STATUS_TEXT: Record<string, string> = {
   confirmed: "Received and tagged",
@@ -77,12 +77,13 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     const contact = await touchContact(from, profileName ?? null, customer?.id ?? null);
     const firstName = (customer?.full_name ?? profileName ?? "").split(" ")[0];
 
+    // Staff are handling this chat (from the console WhatsApp inbox): stay quiet
+    // unless the customer taps a menu button or types "menu".
+    const staffHandling = !!contact.handoffUntil && contact.handoffUntil > Date.now();
+    if (staffHandling && !action && text.toLowerCase() !== "menu") return;
+
     const intent = action ?? intentFromText(text);
-    if (!intent) {
-      // Staff are handling this chat: stay quiet.
-      if (contact.handoffUntil && contact.handoffUntil > Date.now()) return;
-      return menu(from, firstName, true);
-    }
+    if (!intent) return menu(from, firstName, true);
 
     switch (intent) {
       case "menu":
@@ -240,7 +241,7 @@ async function handoff(
       title,
       body: `${customer?.full_name ?? profileName ?? "Customer"} · +${to}`,
       staffUrl: "/work",
-      ownerUrl: "/owner/alerts",
+      ownerUrl: `/whatsapp?c=${to}`,
     }
   );
   return sendText(to, reply);
