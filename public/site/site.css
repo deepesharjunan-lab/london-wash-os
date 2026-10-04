@@ -1075,3 +1075,11 @@ a { color: var(--lw-elephant); }
   .lw-nav { display: none; }
   .lw-header.open .lw-nav { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; position: absolute; left: -20px; right: -20px; top: 100%; background: #fff; padding: 20px 20px 26px; border-bottom: 1px solid var(--lw-line); box-shadow: var(--lw-shadow); }
 }
+
+/* Google review: next to the rating badge (hero) and in the contact list */
+.lw-rating-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: 22px; }
+.lw-rating-row .lw-rating { margin-top: 0; }
+.lw-review-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--lw-saffron); background: rgba(242,154,58,.12); color: #ffd9ad; font-size: 14px; font-weight: 600; text-decoration: none; transition: background .15s ease, color .15s ease; }
+.lw-review-link:hover { background: var(--lw-saffron); color: #15213a; }
+.lw-review-link svg { width: 16px; height: 16px; }
+.lw-review-note { display: block; margin-top: 2px; font-size: 13px; opacity: .7; }
