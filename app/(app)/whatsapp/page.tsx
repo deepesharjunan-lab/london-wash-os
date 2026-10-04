@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { markUnreadAction, setBotAction } from "./actions";
-import { AutoRefresh, Composer, ScrollToEnd } from "./ui";
+import { AutoRefresh, Composer, MediaView, ScrollToEnd } from "./ui";
+import { MEDIA_LABEL } from "@/lib/whatsapp/client";
 
 // WhatsApp inbox: every conversation on The London Wash WhatsApp number, with
 // the bot's replies and the team's. Staff reply here; while they do, the bot
@@ -36,7 +37,19 @@ type Message = {
   status: string | null;
   sent_by_user_id: string | null;
   created_at: string;
+  media_id: string | null;
+  media_mime: string | null;
+  media_name: string | null;
 };
+
+const LABELS = new Set(Object.values(MEDIA_LABEL));
+/** The caption part of a file message's text (drops the "📷 Photo" label and the file name). */
+function captionOf(m: Message) {
+  const parts = (m.body ?? "").split(" · ");
+  if (LABELS.has(parts[0])) parts.shift();
+  if (m.media_name && parts[0] === m.media_name) parts.shift();
+  return parts.join(" · ").trim();
+}
 
 const CONTACT_COLS =
   "wa_id, profile_name, customer_id, last_message_at, last_preview, last_direction, unread_count, handoff_until, last_inbound_at, customer:customer_id(full_name, phone)";
@@ -116,7 +129,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
     if (selected) {
       const { data: m } = await db
         .from("whatsapp_message")
-        .select("id, direction, msg_type, body, status, sent_by_user_id, created_at")
+        .select("id, direction, msg_type, body, status, sent_by_user_id, created_at, media_id, media_mime, media_name")
         .eq("wa_id", selectedId)
         .order("created_at", { ascending: false })
         .limit(MESSAGE_LIMIT);
@@ -323,9 +336,14 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
                             {staff ? staffNames.get(m.sent_by_user_id!) ?? "Staff" : m.msg_type === "template" ? "Automatic message" : "Bot"}
                           </div>
                         )}
-                        {isMedia ? (
+                        {m.media_id ? (
+                          <div className="space-y-1.5">
+                            <MediaView id={m.media_id} kind={m.msg_type ?? "document"} mime={m.media_mime} name={m.media_name} />
+                            {captionOf(m) && <span className="block whitespace-pre-wrap break-words">{captionOf(m)}</span>}
+                          </div>
+                        ) : isMedia ? (
                           <span className="italic text-ink/55">
-                            {m.body!.slice(1, -1)} received. It can't be shown here; open WhatsApp on the shop phone to see it.
+                            {m.body!.slice(1, -1)} received before file viewing was added, so it can't be shown here.
                           </span>
                         ) : (
                           <span className="whitespace-pre-wrap break-words">{m.body}</span>
