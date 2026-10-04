@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { markUnreadAction, setBotAction } from "./actions";
+import { markUnreadAction, setBotAction, setClosedAction } from "./actions";
 import { AutoRefresh, Composer, MediaView, ScrollToEnd } from "./ui";
 import { MEDIA_LABEL } from "@/lib/whatsapp/client";
 
@@ -26,6 +26,8 @@ type Contact = {
   last_direction: string | null;
   unread_count: number;
   handoff_until: string | null;
+  closed_at: string | null;
+  closed_by_user_id: string | null;
   last_inbound_at: string | null;
   customer: { full_name: string | null; phone: string | null } | { full_name: string | null; phone: string | null }[] | null;
 };
@@ -52,7 +54,9 @@ function captionOf(m: Message) {
 }
 
 const CONTACT_COLS =
-  "wa_id, profile_name, customer_id, last_message_at, last_preview, last_direction, unread_count, handoff_until, last_inbound_at, customer:customer_id(full_name, phone)";
+  "wa_id, profile_name, customer_id, last_message_at, last_preview, last_direction, unread_count, handoff_until, last_inbound_at, closed_at, closed_by_user_id, customer:customer_id(full_name, phone)";
+const FILTERS = ["open", "unread", "staff", "closed"] as const;
+type Filter = (typeof FILTERS)[number];
 
 const one = <T,>(x: T | T[] | null): T | null => (Array.isArray(x) ? x[0] ?? null : x);
 const clean = (s: string) => s.replace(/[%,()*]/g, "").trim().slice(0, 60);
@@ -84,13 +88,13 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
   if (!auth?.user) return <p className="text-sm text-ink/60">Sign in to see the WhatsApp inbox.</p>;
 
   const db = createAdminClient() as any;
-  const filter = searchParams.f === "unread" || searchParams.f === "staff" ? searchParams.f : "all";
+  const filter: Filter = (FILTERS as readonly string[]).includes(searchParams.f ?? "") ? (searchParams.f as Filter) : "open";
   const q = clean(searchParams.q ?? "");
   const selectedId = (searchParams.c ?? "").replace(/\D/g, "").slice(0, 20) || null;
 
   const href = (p: { c?: string | null; f?: string; q?: string }) => {
     const sp = new URLSearchParams();
-    if (p.f && p.f !== "all") sp.set("f", p.f);
+    if (p.f && p.f !== "open") sp.set("f", p.f);
     if (p.q) sp.set("q", p.q);
     if (p.c) sp.set("c", p.c);
     const s = sp.toString();
@@ -99,8 +103,11 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
 
   // Conversation list.
   let list = db.from("whatsapp_contact").select(CONTACT_COLS).order("last_message_at", { ascending: false, nullsFirst: false }).limit(LIST_LIMIT);
+  // Search looks through every chat, closed ones included; otherwise "Open" hides closed chats.
+  if (filter === "open" && !q) list = list.is("closed_at", null);
+  if (filter === "closed") list = list.not("closed_at", "is", null);
   if (filter === "unread") list = list.gt("unread_count", 0);
-  if (filter === "staff") list = list.gt("handoff_until", new Date().toISOString());
+  if (filter === "staff") list = list.gt("handoff_until", new Date().toISOString()).is("closed_at", null);
   if (q) {
     const digits = q.replace(/\D/g, "");
     const { data: matches } = await db.from("customer").select("id").ilike("full_name", `%${q}%`).limit(50);
@@ -113,9 +120,10 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
   const { data: listData } = await list;
   const contacts = (listData ?? []) as Contact[];
 
-  const [{ count: unreadChats }, { count: staffChats }] = await Promise.all([
+  const [{ count: openChats }, { count: unreadChats }, { count: staffChats }] = await Promise.all([
+    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).is("closed_at", null),
     db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0),
-    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("handoff_until", new Date().toISOString()),
+    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("handoff_until", new Date().toISOString()).is("closed_at", null),
   ]);
 
   // Open conversation.
@@ -135,7 +143,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
         .limit(MESSAGE_LIMIT);
       messages = ((m ?? []) as Message[]).reverse();
 
-      const userIds = [...new Set(messages.map((x) => x.sent_by_user_id).filter(Boolean) as string[])];
+      const userIds = [...new Set([...messages.map((x) => x.sent_by_user_id), selected.closed_by_user_id].filter(Boolean) as string[])];
       if (userIds.length) {
         const { data: users } = await db.from("user").select("id, full_name").in("id", userIds);
         for (const u of (users ?? []) as { id: string; full_name: string }[]) staffNames.set(u.id, u.full_name);
@@ -175,7 +183,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
       <h1 className="mb-2 font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
       <p className="mb-5 text-sm text-ink/60">
-        Customer chats on our WhatsApp number. The bot answers first; when a customer asks for a person, or you reply here, the bot stays quiet for 4 hours.
+        Customer chats on our WhatsApp number. The bot answers first; when a customer asks for a person, or you reply here, the bot stays quiet for 4 hours. Close a chat when you're done; it reopens if the customer writes again.
       </p>
 
       <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
@@ -183,7 +191,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
         <section className={`border-2 border-black/10 bg-white ${selected ? "hidden lg:block" : ""}`}>
           <div className="border-b border-black/10 p-3">
             <form action="/whatsapp" className="mb-2.5 flex gap-2">
-              {filter !== "all" && <input type="hidden" name="f" value={filter} />}
+              {filter !== "open" && <input type="hidden" name="f" value={filter} />}
               <input
                 name="q"
                 defaultValue={q}
@@ -195,14 +203,17 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
               </button>
             </form>
             <div className="flex flex-wrap gap-1.5">
-              <Link href={href({ q })} className={chip(filter === "all")}>
-                All
+              <Link href={href({ q })} className={chip(filter === "open")}>
+                Open {openChats ? <b className="ml-0.5">{openChats}</b> : null}
               </Link>
               <Link href={href({ f: "unread", q })} className={chip(filter === "unread")}>
                 Unread {unreadChats ? <b className="ml-0.5">{unreadChats}</b> : null}
               </Link>
               <Link href={href({ f: "staff", q })} className={chip(filter === "staff")}>
                 With staff {staffChats ? <b className="ml-0.5">{staffChats}</b> : null}
+              </Link>
+              <Link href={href({ f: "closed", q })} className={chip(filter === "closed")}>
+                Closed
               </Link>
             </div>
           </div>
@@ -224,6 +235,7 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
                         {c.last_direction === "out" ? "You: " : ""}
                         {c.last_preview ?? ""}
                       </span>
+                      {c.closed_at && <span className="shrink-0 rounded-full bg-black/5 px-2 py-0.5 text-[10.5px] font-semibold text-ink/55">Closed</span>}
                       {staffHandling(c) && <span className="shrink-0 rounded-full bg-[#fdf0dc] px-2 py-0.5 text-[10.5px] font-semibold text-[#8a5a12]">Staff</span>}
                       {c.unread_count > 0 && (
                         <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#1f7a4d] px-1.5 text-[11px] font-bold text-white">{c.unread_count}</span>
@@ -235,7 +247,15 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
             })}
             {!contacts.length && (
               <li className="px-4 py-10 text-center text-sm text-ink/40">
-                {q ? `No chats found for “${q}”.` : filter === "unread" ? "No unread chats." : filter === "staff" ? "No chats waiting for staff." : "No WhatsApp chats yet."}
+                {q
+                  ? `No chats found for “${q}”.`
+                  : filter === "unread"
+                    ? "No unread chats."
+                    : filter === "staff"
+                      ? "No chats waiting for staff."
+                      : filter === "closed"
+                        ? "No closed chats yet."
+                        : "No open chats. Closed chats are under Closed."}
               </li>
             )}
           </ul>
@@ -277,7 +297,34 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
                 )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
-                {staffHandling(selected) ? (
+                {selected.closed_at ? (
+                  <>
+                    <span className="rounded-full bg-black/5 px-2.5 py-1 text-[12px] font-semibold text-ink/60">
+                      Closed{selected.closed_by_user_id && staffNames.get(selected.closed_by_user_id) ? ` by ${staffNames.get(selected.closed_by_user_id)}` : ""} ·{" "}
+                      {listWhen(selected.closed_at)}
+                    </span>
+                    <form action={setClosedAction}>
+                      <input type="hidden" name="wa_id" value={selected.wa_id} />
+                      <input type="hidden" name="mode" value="reopen" />
+                      <button type="submit" className="rounded-md border border-black/10 bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-navy/40">
+                        Reopen chat
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <form action={setClosedAction}>
+                    <input type="hidden" name="wa_id" value={selected.wa_id} />
+                    <input type="hidden" name="mode" value="close" />
+                    <button
+                      type="submit"
+                      title="Moves the chat to Closed and hands it back to the bot. It reopens by itself if the customer writes again."
+                      className="rounded-md bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-800"
+                    >
+                      ✓ Close chat
+                    </button>
+                  </form>
+                )}
+                {selected.closed_at ? null : staffHandling(selected) ? (
                   <>
                     <span className="rounded-full bg-[#fdf0dc] px-2.5 py-1 text-[12px] font-semibold text-[#8a5a12]">
                       Bot paused until {time(selected.handoff_until!)}

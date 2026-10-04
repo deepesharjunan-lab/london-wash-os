@@ -59,10 +59,16 @@ export async function sendReplyAction(_prev: ReplyState, form: FormData): Promis
     if (!res.ok) return { error: `WhatsApp didn't accept the message: ${res.error}` };
   }
 
-  // A person is talking now: keep the bot quiet and mark the chat as read.
+  // A person is talking now: keep the bot quiet, mark the chat as read, and reopen it if it was closed.
   await db
     .from("whatsapp_contact")
-    .update({ handoff_until: new Date(Date.now() + HANDOFF_HOURS * 3600000).toISOString(), unread_count: 0, staff_read_at: new Date().toISOString() })
+    .update({
+      handoff_until: new Date(Date.now() + HANDOFF_HOURS * 3600000).toISOString(),
+      unread_count: 0,
+      staff_read_at: new Date().toISOString(),
+      closed_at: null,
+      closed_by_user_id: null,
+    })
     .eq("wa_id", to);
   revalidatePath("/whatsapp");
   return { sentAt: Date.now() };
@@ -77,6 +83,24 @@ export async function setBotAction(form: FormData) {
   await createAdminClient()
     .from("whatsapp_contact")
     .update({ handoff_until: pause ? new Date(Date.now() + HANDOFF_HOURS * 3600000).toISOString() : null })
+    .eq("wa_id", to);
+  revalidatePath("/whatsapp");
+}
+
+/** Close a finished chat (the bot takes over again) or reopen it. A new customer message reopens it automatically. */
+export async function setClosedAction(form: FormData) {
+  const userId = await consoleUserId();
+  if (!userId) return;
+  const to = waId(form.get("wa_id"));
+  if (!to) return;
+  const close = form.get("mode") === "close";
+  await createAdminClient()
+    .from("whatsapp_contact")
+    .update(
+      close
+        ? { closed_at: new Date().toISOString(), closed_by_user_id: userId, handoff_until: null, unread_count: 0, staff_read_at: new Date().toISOString() }
+        : { closed_at: null, closed_by_user_id: null }
+    )
     .eq("wa_id", to);
   revalidatePath("/whatsapp");
 }
