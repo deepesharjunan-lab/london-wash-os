@@ -95,6 +95,101 @@ export const sendTemplate = (to: string, name: string, lang = "en", components: 
 
 export const markRead = (messageId: string) => post({ status: "read", message_id: messageId });
 
+/* ------------------------------------------------------------------ */
+/* Media: photos, videos, voice notes, documents                        */
+/* ------------------------------------------------------------------ */
+
+export type MediaKind = "image" | "video" | "audio" | "document";
+
+/** File types WhatsApp accepts for each kind (anything else is sent as a document). */
+const IMAGE_TYPES = ["image/jpeg", "image/png"];
+const VIDEO_TYPES = ["video/mp4", "video/3gpp"];
+const AUDIO_TYPES = ["audio/ogg", "audio/mpeg", "audio/mp4", "audio/aac", "audio/amr"];
+const baseType = (mime: string) => mime.split(";")[0].trim().toLowerCase();
+
+export function mediaKindFor(mime: string): MediaKind {
+  const t = baseType(mime);
+  if (IMAGE_TYPES.includes(t)) return "image";
+  if (VIDEO_TYPES.includes(t)) return "video";
+  if (AUDIO_TYPES.includes(t)) return "audio";
+  return "document";
+}
+
+export const MEDIA_LABEL: Record<string, string> = {
+  image: "📷 Photo",
+  video: "🎬 Video",
+  audio: "🎤 Voice message",
+  document: "📄 Document",
+  sticker: "Sticker",
+};
+
+/** Uploads a file to Meta for sending. Returns the media id. */
+export async function uploadMedia(file: Blob, mime: string, filename: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  if (!waConfigured()) return { ok: false, error: "WhatsApp is not configured" };
+  try {
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append("type", baseType(mime));
+    form.append("file", new Blob([await file.arrayBuffer()], { type: baseType(mime) }), filename);
+    const res = await fetch(`${GRAPH()}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/media`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+      body: form,
+    });
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok || !json?.id) return { ok: false, error: json?.error?.message ?? `HTTP ${res.status}` };
+    return { ok: true, id: String(json.id) };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Upload failed" };
+  }
+}
+
+/** Sends an uploaded file. Audio can't carry a caption; documents keep their file name. */
+export async function sendMedia(
+  to: string,
+  kind: MediaKind,
+  media: { id: string; mime: string; filename?: string; caption?: string },
+  sentBy?: string | null
+): Promise<SendResult> {
+  const caption = kind === "audio" ? undefined : media.caption?.slice(0, 1024) || undefined;
+  const object: Record<string, unknown> = { id: media.id };
+  if (caption) object.caption = caption;
+  if (kind === "document" && media.filename) object.filename = media.filename.slice(0, 240);
+  const res = await post({ to, type: kind, [kind]: object });
+  if (res.ok) {
+    await logMessage({
+      wa_id: to,
+      direction: "out",
+      msg_type: kind,
+      body: [MEDIA_LABEL[kind], caption].filter(Boolean).join(" · "),
+      wa_message_id: res.id ?? null,
+      status: "sent",
+      sent_by_user_id: sentBy ?? null,
+      media_id: media.id,
+      media_mime: media.mime,
+      media_name: media.filename ?? null,
+    });
+  }
+  return res;
+}
+
+/** Downloads a file from Meta (incoming or one we uploaded). Meta keeps files for about 30 days. */
+export async function fetchMedia(mediaId: string): Promise<{ ok: true; body: ArrayBuffer; mime: string } | { ok: false; status: number }> {
+  if (!waConfigured()) return { ok: false, status: 503 };
+  try {
+    const auth = { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` };
+    const meta = await fetch(`${GRAPH()}/${encodeURIComponent(mediaId)}`, { headers: auth, cache: "no-store" });
+    const info = (await meta.json().catch(() => ({}))) as any;
+    if (!meta.ok || !info?.url) return { ok: false, status: meta.status === 400 || meta.status === 404 ? 404 : 502 };
+    // Meta's file host rejects requests without a normal user agent.
+    const file = await fetch(info.url, { headers: { ...auth, "User-Agent": "Mozilla/5.0 (LondonWashOS)" }, cache: "no-store" });
+    if (!file.ok) return { ok: false, status: file.status === 404 ? 404 : 502 };
+    return { ok: true, body: await file.arrayBuffer(), mime: String(info.mime_type || file.headers.get("content-type") || "application/octet-stream") };
+  } catch {
+    return { ok: false, status: 502 };
+  }
+}
+
 /** Checks Meta's X-Hub-Signature-256 header. Without an app secret configured, requests are accepted (setup only). */
 export function verifySignature(raw: string, header: string | null) {
   const secret = process.env.WHATSAPP_APP_SECRET;
@@ -113,6 +208,9 @@ type LogRow = {
   wa_message_id: string | null;
   status?: string;
   sent_by_user_id?: string | null;
+  media_id?: string | null;
+  media_mime?: string | null;
+  media_name?: string | null;
 };
 
 /** Stores a message in whatsapp_message. Returns false if it was already stored (Meta re-sends webhooks). Never throws. */
