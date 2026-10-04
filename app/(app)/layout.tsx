@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { staffChatCount } from "@/lib/whatsapp/inbox";
 import { signOut } from "./actions";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
@@ -108,19 +108,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .maybeSingle()
     : { data: null };
 
-  // Unread WhatsApp chats, shown on the sidebar link (WhatsApp tables are service-role only).
-  let unreadChats = 0;
-  if (user) {
-    try {
-      const { count } = await createAdminClient().from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0);
-      unreadChats = count ?? 0;
-    } catch {
-      // badge only
-    }
-  }
+  // Open WhatsApp chats waiting on the team, shown on the sidebar link (NavLinks keeps it up to date).
+  const staffChats = user ? await staffChatCount() : 0;
   const navGroups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: unreadChats } : i)),
+    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: staffChats } : i)),
   }));
 
   const branchName =
