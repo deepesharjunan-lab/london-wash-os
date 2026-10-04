@@ -56,7 +56,13 @@ export const sendButtons = (to: string, body: string, buttons: { id: string; tit
     { to, type: "buttons", body }
   );
 
-export const sendList = (to: string, body: string, button: string, rows: { id: string; title: string; description?: string }[]) =>
+export const sendList = (
+  to: string,
+  body: string,
+  button: string,
+  rows: { id: string; title: string; description?: string }[],
+  opts: { section?: string; footer?: string } = {}
+) =>
   post(
     {
       to,
@@ -64,10 +70,15 @@ export const sendList = (to: string, body: string, button: string, rows: { id: s
       interactive: {
         type: "list",
         body: { text: body.slice(0, 1024) },
-        footer: { text: "the art of laundry." },
+        footer: { text: (opts.footer ?? "the art of laundry.").slice(0, 60) },
         action: {
           button: button.slice(0, 20),
-          sections: [{ title: "Menu", rows: rows.slice(0, 10).map((r) => ({ id: r.id, title: r.title.slice(0, 24), description: r.description?.slice(0, 72) })) }],
+          sections: [
+            {
+              title: (opts.section ?? "Menu").slice(0, 24),
+              rows: rows.slice(0, 10).map((r) => ({ id: r.id, title: r.title.slice(0, 24), description: r.description?.slice(0, 72) })),
+            },
+          ],
         },
       },
     },

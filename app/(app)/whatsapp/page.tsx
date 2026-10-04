@@ -162,10 +162,18 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
     return { selected, messages, orders: ((o as any).data ?? []) as OrderRow[], staffNames };
   };
 
-  const [contacts, [{ count: openChats }, { count: unreadChats }, { count: staffChats }], { selected, messages, orders, staffNames }] = await Promise.all([
+  // Team rating over the last 30 days (from the "rate us" message sent when a chat is closed).
+  const loadRating = async () => {
+    const { data } = await db.from("whatsapp_rating").select("rating").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()).limit(1000);
+    const list = ((data ?? []) as { rating: number }[]).map((r) => r.rating);
+    return list.length ? { avg: list.reduce((a, b) => a + b, 0) / list.length, count: list.length } : null;
+  };
+
+  const [contacts, [{ count: openChats }, { count: unreadChats }, { count: staffChats }], { selected, messages, orders, staffNames }, teamRating] = await Promise.all([
     loadList(),
     loadCounts(),
     loadSelected(),
+    loadRating(),
   ]);
   if (selected && selected.unread_count > 0) {
     const row = contacts.find((x) => x.wa_id === selected.wa_id);
@@ -188,7 +196,14 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
-        <SoundToggle />
+        <div className="flex items-center gap-2">
+          {teamRating && (
+            <span className="rounded-full border border-black/10 bg-white px-3 py-1 text-[12.5px] text-ink/70" title="Average customer rating after closed chats, last 30 days">
+              Team rating <b className="text-ink">{teamRating.avg.toFixed(1)} ⭐</b> · {teamRating.count} {teamRating.count === 1 ? "rating" : "ratings"} (30 days)
+            </span>
+          )}
+          <SoundToggle />
+        </div>
       </div>
       <p className="mb-5 text-sm text-ink/60">
         Customer chats on our WhatsApp number. The bot answers first; when a customer asks for a person, or you reply here, the bot stays quiet for 4 hours. Close a chat when you're done; it reopens if the customer writes again.
@@ -320,17 +335,32 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
                     </form>
                   </>
                 ) : (
-                  <form action={setClosedAction}>
-                    <input type="hidden" name="wa_id" value={selected.wa_id} />
-                    <input type="hidden" name="mode" value="close" />
-                    <button
-                      type="submit"
-                      title="Moves the chat to Closed and hands it back to the bot. It reopens by itself if the customer writes again."
-                      className="rounded-md bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-800"
-                    >
-                      ✓ Close chat
-                    </button>
-                  </form>
+                  <div className="flex flex-col items-end gap-1">
+                    <form action={setClosedAction}>
+                      <input type="hidden" name="wa_id" value={selected.wa_id} />
+                      <input type="hidden" name="mode" value="close" />
+                      <button
+                        type="submit"
+                        title={
+                          blockedReason
+                            ? "Moves the chat to Closed. No rating message: WhatsApp's 24-hour window has passed."
+                            : "Moves the chat to Closed, hands it back to the bot and asks the customer to rate the chat."
+                        }
+                        className="rounded-md bg-slate-900 px-3.5 py-1.5 text-[12.5px] font-semibold text-white hover:bg-slate-800"
+                      >
+                        {blockedReason ? "✓ Close chat" : "✓ Close & ask for rating"}
+                      </button>
+                    </form>
+                    {!blockedReason && (
+                      <form action={setClosedAction}>
+                        <input type="hidden" name="wa_id" value={selected.wa_id} />
+                        <input type="hidden" name="mode" value="close_quiet" />
+                        <button type="submit" className="text-[11.5px] text-ink/50 hover:text-ink hover:underline" title="For wrong numbers or spam: closes without messaging the customer">
+                          Close without rating
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 )}
                 {selected.closed_at ? null : staffHandling(selected) ? (
                   <>
