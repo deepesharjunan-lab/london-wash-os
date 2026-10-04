@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { markUnreadAction, setBotAction, setClosedAction } from "./actions";
-import { AutoRefresh, Composer, MediaView, ScrollToEnd } from "./ui";
+import { Composer, LiveRefresh, MediaView, ScrollToEnd, SoundToggle } from "./ui";
 import { MEDIA_LABEL } from "@/lib/whatsapp/client";
 
 // WhatsApp inbox: every conversation on The London Wash WhatsApp number, with
@@ -108,63 +108,68 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
   if (filter === "closed") list = list.not("closed_at", "is", null);
   if (filter === "unread") list = list.gt("unread_count", 0);
   if (filter === "staff") list = list.gt("handoff_until", new Date().toISOString()).is("closed_at", null);
-  if (q) {
-    const digits = q.replace(/\D/g, "");
-    const { data: matches } = await db.from("customer").select("id").ilike("full_name", `%${q}%`).limit(50);
-    const ids = ((matches ?? []) as { id: string }[]).map((m) => m.id);
-    const ors = [`profile_name.ilike.%${q}%`];
-    if (digits.length >= 3) ors.push(`wa_id.ilike.%${digits}%`);
-    if (ids.length) ors.push(`customer_id.in.(${ids.join(",")})`);
-    list = list.or(ors.join(","));
-  }
-  const { data: listData } = await list;
-  const contacts = (listData ?? []) as Contact[];
+  const loadList = async () => {
+    if (q) {
+      const digits = q.replace(/\D/g, "");
+      const { data: matches } = await db.from("customer").select("id").ilike("full_name", `%${q}%`).limit(50);
+      const ids = ((matches ?? []) as { id: string }[]).map((m) => m.id);
+      const ors = [`profile_name.ilike.%${q}%`];
+      if (digits.length >= 3) ors.push(`wa_id.ilike.%${digits}%`);
+      if (ids.length) ors.push(`customer_id.in.(${ids.join(",")})`);
+      list = list.or(ors.join(","));
+    }
+    const { data } = await list;
+    return (data ?? []) as Contact[];
+  };
 
-  const [{ count: openChats }, { count: unreadChats }, { count: staffChats }] = await Promise.all([
-    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).is("closed_at", null),
-    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0),
-    db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("handoff_until", new Date().toISOString()).is("closed_at", null),
-  ]);
+  const nowIso = new Date().toISOString();
+  const loadCounts = () =>
+    Promise.all([
+      db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).is("closed_at", null),
+      db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("unread_count", 0),
+      db.from("whatsapp_contact").select("wa_id", { count: "exact", head: true }).gt("handoff_until", nowIso).is("closed_at", null),
+    ]);
 
-  // Open conversation.
-  let selected: Contact | null = null;
-  let messages: Message[] = [];
-  let orders: { id: string; order_number: string; status: string; created_at: string }[] = [];
-  const staffNames = new Map<string, string>();
-  if (selectedId) {
-    const { data: c } = await db.from("whatsapp_contact").select(CONTACT_COLS).eq("wa_id", selectedId).maybeSingle();
-    selected = (c as Contact | null) ?? null;
-    if (selected) {
-      const { data: m } = await db
+  // Open conversation: the chat and its messages load together, then names and orders together.
+  type OrderRow = { id: string; order_number: string; status: string; created_at: string };
+  const loadSelected = async (): Promise<{ selected: Contact | null; messages: Message[]; orders: OrderRow[]; staffNames: Map<string, string> }> => {
+    const staffNames = new Map<string, string>();
+    if (!selectedId) return { selected: null, messages: [], orders: [], staffNames };
+    const [{ data: c }, { data: m }] = await Promise.all([
+      db.from("whatsapp_contact").select(CONTACT_COLS).eq("wa_id", selectedId).maybeSingle(),
+      db
         .from("whatsapp_message")
         .select("id, direction, msg_type, body, status, sent_by_user_id, created_at, media_id, media_mime, media_name")
         .eq("wa_id", selectedId)
         .order("created_at", { ascending: false })
-        .limit(MESSAGE_LIMIT);
-      messages = ((m ?? []) as Message[]).reverse();
+        .limit(MESSAGE_LIMIT),
+    ]);
+    const selected = (c as Contact | null) ?? null;
+    if (!selected) return { selected: null, messages: [], orders: [], staffNames };
+    const messages = ((m ?? []) as Message[]).reverse();
+    const userIds = [...new Set([...messages.map((x) => x.sent_by_user_id), selected.closed_by_user_id].filter(Boolean) as string[])];
+    const [users, o] = await Promise.all([
+      userIds.length ? db.from("user").select("id, full_name").in("id", userIds) : Promise.resolve({ data: [] }),
+      selected.customer_id
+        ? db.from("order").select("id, order_number, status, created_at").eq("customer_id", selected.customer_id).neq("status", "draft").order("created_at", { ascending: false }).limit(4)
+        : Promise.resolve({ data: [] }),
+      // Opening a chat marks it read (the sidebar badge drops straight away).
+      selected.unread_count > 0
+        ? db.from("whatsapp_contact").update({ unread_count: 0, staff_read_at: nowIso }).eq("wa_id", selectedId)
+        : Promise.resolve(null),
+    ]);
+    for (const u of ((users as any).data ?? []) as { id: string; full_name: string }[]) staffNames.set(u.id, u.full_name);
+    return { selected, messages, orders: ((o as any).data ?? []) as OrderRow[], staffNames };
+  };
 
-      const userIds = [...new Set([...messages.map((x) => x.sent_by_user_id), selected.closed_by_user_id].filter(Boolean) as string[])];
-      if (userIds.length) {
-        const { data: users } = await db.from("user").select("id, full_name").in("id", userIds);
-        for (const u of (users ?? []) as { id: string; full_name: string }[]) staffNames.set(u.id, u.full_name);
-      }
-      if (selected.customer_id) {
-        const { data: o } = await db
-          .from("order")
-          .select("id, order_number, status, created_at")
-          .eq("customer_id", selected.customer_id)
-          .neq("status", "draft")
-          .order("created_at", { ascending: false })
-          .limit(4);
-        orders = (o ?? []) as typeof orders;
-      }
-      // Opening a chat marks it read.
-      if (selected.unread_count > 0) {
-        await db.from("whatsapp_contact").update({ unread_count: 0, staff_read_at: new Date().toISOString() }).eq("wa_id", selectedId);
-        const row = contacts.find((x) => x.wa_id === selectedId);
-        if (row) row.unread_count = 0;
-      }
-    }
+  const [contacts, [{ count: openChats }, { count: unreadChats }, { count: staffChats }], { selected, messages, orders, staffNames }] = await Promise.all([
+    loadList(),
+    loadCounts(),
+    loadSelected(),
+  ]);
+  if (selected && selected.unread_count > 0) {
+    const row = contacts.find((x) => x.wa_id === selected.wa_id);
+    if (row) row.unread_count = 0;
   }
 
   const windowEnds = selected?.last_inbound_at ? new Date(selected.last_inbound_at).getTime() + WINDOW_MS : 0;
@@ -179,9 +184,12 @@ export default async function WhatsAppInboxPage({ searchParams }: { searchParams
 
   return (
     <div>
-      <AutoRefresh />
+      <LiveRefresh />
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Sales</div>
-      <h1 className="mb-2 font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-archivo text-2xl font-extrabold text-ink">WhatsApp Inbox</h1>
+        <SoundToggle />
+      </div>
       <p className="mb-5 text-sm text-ink/60">
         Customer chats on our WhatsApp number. The bot answers first; when a customer asks for a person, or you reply here, the bot stays quiet for 4 hours. Close a chat when you're done; it reopens if the customer writes again.
       </p>

@@ -224,10 +224,13 @@ export async function logMessage(row: LogRow): Promise<boolean> {
   }
 }
 
-export async function recordStatus(s: { id?: string; status?: string }) {
+export async function recordStatus(s: { id?: string; status?: string; recipient_id?: string }) {
   if (!s?.id || !s.status) return;
   try {
-    await createAdminClient().from("whatsapp_message").update({ status: s.status }).eq("wa_message_id", s.id);
+    const db = createAdminClient();
+    await db.from("whatsapp_message").update({ status: s.status }).eq("wa_message_id", s.id);
+    // Touch the chat so open inboxes show the new tick straight away (live pulse).
+    if (s.recipient_id) await db.from("whatsapp_contact").update({ updated_at: new Date().toISOString() }).eq("wa_id", s.recipient_id);
   } catch {
     // logging only
   }

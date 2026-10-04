@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { staffChatCount } from "@/lib/whatsapp/inbox";
+import { waitingChatCount } from "@/lib/whatsapp/inbox";
 import { signOut } from "./actions";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
@@ -108,11 +108,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .maybeSingle()
     : { data: null };
 
-  // Open WhatsApp chats waiting on the team, shown on the sidebar link (NavLinks keeps it up to date).
-  const staffChats = user ? await staffChatCount() : 0;
+  // WhatsApp chats waiting for the team (unread), shown on the sidebar link; NavLinks keeps it live.
+  const waitingChats = user ? await waitingChatCount() : 0;
   const navGroups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: staffChats } : i)),
+    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: waitingChats } : i)),
   }));
 
   const branchName =
