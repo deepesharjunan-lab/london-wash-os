@@ -15,7 +15,7 @@ export const waConfigured = () => !!(process.env.WHATSAPP_TOKEN && process.env.W
 
 type SendResult = { ok: true; id?: string } | { ok: false; error: string };
 
-async function post(payload: Record<string, unknown>, log?: { to: string; type: string; body: string }): Promise<SendResult> {
+async function post(payload: Record<string, unknown>, log?: { to: string; type: string; body: string; sentBy?: string | null }): Promise<SendResult> {
   if (!waConfigured()) return { ok: false, error: "WhatsApp is not configured" };
   try {
     const res = await fetch(`${GRAPH()}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
@@ -29,7 +29,8 @@ async function post(payload: Record<string, unknown>, log?: { to: string; type: 
       return { ok: false, error: json?.error?.message ?? `HTTP ${res.status}` };
     }
     const id = json?.messages?.[0]?.id as string | undefined;
-    if (log) await logMessage({ wa_id: log.to, direction: "out", msg_type: log.type, body: log.body, wa_message_id: id ?? null, status: "sent" });
+    if (log)
+      await logMessage({ wa_id: log.to, direction: "out", msg_type: log.type, body: log.body, wa_message_id: id ?? null, status: "sent", sent_by_user_id: log.sentBy ?? null });
     return { ok: true, id };
   } catch (e: any) {
     console.error("WhatsApp send error", e);
@@ -37,8 +38,9 @@ async function post(payload: Record<string, unknown>, log?: { to: string; type: 
   }
 }
 
-export const sendText = (to: string, body: string) =>
-  post({ to, type: "text", text: { body: body.slice(0, 4096), preview_url: true } }, { to, type: "text", body });
+/** Plain text. `sentBy` is the console user's id when a person (not the bot) is replying. */
+export const sendText = (to: string, body: string, sentBy?: string | null) =>
+  post({ to, type: "text", text: { body: body.slice(0, 4096), preview_url: true } }, { to, type: "text", body, sentBy });
 
 export const sendButtons = (to: string, body: string, buttons: { id: string; title: string }[]) =>
   post(
@@ -103,7 +105,15 @@ export function verifySignature(raw: string, header: string | null) {
   return expected.length === given.length && timingSafeEqual(expected, given);
 }
 
-type LogRow = { wa_id: string; direction: "in" | "out"; msg_type: string; body: string | null; wa_message_id: string | null; status?: string };
+type LogRow = {
+  wa_id: string;
+  direction: "in" | "out";
+  msg_type: string;
+  body: string | null;
+  wa_message_id: string | null;
+  status?: string;
+  sent_by_user_id?: string | null;
+};
 
 /** Stores a message in whatsapp_message. Returns false if it was already stored (Meta re-sends webhooks). Never throws. */
 export async function logMessage(row: LogRow): Promise<boolean> {
