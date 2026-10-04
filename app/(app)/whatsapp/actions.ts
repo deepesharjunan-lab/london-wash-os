@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mediaKindFor, sendMedia, sendText, uploadMedia, waConfigured } from "@/lib/whatsapp/client";
 import { HANDOFF_HOURS } from "@/lib/whatsapp/bot";
+import { sendRatingRequest } from "@/lib/whatsapp/rating";
 
 // WhatsApp inbox actions. The WhatsApp tables are service-role only, so each
 // action first checks that a console user is signed in, then uses the admin client.
@@ -87,14 +88,25 @@ export async function setBotAction(form: FormData) {
   revalidatePath("/whatsapp");
 }
 
-/** Close a finished chat (the bot takes over again) or reopen it. A new customer message reopens it automatically. */
+/**
+ * Close a finished chat (the bot takes over again) or reopen it. A new customer
+ * message reopens it automatically. "close" also asks the customer to rate the
+ * chat, when WhatsApp's 24-hour window allows; "close_quiet" sends nothing.
+ */
 export async function setClosedAction(form: FormData) {
   const userId = await consoleUserId();
   if (!userId) return;
   const to = waId(form.get("wa_id"));
   if (!to) return;
-  const close = form.get("mode") === "close";
-  await createAdminClient()
+  const mode = String(form.get("mode") ?? "");
+  const close = mode === "close" || mode === "close_quiet";
+  const db = createAdminClient();
+  if (mode === "close") {
+    const { data: c } = await db.from("whatsapp_contact").select("last_inbound_at").eq("wa_id", to).maybeSingle();
+    const last = (c as { last_inbound_at: string | null } | null)?.last_inbound_at;
+    if (last && Date.now() - new Date(last).getTime() < WINDOW_MS) await sendRatingRequest(to);
+  }
+  await db
     .from("whatsapp_contact")
     .update(
       close
