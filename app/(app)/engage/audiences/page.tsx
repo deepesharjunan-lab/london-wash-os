@@ -96,6 +96,10 @@ export default async function AudiencesPage({ searchParams }: { searchParams: { 
                   {sizes[i] && <div className="text-[11.5px] text-ink/45">{sizes[i].matched.length.toLocaleString("en-IN")} match</div>}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-[13px]">
+                  <Link href={`/engage/campaigns/new?segment=${s.id}`} className="font-medium text-[#1f7a4d] hover:underline">
+                    Campaign
+                  </Link>
+                  <span className="mx-1.5 text-ink/20">|</span>
                   <Link href={`/engage/audiences/${s.id}`} className="font-medium text-accent hover:underline">
                     Edit
                   </Link>

@@ -5,6 +5,7 @@ import { loadStages } from "@/lib/staff/flow";
 import { notify } from "@/lib/notify";
 import { MEDIA_LABEL, logMessage, markRead, sendButtons, sendLink, sendList, sendText } from "./client";
 import { captureFeedback, handleRating, ratingFrom } from "./rating";
+import { recordCampaignReply } from "@/lib/engage/campaigns";
 
 // The London Wash WhatsApp assistant. Customers get a menu: track orders
 // (live garment stages), book a pickup, prices, Club points, store hours, or
@@ -119,6 +120,21 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     const customer = customers[0] ?? null;
     const contact = await touchContact(from, profileName ?? null, customer?.id ?? null);
     const firstName = (customer?.full_name ?? profileName ?? "").split(" ")[0];
+
+    // A reply within 3 days of a campaign counts as a response to it.
+    if (m.type !== "reaction") await recordCampaignReply(from);
+
+    // Marketing consent: STOP opts out of offers (order updates still come), START opts back in.
+    if (!label && /^\s*(stop|unsubscribe|stop promotions|stop offers)\s*[.!]?\s*$/i.test(text)) {
+      const ids = customers.map((c) => c.id);
+      if (ids.length) await db.from("customer").update({ marketing_opt_out: true, marketing_opt_out_at: new Date().toISOString() }).in("id", ids);
+      return sendText(from, "Done. You won't get offers from The London Wash on WhatsApp any more. You'll still get updates about your orders. Reply START any time to get offers again.");
+    }
+    if (!label && /^\s*(start|subscribe)\s*[.!]?\s*$/i.test(text)) {
+      const ids = customers.map((c) => c.id);
+      if (ids.length) await db.from("customer").update({ marketing_opt_out: false, marketing_opt_out_at: null }).in("id", ids);
+      return sendText(from, "Welcome back! 🤍 You'll get our offers and news on WhatsApp again. Reply STOP any time to opt out.");
+    }
 
     // Rating after a closed chat (tapped, or a typed 1-5 soon after the request).
     const rating = ratingFrom(action, text, prior);
