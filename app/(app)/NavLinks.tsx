@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type NavGroup = { section: string; items: { href: string; label: string; badge?: number }[] };
 
@@ -51,8 +52,38 @@ const ICONS: Record<string, string> = {
 };
 const FALLBACK = '<circle cx="12" cy="12" r="3"/>';
 
+/** Keeps the WhatsApp Inbox badge current on every console page (open chats with the team). */
+function useStaffChats(initial: number) {
+  const [count, setCount] = useState(initial);
+  useEffect(() => setCount(initial), [initial]);
+  useEffect(() => {
+    let stop = false;
+    const load = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch("/whatsapp/count", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as { staff?: number };
+        if (!stop && typeof json.staff === "number") setCount(json.staff);
+      } catch {
+        // badge only
+      }
+    };
+    const t = setInterval(load, 20000);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      stop = true;
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, []);
+  return count;
+}
+
 export function NavLinks({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname() || "";
+  const initialStaff = groups.flatMap((g) => g.items).find((i) => i.href === "/whatsapp")?.badge ?? 0;
+  const staffChats = useStaffChats(initialStaff);
   return (
     <nav className="lw-nav flex flex-1 gap-1 overflow-x-auto px-3 pb-3 lg:block lg:overflow-y-auto lg:overflow-x-hidden lg:py-2" aria-label="Console">
       {groups.map((group) => (
@@ -88,9 +119,18 @@ export function NavLinks({ groups }: { groups: NavGroup[] }) {
                   dangerouslySetInnerHTML={{ __html: ICONS[item.href] || FALLBACK }}
                 />
                 {item.label}
-                {item.badge ? (
-                  <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-[#1f7a4d] px-1.5 text-[11px] font-bold text-white">{item.badge}</span>
-                ) : null}
+                {(() => {
+                  const n = item.href === "/whatsapp" ? staffChats : item.badge ?? 0;
+                  return n > 0 ? (
+                    <span
+                      className="ml-auto grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#1fa855] px-1.5 text-[11.5px] font-bold leading-none text-white"
+                      aria-label={`${n} open ${n === 1 ? "chat" : "chats"} with the team`}
+                      title={`${n} open ${n === 1 ? "chat" : "chats"} with the team`}
+                    >
+                      {n > 99 ? "99+" : n}
+                    </span>
+                  ) : null;
+                })()}
               </Link>
             );
           })}
