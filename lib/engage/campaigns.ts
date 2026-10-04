@@ -218,7 +218,7 @@ export async function pumpCampaigns(budgetMs = 40000) {
   return summary;
 }
 
-/** Delivery receipts from the webhook: moves a campaign message forward (never backwards). */
+/** Delivery receipts from the webhook: moves a campaign or automation message forward (never backwards). */
 export async function recordCampaignStatus(waMessageId: string, status: string) {
   const from: Record<string, string[]> = {
     sent: ["sending"],
@@ -228,17 +228,26 @@ export async function recordCampaignStatus(waMessageId: string, status: string) 
   };
   if (!from[status]) return;
   try {
-    await createAdminClient().from("engage_campaign_recipient").update({ status }).eq("wa_message_id", waMessageId).in("status", from[status]);
+    const db = createAdminClient();
+    await Promise.all([
+      db.from("engage_campaign_recipient").update({ status }).eq("wa_message_id", waMessageId).in("status", from[status]),
+      db.from("engage_automation_run").update({ status }).eq("wa_message_id", waMessageId).in("status", from[status]),
+    ]);
   } catch {
     // tracking only
   }
 }
 
-/** A customer wrote back: credit the reply to the campaign they got in the last 3 days. */
+/** A customer wrote back: credit the reply to the campaign / automation messages they got in the last 3 days. */
 export async function recordCampaignReply(waId: string) {
   try {
     const since = new Date(Date.now() - 3 * 864e5).toISOString();
-    await createAdminClient().from("engage_campaign_recipient").update({ replied_at: new Date().toISOString() }).eq("wa_id", waId).is("replied_at", null).gte("sent_at", since);
+    const db = createAdminClient();
+    const now = new Date().toISOString();
+    await Promise.all([
+      db.from("engage_campaign_recipient").update({ replied_at: now }).eq("wa_id", waId).is("replied_at", null).gte("sent_at", since),
+      db.from("engage_automation_run").update({ replied_at: now }).eq("wa_id", waId).is("replied_at", null).gte("sent_at", since),
+    ]);
   } catch {
     // tracking only
   }
