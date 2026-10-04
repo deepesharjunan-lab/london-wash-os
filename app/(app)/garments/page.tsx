@@ -128,38 +128,59 @@ export default async function GarmentsPage({ searchParams }: { searchParams: { q
     return `/garments${s ? `?${s}` : ""}`;
   };
 
+  // The stage counts, the list (with its timing data) and the selected garment
+  // don't depend on each other, so they load at the same time.
+
   // How many garments sit at each stage right now.
-  const counts = await Promise.all(
-    stages.map(async (s) => {
-      const { count } = await db.from("garment").select("id", { count: "exact", head: true }).eq("current_stage_id", s.id);
-      return count ?? 0;
-    })
-  );
+  const loadCounts = () =>
+    Promise.all(
+      stages.map(async (s) => {
+        const { count } = await db.from("garment").select("id", { count: "exact", head: true }).eq("current_stage_id", s.id);
+        return count ?? 0;
+      })
+    );
+
+  // The list: search results, one stage, or everything not yet delivered; plus
+  // when each garment arrived at its current stage (when work started, else its last move).
+  const loadRows = async () => {
+    const ids = q ? await searchGarments(db, q) : null;
+    let rows: View[] = [];
+    if (!ids || ids.length) {
+      let query = db.from("garment").select(COLS).order("created_at", { ascending: false }).limit(LIST_LIMIT);
+      if (ids) query = query.in("id", ids.slice(0, 300));
+      if (stageFilter) query = query.eq("current_stage_id", stageFilter.id);
+      else if (!ids && delivered) query = query.or(`current_stage_id.is.null,current_stage_id.neq.${delivered.id}`);
+      const { data } = await query;
+      rows = ((data ?? []) as any[]).map((g) => toView(g, stages));
+    }
+    const lastMove = new Map<string, string>();
+    if (rows.length) {
+      const { data } = await db
+        .from("garment_event")
+        .select("garment_id, created_at")
+        .in("garment_id", rows.map((r) => r.id))
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      for (const e of (data ?? []) as any[]) if (!lastMove.has(e.garment_id)) lastMove.set(e.garment_id, e.created_at);
+    }
+    return { rows, lastMove };
+  };
+
+  const loadSelected = () =>
+    selectedId
+      ? Promise.all([
+          db.from("garment").select(COLS).eq("id", selectedId).maybeSingle(),
+          db
+            .from("garment_event")
+            .select("id, event_type, from_stage_id, to_stage_id, actor_employee_id, actor_user_id, metadata, created_at")
+            .eq("garment_id", selectedId)
+            .order("created_at"),
+          db.from("garment_condition").select("id, tag, note, recorded_by, created_at").eq("garment_id", selectedId).order("created_at", { ascending: false }),
+        ])
+      : Promise.resolve(null);
+
+  const [counts, { rows, lastMove }, selectedData] = await Promise.all([loadCounts(), loadRows(), loadSelected()]);
   const activeTotal = stages.reduce((sum, s, i) => (s.code === "delivered" ? sum : sum + counts[i]), 0);
-
-  // The list: search results, one stage, or everything not yet delivered.
-  const ids = q ? await searchGarments(db, q) : null;
-  let rows: View[] = [];
-  if (!ids || ids.length) {
-    let query = db.from("garment").select(COLS).order("created_at", { ascending: false }).limit(LIST_LIMIT);
-    if (ids) query = query.in("id", ids.slice(0, 300));
-    if (stageFilter) query = query.eq("current_stage_id", stageFilter.id);
-    else if (!ids && delivered) query = query.or(`current_stage_id.is.null,current_stage_id.neq.${delivered.id}`);
-    const { data } = await query;
-    rows = ((data ?? []) as any[]).map((g) => toView(g, stages));
-  }
-
-  // When each garment arrived at its current stage: when work started, else its last move.
-  const lastMove = new Map<string, string>();
-  if (rows.length) {
-    const { data } = await db
-      .from("garment_event")
-      .select("garment_id, created_at")
-      .in("garment_id", rows.map((r) => r.id))
-      .order("created_at", { ascending: false })
-      .limit(1000);
-    for (const e of (data ?? []) as any[]) if (!lastMove.has(e.garment_id)) lastMove.set(e.garment_id, e.created_at);
-  }
   const atStageSince = (r: View) => (r.inProgress && r.startedAt ? r.startedAt : lastMove.get(r.id) ?? r.createdAt);
   const isDelayed = (r: View) =>
     !!r.stage && WORK_STAGES.has(r.stage.code) && Date.now() - new Date(atStageSince(r)).getTime() > DELAY_HOURS * 3600000;
@@ -168,16 +189,8 @@ export default async function GarmentsPage({ searchParams }: { searchParams: { q
   let selected: View | null = null;
   let events: any[] = [];
   let conditions: any[] = [];
-  if (selectedId) {
-    const [{ data: g }, { data: ev }, { data: cond }] = await Promise.all([
-      db.from("garment").select(COLS).eq("id", selectedId).maybeSingle(),
-      db
-        .from("garment_event")
-        .select("id, event_type, from_stage_id, to_stage_id, actor_employee_id, actor_user_id, metadata, created_at")
-        .eq("garment_id", selectedId)
-        .order("created_at"),
-      db.from("garment_condition").select("id, tag, note, recorded_by, created_at").eq("garment_id", selectedId).order("created_at", { ascending: false }),
-    ]);
+  if (selectedData) {
+    const [{ data: g }, { data: ev }, { data: cond }] = selectedData;
     if (g) {
       selected = toView(g, stages);
       events = (ev ?? []) as any[];
