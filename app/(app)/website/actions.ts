@@ -109,6 +109,7 @@ export async function saveSeoAction(_p: SaveState, form: FormData): Promise<Save
     bing_verification: str(form, "bing_verification", 200).replace(/^.*content="([^"]+)".*$/, "$1"),
     ga_id: str(form, "ga_id", 30).toUpperCase(),
     gtm_id: str(form, "gtm_id", 30).toUpperCase(),
+    gsc_dns: form.get("gsc_dns") === "on",
     local_business: form.get("local_business") === "on",
   };
   if (!v.title) return { error: "The page title can't be empty." };
