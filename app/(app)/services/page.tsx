@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceCategory, createService, toggleService, toggleServiceSubCategories } from "./actions";
 import { CatalogueTabs } from "./CatalogueTabs";
+import { ToggleButton, ToggleInput } from "@/lib/ui/Toggle";
 
 const field = "w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent";
 const addBtn = "w-full rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:brightness-110";
@@ -51,13 +52,12 @@ export default async function ServicesPage() {
                         <form action={toggleServiceSubCategories} className="inline">
                           <input type="hidden" name="id" value={s.id} />
                           <input type="hidden" name="next" value={s.uses_sub_categories ? "false" : "true"} />
-                          <button
-                            type="submit"
+                          <ToggleButton
+                            on={!!s.uses_sub_categories}
+                            small
+                            label={`${s.name} uses sub categories`}
                             title={s.uses_sub_categories ? "Products of this service are grouped by Men, Women, Kids… Click to turn off." : "Click to group this service's products by Men, Women, Kids…"}
-                            className={"rounded-full px-2.5 py-0.5 text-[11px] font-semibold " + (s.uses_sub_categories ? "bg-navy text-[#f8f5ef]" : "border border-black/10 text-ink/50")}
-                          >
-                            {s.uses_sub_categories ? "On" : "Off"}
-                          </button>
+                          />
                         </form>
                       </td>
                       <td className="px-4 py-2.5">
@@ -105,9 +105,7 @@ export default async function ServicesPage() {
               <option value="per_kg">Per kg</option>
               <option value="per_set">Per set</option>
             </select>
-            <label className="flex items-center gap-2 text-sm text-ink/70">
-              <input type="checkbox" name="uses_sub_categories" /> Uses sub categories (Men, Women…)
-            </label>
+            <ToggleInput name="uses_sub_categories" label="Uses sub categories (Men, Women…)" />
             <button type="submit" className={addBtn}>
               Add
             </button>
