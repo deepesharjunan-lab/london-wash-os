@@ -4,6 +4,7 @@ import { campaignStatus, computeEarning, inr, pts } from "@/lib/loyalty/engine";
 import type { ClubCampaign, ClubConfig } from "@/lib/loyalty/engine";
 import { createCampaign, removeCampaign, saveCampaign, toggleCampaign } from "../actions";
 import { btnPrimary, btnSecondary, Card, ClubHeader, Field, inputCls, StatusPill } from "../ui";
+import { ToggleInput } from "@/lib/ui/Toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -136,7 +137,7 @@ export default async function ClubCampaignsPage({ searchParams }: { searchParams
                     </div>
                   </fieldset>
                   <div className="flex flex-wrap items-center gap-4">
-                    <label className="flex items-center gap-2 text-[13.5px] text-ink"><input type="checkbox" name="is_enabled" defaultChecked={c.is_enabled} /> Switched on</label>
+                    <ToggleInput name="is_enabled" defaultChecked={c.is_enabled} label="Switched on" />
                     <label className="flex items-center gap-2 text-[13.5px] text-ink"><input type="checkbox" name="stackable" defaultChecked={c.stackable} /> Can stack with other campaigns</label>
                     <button type="submit" className={btnPrimary + " ml-auto"}>Save campaign</button>
                   </div>
