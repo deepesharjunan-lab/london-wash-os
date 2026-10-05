@@ -49,13 +49,14 @@ export async function middleware(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   // /my is the customer app and /work the staff app (each has its own sign-in
-  // and session), /api/cron is the nightly job (it checks Vercel's cron
+  // and session), /i/<code> is a customer's online invoice, /api/cron is the nightly job (it checks Vercel's cron
   // credentials), and the service worker, manifests and icons must load
   // before anyone signs in.
   const isCustomerApp = path === "/my" || path.startsWith("/my/");
   const isStaffApp = path === "/work" || path.startsWith("/work/");
   const isAppShell = path === "/sw.js" || path.startsWith("/manifests/") || path.startsWith("/appicon/");
   const isWebsite = path.startsWith("/site/");
+  const isInvoiceLink = path.startsWith("/i/"); // private online invoice, opened from WhatsApp (signed link)
   const isPublic =
     path === "/login" ||
     path.startsWith("/_next") ||
@@ -64,7 +65,8 @@ export async function middleware(request: NextRequest) {
     isCustomerApp ||
     isStaffApp ||
     isAppShell ||
-    isWebsite;
+    isWebsite ||
+    isInvoiceLink;
 
   // Public pages don't use the console sign-in, so skip it entirely.
   if (isPublic && path !== "/login") return NextResponse.next();

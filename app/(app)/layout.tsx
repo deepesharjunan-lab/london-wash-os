@@ -21,6 +21,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
     section: "Engage",
     items: [
       { href: "/engage/campaigns", label: "Campaigns" },
+      { href: "/engage/automations", label: "Automations" },
       { href: "/engage/audiences", label: "Audiences" },
       { href: "/engage/templates", label: "WhatsApp Templates" },
     ],

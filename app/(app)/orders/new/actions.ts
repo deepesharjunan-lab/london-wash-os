@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { onAutomationEvent } from "@/lib/engage/automations";
 import { createClient } from "@/lib/supabase/server";
 import { applyCheckout, checkoutOptions, loadCtx, onCustomerCreated, onPayment } from "@/lib/loyalty/ledger";
 import { notify } from "@/lib/notify";
@@ -233,6 +234,7 @@ export async function createOrder(input: {
     }
   }
 
+  await onAutomationEvent("order_placed", { orderId: order.id }); // ENGAGE automations (invoice link…); never throws
   revalidatePath("/orders");
   redirect(input.return_to === "pos" ? `/pos/done/${order.id}` : `/orders/${order.id}`);
 }

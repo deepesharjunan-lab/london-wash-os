@@ -14,6 +14,7 @@ export const ENGAGE_VARIABLES: EngageVariable[] = [
   { key: "last_order_date", label: "Last order date", example: "12 Sep" },
   { key: "order_number", label: "Order number (automations)", example: "LW-1031", hint: "Filled from the order that triggered an automation" },
   { key: "order_total", label: "Order total (automations)", example: "₹640" },
+  { key: "balance_due", label: "Balance due on the order (automations)", example: "₹240" },
   { key: "invoice_link", label: "Invoice link code (automations)", example: "a1b2c3", hint: "Use as the end of a URL button" },
   { key: "pickup_time", label: "Pickup time (automations)", example: "Sat 4 Oct, 10 am" },
   { key: "expiring_points", label: "Points about to expire", example: "300" },

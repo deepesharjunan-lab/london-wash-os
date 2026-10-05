@@ -4,7 +4,7 @@ import { inSegment, reachablePhone, type Filter, type Profile } from "./segments
 // Server side of ENGAGE → Audiences: reads the customer profile view and
 // runs a segment's filters over it. Server-only (service-role client).
 
-const COLS =
+export const PROFILE_COLS =
   "id, full_name, phone, branch_id, birth_date, created_at, corporate_account_id, family_account_id, marketing_opt_out, tier_name, tier_id, points, order_count, total_spent_minor, first_order_at, last_order_at, channels, service_ids, city, pincode, tags, has_whatsapp_chat, last_rating";
 
 /** Every customer profile (pages past the API's 1,000-row limit). */
@@ -12,7 +12,7 @@ export async function loadProfiles(): Promise<Profile[]> {
   const db = createAdminClient();
   const out: Profile[] = [];
   for (let from = 0; from < 50000; from += 1000) {
-    const { data, error } = await db.from("engage_customer_profile").select(COLS).order("id").range(from, from + 999);
+    const { data, error } = await db.from("engage_customer_profile").select(PROFILE_COLS).order("id").range(from, from + 999);
     if (error) throw new Error(error.message);
     out.push(...((data ?? []) as Profile[]));
     if (!data || data.length < 1000) break;

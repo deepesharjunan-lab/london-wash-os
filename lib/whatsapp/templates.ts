@@ -108,6 +108,14 @@ export async function sendLoginCodeWhatsApp(phone: string, code: string): Promis
   }
 }
 
+// An active ENGAGE automation for the same event replaces the built-in message
+// (so customers never get both). Errors (e.g. table not created yet) count as "no".
+async function automationCovers(trigger: string) {
+  const { count, error } = await createAdminClient().from("engage_automation").select("id", { count: "exact", head: true }).eq("trigger", trigger).eq("active", true);
+  return !error && !!count;
+}
+const ORDER_TRIGGER: Record<string, string> = { ready: "order_ready", out_for_delivery: "out_for_delivery", delivered: "order_delivered" };
+
 const ORDER_TEMPLATE: Record<string, string> = {
   ready: "lw_order_ready",
   out_for_delivery: "lw_out_for_delivery",
@@ -119,6 +127,7 @@ export async function sendOrderUpdateWhatsApp(orderId: string, status: string) {
   try {
     const name = ORDER_TEMPLATE[status];
     if (!name || !waNotifyOn()) return;
+    if (await automationCovers(ORDER_TRIGGER[status])) return;
     const { data } = await createAdminClient()
       .from("order")
       .select("order_number, customer:customer_id(full_name, phone)")
@@ -138,6 +147,7 @@ export async function sendOrderUpdateWhatsApp(orderId: string, status: string) {
 export async function sendPickupBookedWhatsApp(customerId: string, when: string) {
   try {
     if (!waNotifyOn()) return;
+    if (await automationCovers("pickup_booked")) return;
     const { data } = await createAdminClient().from("customer").select("full_name, phone").eq("id", customerId).maybeSingle();
     const c = data as { full_name: string; phone: string } | null;
     const to = toWaNumber(c?.phone);
