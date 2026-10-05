@@ -40,6 +40,14 @@ export async function middleware(request: NextRequest) {
     }
     if (pathname === "/site/index.html") return NextResponse.redirect(new URL("/", request.url), 301);
     if (pathname === "/sitemap.xml") return NextResponse.rewrite(new URL("/api/public/site/sitemap", request.url));
+    // Service pages from the website CMS (www.thelondonwash.com/services/<slug>).
+    if (pathname === "/services" || pathname === "/services/") return NextResponse.redirect(new URL("/#services", request.url));
+    const servicePage = pathname.match(/^\/services\/([a-z0-9-]+)\/?$/);
+    if (servicePage) {
+      const url = new URL("/api/public/site/page", request.url);
+      url.searchParams.set("slug", servicePage[1]);
+      return NextResponse.rewrite(url);
+    }
     if (pathname === "/privacy") {
       return NextResponse.rewrite(new URL("/site/privacy.html", request.url));
     }
