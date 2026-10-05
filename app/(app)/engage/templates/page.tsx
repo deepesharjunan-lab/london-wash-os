@@ -5,6 +5,7 @@ import { listTemplates, type TemplateRow } from "@/lib/whatsapp/meta-templates";
 import { TEMPLATE_DEFS } from "@/lib/whatsapp/templates";
 import { variableByKey } from "@/lib/engage/variables";
 import { deleteTemplateAction } from "./actions";
+import { RefreshStatus } from "./refresh";
 
 // ENGAGE → Templates: every WhatsApp template on our accounts with its
 // approval status, a preview, and delete. Statuses come live from Meta.
@@ -87,9 +88,12 @@ export default async function TemplatesPage({ searchParams }: { searchParams: { 
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-accent">Engage</div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-archivo text-2xl font-extrabold text-ink">WhatsApp Templates</h1>
-        <Link href="/engage/templates/new" className="rounded-md bg-[#1f7a4d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19663f]">
-          + New template
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <RefreshStatus checkedAt={new Date().toISOString()} />
+          <Link href="/engage/templates/new" className="rounded-md bg-[#1f7a4d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#19663f]">
+            + New template
+          </Link>
+        </div>
       </div>
       <p className="mb-5 max-w-3xl text-sm text-ink/60">
         Approved templates can be used in campaigns and automations. Each template is created on both WhatsApp accounts; the system currently sends from{" "}
