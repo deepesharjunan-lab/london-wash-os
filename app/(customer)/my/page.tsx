@@ -5,6 +5,7 @@ import { loadMember, STAGES, stageIndex } from "@/lib/customer/member";
 import { campaignStatus, pts } from "@/lib/loyalty/engine";
 import { AppShell, Card, Icon, Notice, TierCard, fmtDate } from "./ui";
 import { InstallHint } from "@/lib/pwa/InstallHint";
+import { pickupEnabled } from "@/lib/site/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "The London Wash Club" };
@@ -15,6 +16,7 @@ const greeting = () => {
 };
 
 export default async function MemberHomePage() {
+  const pickupOn = await pickupEnabled();
   const { customerId, db } = requireMember();
   const m = await loadMember(db, customerId);
   if (!m) redirect("/my/login");
@@ -108,13 +110,13 @@ export default async function MemberHomePage() {
         </Notice>
       )}
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className={"grid gap-2 " + (pickupOn ? "grid-cols-4" : "grid-cols-3")}>
         {[
           ["/my/book", "Book pickup", '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'],
           ["/my/card", "My card", '<rect x="4" y="4" width="6" height="6" rx=".5"/><rect x="14" y="4" width="6" height="6" rx=".5"/><rect x="4" y="14" width="6" height="6" rx=".5"/><path d="M14 14h2.5v2.5H14zM19 14h1M14 19h2.5v1M19 18v2"/>'],
           ["/my/rewards", "Rewards", '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M3 9h18M12 9v11"/>'],
           ["/my/points", "Points", '<path d="M12 3.5c.6 3.8 2.7 5.9 6.5 6.5-3.8.6-5.9 2.7-6.5 6.5-.6-3.8-2.7-5.9-6.5-6.5 3.8-.6 5.9-2.7 6.5-6.5z"/>'],
-        ].map(([href, label, icon]) => (
+        ].filter(([href]) => pickupOn || href !== "/my/book").map(([href, label, icon]) => (
           <Link key={href} href={href} className="flex flex-col items-center gap-2 text-[12px] font-semibold">
             <span className="grid h-14 w-14 place-items-center rounded-[18px] border border-hair bg-white shadow-sm">
               <Icon d={icon} className="h-[22px] w-[22px]" />

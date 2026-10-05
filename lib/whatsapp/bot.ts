@@ -6,10 +6,13 @@ import { notify } from "@/lib/notify";
 import { MEDIA_LABEL, logMessage, markRead, sendButtons, sendLink, sendList, sendText } from "./client";
 import { captureFeedback, handleRating, ratingFrom } from "./rating";
 import { recordCampaignReply } from "@/lib/engage/campaigns";
+import { getSiteSettings } from "@/lib/site/settings";
+import { getFlow, handleBooking, startBooking } from "./booking";
 
 // The London Wash WhatsApp assistant. Customers get a menu: track orders
-// (live garment stages), book a pickup, prices, Club points, store hours, or
-// a person. "Talk to staff" alerts reception and keeps the bot quiet for a
+// (live garment stages), book a pickup (only while Website → Pickup & delivery
+// is on; the booking happens in the chat, see booking.ts), prices, Club points,
+// store hours, or a person. "Talk to staff" alerts reception and keeps the bot quiet for a
 // few hours so staff can reply. Server-only; replies go to the sender only.
 
 const APP = "https://club.thelondonwash.com/my";
@@ -26,14 +29,16 @@ const STATUS_TEXT: Record<string, string> = {
 };
 const GREETINGS = /^(hi+|hello|hey|hai|helo|menu|start|help|0|good (morning|afternoon|evening)|namaskaram)\b/i;
 
-const MENU_ROWS = [
+const menuRows = (pickup: { on: boolean; km: number }) => [
   { id: "track", title: "Track my order", description: "Where your clothes are right now" },
-  { id: "book", title: "Book a pickup", description: "Pickup within 15–30 km of our store" },
+  ...(pickup.on ? [{ id: "book", title: "Book a pickup", description: `Pickup within ${pickup.km} km of our store` }] : []),
   { id: "prices", title: "Prices", description: "Starting prices for our services" },
   { id: "points", title: "My Club points", description: "Points, tier and rewards" },
   { id: "hours", title: "Store hours & location", description: "Vettipuram, Pathanamthitta" },
   { id: "staff", title: "Talk to our team", description: "A person will reply here" },
 ];
+// The second button under "no orders" / "no Club account": book a pickup, or the store when pickup is off.
+const nextStepButton = (pickupOn: boolean) => (pickupOn ? { id: "book", title: "Book a pickup" } : { id: "hours", title: "Store location" });
 
 type IncomingMedia = { id: string; mime_type?: string; caption?: string; filename?: string };
 type Incoming = {
@@ -142,6 +147,12 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     // After a low rating, the next message is the customer's comment for the manager.
     if (!label && (await captureFeedback(from, text, prior))) return;
 
+    // Booking a pickup in the chat (location → time → what to collect).
+    const site = await getSiteSettings();
+    const pickup = { on: site.flags.pickup, km: site.pickup.radius_km };
+    const flow = await getFlow(from);
+    if (flow && (await handleBooking(flow, m, { action, text }, { from, customer, profileName }))) return;
+
     // Staff are handling this chat (from the console WhatsApp inbox): stay quiet
     // unless the customer taps a menu button or types "menu".
     const staffHandling = !!contact.handoffUntil && contact.handoffUntil > Date.now();
@@ -157,22 +168,24 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
     }
 
     const intent = action ?? intentFromText(text);
-    if (!intent) return menu(from, firstName, true);
+    if (!intent) return menu(from, firstName, true, pickup);
 
     switch (intent) {
       case "menu":
-        return menu(from, firstName, false);
+        return menu(from, firstName, false, pickup);
       case "track":
-        return track(db, from, customers);
+        return track(db, from, customers, pickup.on);
       case "book":
-        return sendLink(from, "Book a pickup in our app: choose a time and we'll come to you (within 15–30 km of our store). Sign in with this mobile number.", "Book a pickup", `${APP}/book`).then(() =>
-          sendButtons(from, "Prefer to book here on WhatsApp?", [
-            { id: "book_chat", title: "Book via chat" },
-            { id: "menu", title: "Main menu" },
-          ])
-        );
       case "book_chat":
-        return handoff(db, from, customer, profileName, "Pickup request on WhatsApp", "Please send your address and a convenient pickup time. Our team will confirm here shortly.");
+        if (pickup.on) return startBooking(from);
+        return sendButtons(
+          from,
+          "We're not taking pickup bookings at the moment. You're very welcome to drop off at our store in Vettipuram, Pathanamthitta: we'll tag everything and message you when it's ready.",
+          [
+            { id: "hours", title: "Store location" },
+            { id: "menu", title: "Main menu" },
+          ]
+        );
       case "prices":
         return sendLink(
           from,
@@ -181,7 +194,7 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
           `${SITE}/#services`
         );
       case "points":
-        return points(db, from, customer?.id ?? null);
+        return points(db, from, customer?.id ?? null, pickup.on);
       case "hours":
         return sendLink(
           from,
@@ -192,22 +205,22 @@ export async function handleIncoming(m: Incoming, profileName?: string) {
       case "staff":
         return handoff(db, from, customer, profileName, "Customer wants to talk on WhatsApp", "Thanks! A member of our team will reply here shortly (Mon–Sat 9–9, Sun 11–6). Type *menu* any time to see the options again.");
       default:
-        return menu(from, firstName, true);
+        return menu(from, firstName, true, pickup);
     }
   } catch (e) {
     console.error("WhatsApp bot failed", e);
   }
 }
 
-async function menu(to: string, firstName: string, didNotUnderstand: boolean) {
+async function menu(to: string, firstName: string, didNotUnderstand: boolean, pickup: { on: boolean; km: number }) {
   const hello = firstName ? `Hi ${firstName}! 👋` : "Hi! 👋";
   const body = didNotUnderstand
     ? `Sorry, I didn't quite get that. Here's what I can help with:`
     : `${hello} Welcome to *The London Wash*, the art of laundry. How can we help you today?`;
-  return sendList(to, body, "See options", MENU_ROWS);
+  return sendList(to, body, "See options", menuRows(pickup));
 }
 
-async function track(db: ReturnType<typeof createAdminClient>, to: string, customers: { id: string }[]) {
+async function track(db: ReturnType<typeof createAdminClient>, to: string, customers: { id: string }[], pickupOn: boolean) {
   if (!customers.length) {
     return sendButtons(
       to,
@@ -240,7 +253,7 @@ async function track(db: ReturnType<typeof createAdminClient>, to: string, custo
     const l = last as { order_number: string; status: string; created_at: string } | null;
     const lastLine = l ? `\nYour last order *${l.order_number}* is ${STATUS_TEXT[l.status]?.toLowerCase() ?? l.status}.` : "";
     return sendButtons(to, `You have no orders in progress right now.${lastLine}`, [
-      { id: "book", title: "Book a pickup" },
+      nextStepButton(pickupOn),
       { id: "menu", title: "Main menu" },
     ]);
   }
@@ -273,10 +286,10 @@ async function track(db: ReturnType<typeof createAdminClient>, to: string, custo
   return sendLink(to, `Your orders in progress:\n\n${lines.join("\n\n")}`, "Track live", `${APP}/orders`);
 }
 
-async function points(db: ReturnType<typeof createAdminClient>, to: string, customerId: string | null) {
+async function points(db: ReturnType<typeof createAdminClient>, to: string, customerId: string | null, pickupOn: boolean) {
   if (!customerId) {
     return sendButtons(to, "We couldn't find a London Wash Club account for this number. Every customer becomes a member with their first order.", [
-      { id: "book", title: "Book a pickup" },
+      nextStepButton(pickupOn),
       { id: "menu", title: "Main menu" },
     ]);
   }

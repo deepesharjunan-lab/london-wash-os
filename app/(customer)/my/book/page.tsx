@@ -1,14 +1,36 @@
+import Link from "next/link";
 import { requireMember } from "@/lib/customer/session";
+import { getSiteSettings } from "@/lib/site/settings";
+import { windowLabel } from "@/lib/pickup/slots";
 import { bookPickupAction } from "../actions";
 import { AppShell, Card, Notice, btn, input } from "../ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Book a pickup · The London Wash Club" };
 
-const SLOTS: [string, string][] = [["9-11", "9–11 am"], ["11-13", "11 am–1 pm"], ["14-16", "2–4 pm"], ["16-18", "4–6 pm"], ["18-20", "6–8 pm"]];
-
 export default async function MemberBookPage({ searchParams }: { searchParams: { error?: string } }) {
   const { customerId, db } = requireMember();
+  const site = await getSiteSettings();
+  // Pickup & delivery is switched off in the console (Website → Overview): no booking for now.
+  if (!site.flags.pickup) {
+    return (
+      <AppShell current="/my" title="Book a pickup" back="/my">
+        <Card className="flex flex-col gap-3 p-5">
+          <h2 className="font-display text-[22px] font-medium">Pickups are paused for now</h2>
+          <p className="text-[14px] text-ink-2">
+            You&apos;re very welcome to drop off at our store in Vettipuram, Pathanamthitta. We tag every garment and message you when your order is ready.
+          </p>
+          <a href={site.business.map_link} target="_blank" rel="noopener" className={btn + " self-start px-5 text-[14px]"}>
+            Get directions
+          </a>
+          <Link href="/my" className="text-[13px] text-ink-3 underline-offset-4 hover:underline">
+            Back to home
+          </Link>
+        </Card>
+      </AppShell>
+    );
+  }
+  const SLOTS: [string, string][] = site.pickup.weekday_windows.map((w) => [`${w.start}-${w.end}`, windowLabel(w)]);
   const [addrRes, svcRes] = await Promise.all([
     db.from("customer_address").select("id, label, address_line, is_default").eq("customer_id", customerId).order("is_default", { ascending: false }),
     db.from("service").select("id, name").is("deleted_at", null).eq("is_active", true).order("name"),
@@ -16,9 +38,9 @@ export default async function MemberBookPage({ searchParams }: { searchParams: {
   const addresses = (addrRes.data ?? []) as { id: string; label: string | null; address_line: string; is_default: boolean }[];
   const services = (svcRes.data ?? []) as { id: string; name: string }[];
 
-  // Next 7 days in India time.
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(Date.now() + (i + 1) * 864e5);
+  // The next days customers can book (Website → Pickup booking settings), in India time.
+  const days = Array.from({ length: Math.max(1, site.pickup.days_ahead) }, (_, i) => {
+    const d = new Date(Date.now() + i * 864e5);
     const iso = d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     return {
       iso,

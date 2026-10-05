@@ -3,6 +3,7 @@ import { requireMember } from "@/lib/customer/session";
 import { STAGES, stageIndex } from "@/lib/customer/member";
 import { inr } from "@/lib/loyalty/engine";
 import { AppShell, Card, Notice, btn, fmtDate } from "../ui";
+import { pickupEnabled } from "@/lib/site/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Orders · The London Wash Club" };
@@ -10,6 +11,7 @@ export const metadata = { title: "Orders · The London Wash Club" };
 type Order = { id: string; order_number: string; status: string; total_minor: number; created_at: string };
 
 export default async function MemberOrdersPage({ searchParams }: { searchParams: { booked?: string } }) {
+  const pickupOn = await pickupEnabled();
   const { customerId, db } = requireMember();
   const [ordersRes, pickupsRes] = await Promise.all([
     db.from("order").select("id, order_number, status, total_minor, created_at").eq("customer_id", customerId).neq("status", "draft").order("created_at", { ascending: false }).limit(100),
@@ -46,8 +48,10 @@ export default async function MemberOrdersPage({ searchParams }: { searchParams:
         {active.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <h3 className="font-display text-[21px] font-medium">No active orders</h3>
-            <p className="max-w-[32ch] text-[14px] text-ink-2">When you book a pickup, you can follow every garment from collection to delivery here.</p>
-            <Link href="/my/book" className={btn}>Book a pickup</Link>
+            <p className="max-w-[32ch] text-[14px] text-ink-2">
+              {pickupOn ? "When you book a pickup, you can follow every garment from collection to delivery here." : "When you drop off an order at our store, you can follow every garment here until it is ready."}
+            </p>
+            {pickupOn && <Link href="/my/book" className={btn}>Book a pickup</Link>}
           </div>
         ) : (
           active.map((o) => {
