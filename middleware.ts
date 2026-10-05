@@ -30,10 +30,16 @@ export async function middleware(request: NextRequest) {
   const host = (request.headers.get("host") ?? "").toLowerCase().split(":")[0];
   const pathname = request.nextUrl.pathname;
 
+  // robots.txt on every host (the website may be indexed, the apps never).
+  if (pathname === "/robots.txt") return NextResponse.rewrite(new URL("/api/public/site/robots", request.url));
+
   if (host === ROOT_DOMAIN || host === "www." + ROOT_DOMAIN) {
+    // The home page is rendered from the website CMS (lib/site); the old static copy redirects to it.
     if (pathname === "/") {
-      return NextResponse.rewrite(new URL("/site/index.html", request.url));
+      return NextResponse.rewrite(new URL("/api/public/site/home", request.url));
     }
+    if (pathname === "/site/index.html") return NextResponse.redirect(new URL("/", request.url), 301);
+    if (pathname === "/sitemap.xml") return NextResponse.rewrite(new URL("/api/public/site/sitemap", request.url));
     if (pathname === "/privacy") {
       return NextResponse.rewrite(new URL("/site/privacy.html", request.url));
     }
