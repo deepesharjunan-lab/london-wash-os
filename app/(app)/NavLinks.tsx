@@ -86,62 +86,96 @@ function useWaitingChats(initial: number) {
   return count;
 }
 
+// Desktop sidebar: each section heading opens and closes its links, one
+// section at a time, all closed when the console first loads. While a section
+// is closed it still shows its badge (e.g. WhatsApp chats waiting) and is
+// highlighted if it holds the current page. On phones the links stay one
+// scrolling row, as before.
 export function NavLinks({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname() || "";
   const initialWaiting = groups.flatMap((g) => g.items).find((i) => i.href === "/whatsapp")?.badge ?? 0;
   const waitingChats = useWaitingChats(initialWaiting);
+  const [open, setOpen] = useState<string | null>(null);
+  const isActive = (group: NavGroup, href: string) =>
+    pathname === href ||
+    (pathname.startsWith(href + "/") && !group.items.some((o) => o.href !== href && o.href.startsWith(href + "/") && pathname.startsWith(o.href)));
+  const badgeOf = (href: string, badge?: number) => (href === "/whatsapp" ? waitingChats : badge ?? 0);
+  const Badge = ({ n }: { n: number }) =>
+    n > 0 ? (
+      <span
+        className="ml-auto grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#1fa855] px-1.5 text-[11.5px] font-bold leading-none text-white"
+        aria-label={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
+        title={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
+      >
+        {n > 99 ? "99+" : n}
+      </span>
+    ) : null;
+
   return (
     <nav className="lw-nav flex flex-1 gap-1 overflow-x-auto px-3 pb-3 lg:block lg:overflow-y-auto lg:overflow-x-hidden lg:py-2" aria-label="Console">
-      {groups.map((group) => (
-        <div key={group.section} className="contents lg:block">
-          <div className="hidden px-2.5 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7f8796] lg:block">
-            {group.section}
+      {groups.map((group) => {
+        const isOpen = open === group.section;
+        const holdsPage = group.items.some((i) => isActive(group, i.href));
+        const groupBadge = group.items.reduce((sum, i) => sum + badgeOf(i.href, i.badge), 0);
+        const panelId = `nav-${group.section.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+        return (
+          <div key={group.section} className="contents lg:block">
+            <button
+              type="button"
+              onClick={() => setOpen(isOpen ? null : group.section)}
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              className={
+                "hidden w-full items-center gap-2 rounded-[8px] px-2.5 py-2.5 text-left text-[10.5px] font-bold uppercase tracking-[0.18em] transition hover:bg-white/5 lg:flex " +
+                (isOpen || holdsPage ? "text-[#e3d2ac]" : "text-[#7f8796] hover:text-[#c9c3b6]")
+              }
+            >
+              <span className="flex-1">{group.section}</span>
+              {!isOpen && <Badge n={groupBadge} />}
+              <svg viewBox="0 0 24 24" aria-hidden="true" className={"h-3.5 w-3.5 shrink-0 transition-transform duration-200 " + (isOpen ? "rotate-180" : "")} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div
+              id={panelId}
+              className={"contents lg:grid lg:transition-[grid-template-rows] lg:duration-200 lg:ease-out " + (isOpen ? "lg:grid-rows-[1fr]" : "lg:grid-rows-[0fr]")}
+            >
+              <div className={"contents lg:block lg:overflow-hidden " + (isOpen ? "" : "lg:invisible")}>
+                <div className="contents lg:block lg:pb-2">
+                  {group.items.map((item) => {
+                    const active = isActive(group, item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={
+                          "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-[13.5px] font-medium transition " +
+                          (active ? "bg-[rgba(199,181,143,0.14)] text-[#f3ecdd]" : "text-[#c9c3b6] hover:bg-white/5 hover:text-white")
+                        }
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          className={"h-[18px] w-[18px] shrink-0 " + (active ? "text-brass-2" : "text-[#8d93a0]")}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.6}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          dangerouslySetInnerHTML={{ __html: ICONS[item.href] || FALLBACK }}
+                        />
+                        {item.label}
+                        <Badge n={badgeOf(item.href, item.badge)} />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-          {group.items.map((item) => {
-            const active =
-              pathname === item.href ||
-              (pathname.startsWith(item.href + "/") && !group.items.some((o) => o.href !== item.href && o.href.startsWith(item.href + "/") && pathname.startsWith(o.href)));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={
-                  "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-[10px] px-2.5 py-2 text-[13.5px] font-medium transition " +
-                  (active
-                    ? "bg-[rgba(199,181,143,0.14)] text-[#f3ecdd]"
-                    : "text-[#c9c3b6] hover:bg-white/5 hover:text-white")
-                }
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className={"h-[18px] w-[18px] shrink-0 " + (active ? "text-brass-2" : "text-[#8d93a0]")}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  dangerouslySetInnerHTML={{ __html: ICONS[item.href] || FALLBACK }}
-                />
-                {item.label}
-                {(() => {
-                  const n = item.href === "/whatsapp" ? waitingChats : item.badge ?? 0;
-                  return n > 0 ? (
-                    <span
-                      className="ml-auto grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#1fa855] px-1.5 text-[11.5px] font-bold leading-none text-white"
-                      aria-label={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
-                      title={`${n} ${n === 1 ? "chat" : "chats"} waiting for the team`}
-                    >
-                      {n > 99 ? "99+" : n}
-                    </span>
-                  ) : null;
-                })()}
-              </Link>
-            );
-          })}
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
