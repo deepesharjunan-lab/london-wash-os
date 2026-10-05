@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fillTemplate, TEMPLATE_VARS } from "@/lib/loyalty/engine";
 import { saveAutomation } from "../actions";
 import { btnPrimary, Card, ClubHeader, Field, inputCls, StatusPill } from "../ui";
+import { ToggleInput } from "@/lib/ui/Toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +98,7 @@ export default async function ClubAutomationsPage({ searchParams }: { searchPara
                     <textarea className={inputCls + " min-h-[110px]"} name="message_template" defaultValue={a.message_template} required />
                   </Field>
                   <div className="flex flex-wrap items-center gap-4">
-                    <label className="flex items-center gap-2 text-[13.5px] text-ink"><input type="checkbox" name="is_enabled" defaultChecked={a.is_enabled} /> Switched on</label>
+                    <ToggleInput name="is_enabled" defaultChecked={a.is_enabled} label="Switched on" />
                     <button type="submit" className={btnPrimary + " ml-auto"}>Save automation</button>
                   </div>
                 </div>
