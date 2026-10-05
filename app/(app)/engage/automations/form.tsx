@@ -7,6 +7,7 @@ import { createRecipeTemplateAction, saveAutomationAction, testAutomationAction,
 import { CONDITIONS, CONTEXT_FIELDS, TRIGGERS, triggerByKey, type Recipe } from "@/lib/engage/automation-defs";
 import { variableByKey } from "@/lib/engage/variables";
 import type { AutoTemplateOption } from "@/lib/engage/automations";
+import { ToggleInput } from "@/lib/ui/Toggle";
 
 export type AutomationInitial = {
   id?: string;
@@ -228,12 +229,7 @@ export function AutomationForm({
         )}
 
         <div className="grid gap-3 text-[13.5px] text-ink/75 sm:grid-cols-2">
-          <label className="flex items-start gap-2">
-            <input type="checkbox" name="respect_quiet" defaultChecked={initial.respect_quiet} className="mt-0.5" />
-            <span>
-              Quiet hours: hold messages due between 9 pm and 9 am until 9 am
-            </span>
-          </label>
+          <ToggleInput name="respect_quiet" defaultChecked={initial.respect_quiet} label="Quiet hours" hint="Hold messages due between 9 pm and 9 am until 9 am" />
           <div className="flex items-center gap-2">
             Don't repeat for the same customer within
             <input type="number" name="cooldown_days" min={0} max={365} defaultValue={initial.cooldown_days} className="w-16 border border-black/10 bg-white px-2 py-1.5 text-sm" /> days
@@ -243,9 +239,7 @@ export function AutomationForm({
           <p className="-mt-2 text-[12px] text-ink/50">Marketing message: customers who replied STOP are skipped, and nobody gets more than one marketing message a day.</p>
         )}
 
-        <label className="flex items-center gap-2 text-[14px] font-medium">
-          <input type="checkbox" name="active" defaultChecked={initial.active} /> Switched on
-        </label>
+        <ToggleInput name="active" defaultChecked={initial.active} label={<b className="font-semibold">Switched on</b>} />
 
         <div className="rounded-md bg-[#fbf7ef] p-3">
           <label className={label}>Send a test now</label>

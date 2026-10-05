@@ -5,6 +5,7 @@ import { automationTemplates, AUTOMATION_COLS, type Automation } from "@/lib/eng
 import { describeWhen, RECIPES } from "@/lib/engage/automation-defs";
 import { AutomationForm } from "../form";
 import { deleteAutomationAction, toggleAutomationAction } from "../actions";
+import { ToggleButton } from "@/lib/ui/Toggle";
 
 // One automation: settings, and its recent messages.
 
@@ -49,9 +50,7 @@ export default async function AutomationPage({ params, searchParams }: { params:
           <form action={toggleAutomationAction}>
             <input type="hidden" name="id" value={a.id} />
             <input type="hidden" name="on" value={a.active ? "0" : "1"} />
-            <button type="submit" className={`rounded-full px-3 py-1 text-[12.5px] font-semibold ${a.active ? "bg-[#e2eee7] text-[#2c6a4e]" : "bg-black/5 text-ink/55"}`}>
-              {a.active ? "● On · switch off" : "○ Off · switch on"}
-            </button>
+            <ToggleButton on={a.active} label={a.name} />
           </form>
           <form action={deleteAutomationAction}>
             <input type="hidden" name="id" value={a.id} />

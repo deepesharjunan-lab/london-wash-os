@@ -3,6 +3,7 @@ import { saveSubCategory } from "../actions";
 import { CatalogueTabs } from "../CatalogueTabs";
 import { Pager } from "../Pager";
 import { PER_PAGE_OPTIONS } from "../paging";
+import { ToggleInput } from "@/lib/ui/Toggle";
 
 const field = "w-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-accent";
 const filter = "mt-1.5 w-full rounded border border-black/10 px-2 py-1 text-[12.5px] font-normal normal-case tracking-normal";
@@ -94,9 +95,7 @@ export default async function SubCategoriesPage({
                         <input type="hidden" name="id" value={r.id} />
                         <input name="name" required defaultValue={r.name} className={field} aria-label="Name" />
                         <textarea name="description" rows={2} defaultValue={r.description ?? ""} placeholder="Description" className={field} aria-label="Description" />
-                        <label className="flex items-center gap-2 text-sm text-ink/70">
-                          <input type="checkbox" name="is_active" defaultChecked={r.is_active} /> Active
-                        </label>
+                        <ToggleInput name="is_active" defaultChecked={r.is_active} label="Active" />
                         <button type="submit" className="w-full rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
                           Save
                         </button>

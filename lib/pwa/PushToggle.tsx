@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Switch } from "@/lib/ui/Toggle";
 
 type Save = (sub: { endpoint: string; keys: { p256dh: string; auth: string } }) => Promise<{ ok?: boolean; error?: string }>;
 type Remove = (endpoint: string) => Promise<unknown>;
@@ -78,9 +79,6 @@ export function PushToggle({ publicKey, save, remove, tone = "light" }: { public
   const dark = tone === "dark";
   const box = "flex items-center justify-between gap-3 rounded-[14px] border px-4 py-3 " + (dark ? "border-white/15 bg-white/5 text-white" : "border-hair bg-white");
   const sub = "text-[12.5px] " + (dark ? "text-white/60" : "text-ink-2");
-  const button =
-    "inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14px] font-semibold disabled:opacity-50 " +
-    (dark ? "bg-[#efe8da] text-[#15213a]" : "bg-navy text-[#f8f5ef]");
 
   if (state === "loading") return null;
   return (
@@ -97,14 +95,17 @@ export function PushToggle({ publicKey, save, remove, tone = "light" }: { public
           {error && <span className="block text-[#9c3326]">{error}</span>}
         </span>
       </span>
-      {(state === "off" || state === "busy") && (
-        <button type="button" className={button} onClick={turnOn} disabled={state === "busy"}>
-          Turn on
-        </button>
-      )}
-      {state === "on" && (
-        <button type="button" className={"text-[13px] font-semibold underline-offset-4 hover:underline " + (dark ? "text-white/70" : "text-ink-2")} onClick={turnOff}>
-          Turn off
+      {(state === "off" || state === "on" || state === "busy") && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={state === "on"}
+          aria-label={state === "on" ? "Notifications on. Turn off" : "Notifications off. Turn on"}
+          onClick={state === "on" ? turnOff : turnOn}
+          disabled={state === "busy"}
+          className="inline-flex min-h-[44px] shrink-0 items-center rounded-full px-1 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1f7a4d]/40"
+        >
+          <Switch on={state === "on"} dark={dark} />
         </button>
       )}
     </div>

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AUTOMATION_COLS, type Automation } from "@/lib/engage/automations";
 import { describeWhen, RECIPES } from "@/lib/engage/automation-defs";
 import { toggleAutomationAction } from "./actions";
+import { ToggleButton } from "@/lib/ui/Toggle";
 
 // ENGAGE → Automations: messages that send themselves, with 30-day numbers,
 // plus ready-made recipes to start from.
@@ -80,9 +81,7 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
                       <form action={toggleAutomationAction}>
                         <input type="hidden" name="id" value={a.id} />
                         <input type="hidden" name="on" value={a.active ? "0" : "1"} />
-                        <button type="submit" className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${a.active ? "bg-[#e2eee7] text-[#2c6a4e]" : "bg-black/5 text-ink/55"}`} title={a.active ? "Switch off" : "Switch on"}>
-                          {a.active ? "● On" : "○ Off"}
-                        </button>
+                        <ToggleButton on={a.active} label={a.name} />
                       </form>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-ink">{(s.sent ?? 0).toLocaleString("en-IN")}</td>
