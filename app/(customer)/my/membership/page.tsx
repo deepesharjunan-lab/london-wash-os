@@ -4,11 +4,13 @@ import { requireMember } from "@/lib/customer/session";
 import { loadMember } from "@/lib/customer/member";
 import { inr, mult, pts } from "@/lib/loyalty/engine";
 import { AppShell, Card, TierCard, btn, fmtDate } from "../ui";
+import { pickupEnabled } from "@/lib/site/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Membership · The London Wash Club" };
 
 export default async function MemberMembershipPage() {
+  const pickupOn = await pickupEnabled();
   const { customerId, db } = requireMember();
   const m = await loadMember(db, customerId);
   if (!m) redirect("/my/login");
@@ -96,9 +98,11 @@ export default async function MemberMembershipPage() {
           ))}
         </ol>
         <p className="font-semibold">{m.gapText}.</p>
-        <Link href="/my/book" className={btn + " self-start px-5 text-[14px]"}>
-          Book a pickup
-        </Link>
+        {pickupOn && (
+          <Link href="/my/book" className={btn + " self-start px-5 text-[14px]"}>
+            Book a pickup
+          </Link>
+        )}
       </Card>
 
       <section className="flex flex-col gap-2.5">
