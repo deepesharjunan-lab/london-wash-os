@@ -22,6 +22,7 @@ const ICONS: Record<string, string> = {
   "/engage/automations": '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
   "/website": '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z"/>',
   "/website/content": '<path d="M5 19h14M7 15l8.5-8.5a2 2 0 0 1 3 3L10 18H7z"/>',
+  "/website/pages": `<rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>`,
   "/website/seo": '<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5M8.5 11.5l1.5 1.5 3-3"/>',
   "/engage/audiences": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 9.5h6M15 13h4M15 16.5h2.5"/>',
   "/engage/templates": '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="m15.5 15.5 1.5 1.5 3-3"/>',

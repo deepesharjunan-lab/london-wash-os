@@ -31,6 +31,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
     items: [
       { href: "/website", label: "Overview & switches" },
       { href: "/website/content", label: "Texts & prices" },
+      { href: "/website/pages", label: "Service pages" },
       { href: "/website/seo", label: "SEO" },
     ],
   },
