@@ -3,6 +3,7 @@ import { loadServices, loadTiers } from "@/lib/loyalty/data";
 import { inr, num } from "@/lib/loyalty/engine";
 import { deleteReward, saveReward, toggleReward } from "../actions";
 import { btnPrimary, btnSecondary, Card, ClubHeader, Field, inputCls, StatusPill } from "../ui";
+import { ToggleInput } from "@/lib/ui/Toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ function RewardForm({ r, tiers, services }: { r: Partial<Reward>; tiers: { id: s
         </div>
       </fieldset>
       <div className="flex flex-wrap items-center gap-5 text-[13.5px] text-ink">
-        <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={r.is_active ?? true} /> Active</label>
+        <ToggleInput name="is_active" defaultChecked={r.is_active ?? true} label="Active" />
         <label className="flex items-center gap-2"><input type="checkbox" name="is_draft" defaultChecked={r.is_draft ?? false} /> Draft (hidden from members)</label>
         <button type="submit" className={btnPrimary + " ml-auto"}>{r.id ? "Save reward" : "Create reward"}</button>
       </div>
