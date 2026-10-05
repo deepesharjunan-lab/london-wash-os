@@ -24,9 +24,27 @@ const STATUS: Record<string, string> = {
 const rupees = (minor: number) => "₹" + (minor / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
 
-export default async function OnlineInvoicePage({ params }: { params: { code: string } }) {
-  const orderId = orderIdFromCode(params.code);
-  if (!orderId) notFound();
+// /i/sample: a made-up order, so staff can see the page from a test message
+// sent to a number that isn't a customer (the test fills the link with "sample").
+async function sampleInvoice() {
+  const { data: branch } = await createAdminClient().from("branch").select("name, address, city, state, phone").limit(1).maybeSingle();
+  const created = new Date(Date.now() - 2 * 3600e3).toISOString();
+  return {
+    order: {
+      id: "sample", order_number: "LW-SAMPLE", status: "confirmed", created_at: created,
+      subtotal_minor: 64000, discount_minor: 0, tax_minor: 0, total_minor: 64000, extra_charges: [], discount_note: null,
+      customer: { full_name: "Sample Customer" }, branch,
+    },
+    items: [
+      { id: "1", quantity: 3, unit_price_minor: 8000, line_total_minor: 24000, notes: null, service: { name: "Dry Clean" }, item: { name: "Shirt" } },
+      { id: "2", quantity: 2, unit_price_minor: 12000, line_total_minor: 24000, notes: "Light starch", service: { name: "Dry Clean" }, item: { name: "Trousers" } },
+      { id: "3", quantity: 1, unit_price_minor: 16000, line_total_minor: 16000, notes: null, service: { name: "Wash & Iron" }, item: { name: "Bedsheet (double)" } },
+    ],
+    payments: [{ amount_minor: 40000, status: "completed" }],
+  };
+}
+
+async function realInvoice(orderId: string) {
   const db = createAdminClient();
   const [{ data: order }, { data: items }, { data: payments }] = await Promise.all([
     db
@@ -39,6 +57,14 @@ export default async function OnlineInvoicePage({ params }: { params: { code: st
     db.from("order_item").select("id, quantity, unit_price_minor, line_total_minor, notes, service:service_id(name), item:item_id(name)").eq("order_id", orderId).order("created_at"),
     db.from("payment").select("amount_minor, status, method, created_at").eq("order_id", orderId),
   ]);
+  return { order, items, payments };
+}
+
+export default async function OnlineInvoicePage({ params }: { params: { code: string } }) {
+  const isSample = params.code === "sample";
+  const orderId = isSample ? null : orderIdFromCode(params.code);
+  if (!isSample && !orderId) notFound();
+  const { order, items, payments } = isSample ? await sampleInvoice() : await realInvoice(orderId as string);
   if (!order) notFound();
   const o = order as any;
   const customer = one<any>(o.customer);
@@ -53,6 +79,11 @@ export default async function OnlineInvoicePage({ params }: { params: { code: st
     <main className="min-h-screen bg-ivory px-4 py-6 font-archivo text-ink print:bg-white print:p-0">
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
       <div className="mx-auto max-w-[560px]">
+        {isSample && (
+          <p className="no-print mb-4 rounded-md bg-[#fdf0dc] px-3 py-2 text-center text-[13px] text-[#8a5a12]">
+            Sample invoice. Customers see their own order here, with live payment status.
+          </p>
+        )}
         <div className="mb-4 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/logo-full.png" alt={`${ORG_NAME}, the art of laundry`} className="mx-auto h-auto w-[210px]" />
