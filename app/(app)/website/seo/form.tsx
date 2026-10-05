@@ -30,9 +30,29 @@ function Counter({ n, min, max }: { n: number; min: number; max: number }) {
   );
 }
 
+/** A connection card: a big green dot when connected, grey when not. */
+function Connection({ on, title, detail, children }: { on: boolean; title: string; detail: string; children?: React.ReactNode }) {
+  return (
+    <div className={"rounded-lg border-2 p-4 " + (on ? "border-[#1f7a4d]/30 bg-[#f1f8f4]" : "border-black/10 bg-white")}>
+      <div className="flex items-center gap-3">
+        <span className={"h-5 w-5 shrink-0 rounded-full " + (on ? "bg-[#1f9d55] shadow-[0_0_0_5px_rgba(31,157,85,0.18)]" : "bg-[#cfc6b5]")} aria-hidden="true" />
+        <div className="min-w-0">
+          <div className="font-bold text-ink">
+            {title} <span className={"ml-1 text-[12.5px] font-semibold " + (on ? "text-[#1f7a4d]" : "text-ink/45")}>{on ? "Connected" : "Not connected"}</span>
+          </div>
+          <div className="truncate text-[12.5px] text-ink/60">{detail}</div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export function SeoForm({ initial, facts }: { initial: Seo; facts: PageFacts }) {
   const [s, setS] = useState<Seo>(initial);
   const up = (k: keyof Seo) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setS({ ...s, [k]: e.target.value });
+  const gaOn = /^G-[A-Z0-9]{4,20}$/i.test(s.ga_id.trim()) || /^GTM-[A-Z0-9]{4,12}$/i.test((s.gtm_id ?? "").trim());
+  const gscOn = !!s.gsc_dns || !!s.google_verification.trim();
   const focus = s.keywords.split(",")[0]?.trim().toLowerCase() ?? "";
   const words = focus.split(/\s+/).filter((w) => w.length > 2);
   const has = (t: string) => !!focus && words.every((w) => t.toLowerCase().includes(w));
@@ -53,8 +73,8 @@ export function SeoForm({ initial, facts }: { initial: Seo; facts: PageFacts }) 
       { ok: facts.hasPhone && facts.hasAddress, label: "Phone and address on the page", tip: "Add them in Website → Business details.", weight: 2 },
       { ok: /^https:\/\/www\./.test(s.canonical), label: "Main address uses https://www.", tip: "Use https://www.thelondonwash.com/ as the main address.", weight: 1 },
       { ok: /^https:\/\//.test(s.og_image), label: "Share image", tip: "Set an image for WhatsApp and Facebook link previews.", weight: 1 },
-      { ok: s.google_verification.trim() ? true : "info", label: "Google Search Console code", tip: "Not needed if you verified with DNS (domain property), as on 5 Oct 2026.", weight: 0 },
-      { ok: s.ga_id.trim() || (s.gtm_id ?? "").trim() ? true : "info", label: "Google Analytics", tip: "Add a G-… ID (or a Tag Manager GTM-… ID) to count visitors.", weight: 0 },
+      { ok: gscOn, label: "Google Search Console connected", tip: "Verify the site in Search Console (DNS or HTML tag) to see searches and get indexed faster.", weight: 1 },
+      { ok: gaOn, label: "Google Analytics connected", tip: "Add the G-… ID to count visitors.", weight: 1 },
     ],
     [s, facts, focus]
   );
@@ -102,30 +122,54 @@ export function SeoForm({ initial, facts }: { initial: Seo; facts: PageFacts }) 
               </div>
             </div>
 
-            <h3 className="pt-2 text-[14px] font-bold text-ink">Google settings</h3>
+            <h3 className="pt-2 text-[14px] font-bold text-ink">Google connections</h3>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={label}>Main address of the site</label>
-                <input name="canonical" value={s.canonical} onChange={up("canonical")} className={box} />
-              </div>
-              <div>
-                <label className={label}>Google Analytics ID (optional)</label>
+              <Connection
+                on={gaOn}
+                title="Google Analytics"
+                detail={gaOn ? (s.ga_id.trim() ? `Measuring visitors · ${s.ga_id.trim()}` : `Through Tag Manager · ${(s.gtm_id ?? "").trim()}`) : "Not connected: add the G-… ID below"}
+              >
+                <label className={label + " mt-3"}>Measurement ID</label>
                 <input name="ga_id" value={s.ga_id} onChange={up("ga_id")} className={box} placeholder="G-XXXXXXXXXX" />
-              </div>
-              <div>
-                <label className={label}>Google Tag Manager ID (optional)</label>
-                <input name="gtm_id" value={s.gtm_id ?? ""} onChange={up("gtm_id")} className={box} placeholder="GTM-XXXXXXX" />
-                <p className="mt-0.5 text-[11.5px] text-ink/45">Use either Analytics here or Analytics inside Tag Manager, not both, or visits are counted twice.</p>
-              </div>
-              <div>
-                <label className={label}>Google verification code</label>
-                <input name="google_verification" value={s.google_verification} onChange={up("google_verification")} className={box} placeholder="paste the code or the whole meta tag" />
-              </div>
-              <div>
-                <label className={label}>Bing verification code (optional)</label>
-                <input name="bing_verification" value={s.bing_verification} onChange={up("bing_verification")} className={box} />
-              </div>
+              </Connection>
+              <Connection
+                on={gscOn}
+                title="Google Search Console"
+                detail={gscOn ? (s.gsc_dns ? "Verified by DNS · thelondonwash.com (whole domain)" : "Verified with the HTML tag") : "Not connected yet"}
+              >
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-[13px] text-ink/70">
+                  <input type="checkbox" name="gsc_dns" checked={s.gsc_dns} onChange={(e) => setS({ ...s, gsc_dns: e.target.checked })} />
+                  Verified with DNS at GoDaddy (domain property)
+                </label>
+                <a href="https://search.google.com/search-console?resource_id=sc-domain%3Athelondonwash.com" target="_blank" rel="noopener" className="mt-1 inline-block text-[12.5px] text-accent hover:underline">
+                  Open Search Console ↗
+                </a>
+              </Connection>
             </div>
+
+            <div>
+              <label className={label}>Main address of the site</label>
+              <input name="canonical" value={s.canonical} onChange={up("canonical")} className={box} />
+            </div>
+
+            <details className="rounded-md border border-black/10 px-3 py-2" open={!!(s.gtm_id || s.bing_verification || s.google_verification)}>
+              <summary className="cursor-pointer text-[13px] font-semibold text-ink/70">Advanced (optional, not needed now)</summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={label}>Google Tag Manager ID</label>
+                  <input name="gtm_id" value={s.gtm_id ?? ""} onChange={up("gtm_id")} className={box} placeholder="GTM-XXXXXXX" />
+                  <p className="mt-0.5 text-[11.5px] text-ink/45">Only if you move tracking into Tag Manager. Don&apos;t set up Analytics in both places, or visits count twice.</p>
+                </div>
+                <div>
+                  <label className={label}>Google HTML-tag verification code</label>
+                  <input name="google_verification" value={s.google_verification} onChange={up("google_verification")} className={box} placeholder="not needed with DNS verification" />
+                </div>
+                <div>
+                  <label className={label}>Bing verification code</label>
+                  <input name="bing_verification" value={s.bing_verification} onChange={up("bing_verification")} className={box} />
+                </div>
+              </div>
+            </details>
             <div className="flex flex-col gap-3 pt-1">
               <ToggleInput name="indexing" defaultChecked={initial.indexing} label="Let Google show the website" hint="Switch off only if the site should disappear from search results." />
               <ToggleInput name="local_business" defaultChecked={initial.local_business} label="Business details for Google" hint="Address, phone, hours and map pin in the format Google reads (schema.org)." />
