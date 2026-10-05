@@ -53,8 +53,8 @@ export function SeoForm({ initial, facts }: { initial: Seo; facts: PageFacts }) 
       { ok: facts.hasPhone && facts.hasAddress, label: "Phone and address on the page", tip: "Add them in Website → Business details.", weight: 2 },
       { ok: /^https:\/\/www\./.test(s.canonical), label: "Main address uses https://www.", tip: "Use https://www.thelondonwash.com/ as the main address.", weight: 1 },
       { ok: /^https:\/\//.test(s.og_image), label: "Share image", tip: "Set an image for WhatsApp and Facebook link previews.", weight: 1 },
-      { ok: s.google_verification.trim() ? true : "info", label: "Google Search Console connected", tip: "Add the verification code (steps below) to see searches and get indexed faster.", weight: 1 },
-      { ok: s.ga_id.trim() ? true : "info", label: "Google Analytics", tip: "Optional: add a G-… ID to count visitors.", weight: 0 },
+      { ok: s.google_verification.trim() ? true : "info", label: "Google Search Console code", tip: "Not needed if you verified with DNS (domain property), as on 5 Oct 2026.", weight: 0 },
+      { ok: s.ga_id.trim() || (s.gtm_id ?? "").trim() ? true : "info", label: "Google Analytics", tip: "Add a G-… ID (or a Tag Manager GTM-… ID) to count visitors.", weight: 0 },
     ],
     [s, facts, focus]
   );
@@ -111,6 +111,11 @@ export function SeoForm({ initial, facts }: { initial: Seo; facts: PageFacts }) 
               <div>
                 <label className={label}>Google Analytics ID (optional)</label>
                 <input name="ga_id" value={s.ga_id} onChange={up("ga_id")} className={box} placeholder="G-XXXXXXXXXX" />
+              </div>
+              <div>
+                <label className={label}>Google Tag Manager ID (optional)</label>
+                <input name="gtm_id" value={s.gtm_id ?? ""} onChange={up("gtm_id")} className={box} placeholder="GTM-XXXXXXX" />
+                <p className="mt-0.5 text-[11.5px] text-ink/45">Use either Analytics here or Analytics inside Tag Manager, not both, or visits are counted twice.</p>
               </div>
               <div>
                 <label className={label}>Google verification code</label>

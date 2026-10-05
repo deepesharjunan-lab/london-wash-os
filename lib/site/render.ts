@@ -8,16 +8,19 @@ import type { SiteSettings } from "./settings";
 const BOOK = "https://club.thelondonwash.com/my/book";
 const APP = "https://club.thelondonwash.com/my";
 
-function serviceCard(s: ServiceItem) {
-  const icon = SITE_ICONS[s.icon] ?? SITE_ICONS.sparkle ?? "";
-  const price =
-    s.price > 0
-      ? `from <strong>&#8377;${Number(s.price).toLocaleString("en-IN")}</strong> <em>/ ${esc(s.unit)}</em>`
-      : "<strong>Ask us</strong> <em>priced per garment</em>";
-  return `        <article class="lw-service"><div class="lw-ico">${icon}</div><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p><div class="lw-price">${price}</div></article>`;
+export function priceHtml(s: ServiceItem) {
+  return s.price > 0
+    ? `from <strong>&#8377;${Number(s.price).toLocaleString("en-IN")}</strong> <em>/ ${esc(s.unit)}</em>`
+    : "<strong>Ask us</strong> <em>priced per garment</em>";
 }
 
-function seoHead(st: SiteSettings) {
+function serviceCard(s: ServiceItem, href?: string) {
+  const icon = SITE_ICONS[s.icon] ?? SITE_ICONS.sparkle ?? "";
+  const title = href ? `<a href="${href}" style="color:inherit;text-decoration:none">${esc(s.title)}</a>` : esc(s.title);
+  return `        <article class="lw-service"><div class="lw-ico">${icon}</div><h3>${title}</h3><p>${esc(s.text)}</p><div class="lw-price">${priceHtml(s)}</div></article>`;
+}
+
+export function seoHead(st: SiteSettings) {
   const { seo, business: b, flags, pickup } = st;
   const t: string[] = [
     `<title>${esc(seo.title)}</title>`,
@@ -64,15 +67,36 @@ function seoHead(st: SiteSettings) {
   return t.join("\n");
 }
 
-function analytics(id: string) {
-  if (!/^G-[A-Z0-9]{4,20}$/.test(id.trim())) return "";
-  const g = id.trim();
-  return `<script async src="https://www.googletagmanager.com/gtag/js?id=${g}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${g}');</script>`;
+export const validGtm = (id: string | undefined) => /^GTM-[A-Z0-9]{4,12}$/.test((id ?? "").trim());
+
+/** Google Tag Manager and/or Google Analytics (gtag), as set in Website → SEO. */
+function analytics(gaId: string, gtmId: string | undefined) {
+  const out: string[] = [];
+  if (validGtm(gtmId)) {
+    const gtm = gtmId!.trim();
+    out.push(
+      `<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');</script>`
+    );
+  }
+  const g = gaId.trim();
+  if (/^G-[A-Z0-9]{4,20}$/.test(g)) {
+    out.push(`<script async src="https://www.googletagmanager.com/gtag/js?id=${g}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${g}');</script>`);
+  }
+  return out.join("\n");
 }
 
-export function renderHome(st: SiteSettings, template = HOME_TEMPLATE): string {
+/**
+ * The finished page. Service pages (lib/site/pages.ts) reuse the home page's
+ * header and footer: they pass their own main content and head tags.
+ */
+export function renderHome(st: SiteSettings, template = HOME_TEMPLATE, page?: { main: string; seo: string }): string {
   let html = template;
+  if (page) {
+    const start = html.indexOf('<main id="content" class="lw">');
+    const end = html.indexOf("</main>");
+    if (start >= 0 && end > start) html = html.slice(0, start) + '<main id="content" class="lw">\n' + page.main + "\n" + html.slice(end);
+  }
 
   // Features (pickup on/off).
   for (const [flag, on] of Object.entries(st.flags)) {
@@ -84,15 +108,45 @@ export function renderHome(st: SiteSettings, template = HOME_TEMPLATE): string {
     html = html.replace(/<!--section:(\w+)-->([\s\S]*?)<!--\/section:\1-->/g, (_m, key: string, inner: string) => (st.sections[key] === false ? "" : inner));
   }
   // Services and prices.
-  html = html.replace(/<!--block:services-->[\s\S]*?<!--\/block:services-->/, st.services.filter((s) => !s.hidden).map(serviceCard).join("\n"));
+  // Service cards link to their service page when there is one.
+  const live = (st.pages ?? []).filter((p) => p.published);
+  const pageFor = (title: string) => live.find((p) => p.service === title);
+  html = html.replace(
+    /<!--block:services-->[\s\S]*?<!--\/block:services-->/,
+    st.services
+      .filter((s) => !s.hidden)
+      .map((s) => {
+        const p = pageFor(s.title);
+        return serviceCard(s, p ? `/services/${p.slug}` : undefined);
+      })
+      .join("\n")
+  );
+  html = html.replace(
+    /<!--block:service_links-->[\s\S]*?<!--\/block:service_links-->/,
+    live.length
+      ? `      <p style="margin:18px 0 0;text-align:center;font-size:14px;line-height:1.9">More about: ${live
+          .map((p) => `<a href="/services/${p.slug}" style="color:inherit;font-weight:600">${esc(p.nav_label)}</a>`)
+          .join(" · ")}</p>`
+      : ""
+  );
   // Texts.
   html = html.replace(/<!--f:([\w.]+)-->([\s\S]*?)<!--\/f-->/g, (_m, key: string, def: string) => {
     const v = st.fields[key];
     return typeof v === "string" && v.trim() ? liteToHtml(v.trim()) : def;
   });
   // Head and tracking.
-  html = html.replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, seoHead(st));
-  html = html.replace("<!--analytics-->", analytics(st.seo.ga_id));
+  html = html.replace(/<!--seo-->[\s\S]*?<!--\/seo-->/, page ? page.seo : seoHead(st));
+  html = html.replace("<!--analytics-->", analytics(st.seo.ga_id, st.seo.gtm_id));
+  if (validGtm(st.seo.gtm_id)) {
+    html = html.replace(
+      "<body>",
+      `<body>\n<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${st.seo.gtm_id.trim()}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>`
+    );
+  }
+  // Icons in content added at request time (service pages).
+  html = html.replace(/<i data-i="(\w+)"><\/i>/g, (_m, k: string) => SITE_ICONS[k] ?? "");
+  // On service pages the menu's #section links point back to the home page.
+  if (page) html = html.replace(/href="#(?!content")/g, 'href="/#');
 
   // Business details.
   const b = st.business;
