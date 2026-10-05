@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { waitingChatCount } from "@/lib/whatsapp/inbox";
+import { unrepliedReviewCount } from "@/lib/google/reviews";
 import { signOut } from "./actions";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
@@ -33,6 +34,7 @@ const NAV_GROUPS: { section: string; items: { href: string; label: string; badge
       { href: "/website/content", label: "Texts & prices" },
       { href: "/website/pages", label: "Service pages" },
       { href: "/website/seo", label: "SEO" },
+      { href: "/google", label: "Google Business" },
     ],
   },
   {
@@ -123,15 +125,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Profile and the WhatsApp badge load together. The badge counts chats waiting for
   // the team (unread), shown on the sidebar link; NavLinks keeps it live.
-  const [{ data: profile }, waitingChats] = user
+  const [{ data: profile }, waitingChats, unrepliedReviews] = user
     ? await Promise.all([
         supabase.from("user").select("full_name, branch:branch_id(name)").eq("auth_user_id", user.id).maybeSingle(),
         waitingChatCount(),
+        unrepliedReviewCount(),
       ])
-    : [{ data: null }, 0];
+    : [{ data: null }, 0, 0];
   const navGroups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.map((i) => (i.href === "/whatsapp" ? { ...i, badge: waitingChats } : i)),
+    items: g.items.map((i) =>
+      i.href === "/whatsapp" ? { ...i, badge: waitingChats } : i.href === "/google" && unrepliedReviews ? { ...i, badge: unrepliedReviews } : i
+    ),
   }));
 
   const branchName =
