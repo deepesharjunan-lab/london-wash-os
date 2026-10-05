@@ -24,6 +24,7 @@ const ICONS: Record<string, string> = {
   "/website/content": '<path d="M5 19h14M7 15l8.5-8.5a2 2 0 0 1 3 3L10 18H7z"/>',
   "/website/pages": `<rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>`,
   "/website/seo": '<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5M8.5 11.5l1.5 1.5 3-3"/>',
+  "/google": '<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><path d="m12 6.8.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/>',
   "/engage/audiences": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 9.5h6M15 13h4M15 16.5h2.5"/>',
   "/engage/templates": '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="m15.5 15.5 1.5 1.5 3-3"/>',
   "/customers": '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/><path d="M15 5.3a3 3 0 0 1 0 5.4M17.5 14.8c1.6.6 2.6 2 3 4.2"/>',
