@@ -2,6 +2,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_BUSINESS, DEFAULT_FLAGS, DEFAULT_PICKUP, DEFAULT_SEO, sectionDefaults, type Business, type PickupConfig, type Seo, type ServiceItem, type SiteFlags } from "./defs";
 import { DEFAULT_SERVICES } from "./template";
+import { DEFAULT_PAGES, type ServicePage } from "./pages-defaults";
 
 // Website CMS settings (site_setting, one row per group) merged with the
 // defaults. Cached for 5 minutes and refreshed straight away on every save.
@@ -15,9 +16,10 @@ export type SiteSettings = {
   services: ServiceItem[];
   seo: Seo;
   pickup: PickupConfig;
+  pages: ServicePage[];
   updatedAt: string | null;
 };
-export type SettingKey = "flags" | "sections" | "fields" | "business" | "services" | "seo" | "pickup";
+export type SettingKey = "flags" | "sections" | "fields" | "business" | "services" | "seo" | "pickup" | "pages";
 
 const TAG = "site-settings";
 
@@ -40,12 +42,13 @@ async function load(): Promise<SiteSettings> {
     services,
     seo: { ...DEFAULT_SEO, ...(v("seo") ?? {}) },
     pickup: { ...DEFAULT_PICKUP, ...(v("pickup") ?? {}) },
+    pages: Array.isArray(v("pages")) ? (v("pages") as ServicePage[]) : DEFAULT_PAGES,
     updatedAt,
   };
 }
 
 /** All website settings (cached). */
-export const getSiteSettings = unstable_cache(load, ["site-settings-v1"], { tags: [TAG], revalidate: 300 });
+export const getSiteSettings = unstable_cache(load, ["site-settings-v2"], { tags: [TAG], revalidate: 300 });
 
 /** Uncached read, for the CMS editor. */
 export const getSiteSettingsFresh = load;

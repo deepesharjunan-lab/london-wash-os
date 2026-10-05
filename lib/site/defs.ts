@@ -107,6 +107,7 @@ export type Seo = {
   google_verification: string;
   bing_verification: string;
   ga_id: string; // Google Analytics 4 measurement id (G-XXXX)
+  gtm_id: string; // Google Tag Manager container id (GTM-XXXX), optional
   local_business: boolean; // add the business details Google reads (schema.org)
 };
 export const DEFAULT_SEO: Seo = {
@@ -122,6 +123,7 @@ export const DEFAULT_SEO: Seo = {
   google_verification: "",
   bing_verification: "",
   ga_id: "",
+  gtm_id: "",
   local_business: true,
 };
 
