@@ -17,6 +17,8 @@ import {
 import { loadCtx, recordReview, redeem } from "@/lib/loyalty/ledger";
 import { sendPickupBookedWhatsApp } from "@/lib/whatsapp/templates";
 import { onAutomationEvent } from "@/lib/engage/automations";
+import { getSiteSettings } from "@/lib/site/settings";
+import { findSlot } from "@/lib/pickup/slots";
 
 // Every action below that reads or changes data first calls requireMember(),
 // which checks the signed session cookie, and then only touches rows that
@@ -98,8 +100,11 @@ export async function bookPickupAction(form: FormData) {
   let addressId = String(form.get("address_id") ?? "");
   const newAddress = String(form.get("new_address") ?? "").trim();
 
-  const [h1, h2] = slot.split("-").map((x) => Number(x));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(h1) || !Number.isFinite(h2)) {
+  const site = await getSiteSettings();
+  if (!site.flags.pickup) redirect("/my/book"); // pickup & delivery switched off
+  // Slot is "HH:MM-HH:MM" (older pages sent "9-11").
+  const [t1, t2] = slot.split("-").map((x) => (x.includes(":") ? x : `${x.padStart(2, "0")}:00`));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(t1 ?? "") || !/^\d{2}:\d{2}$/.test(t2 ?? "")) {
     redirect("/my/book?error=" + encodeURIComponent("Choose a day and a time."));
   }
   if (addressId === "new" || !addressId) {
@@ -116,9 +121,12 @@ export async function bookPickupAction(form: FormData) {
     if (!owned) redirect("/my/book?error=" + encodeURIComponent("Choose one of your addresses."));
   }
   // Slot times are Indian Standard Time (UTC+05:30).
-  const start = new Date(`${date}T${String(h1).padStart(2, "0")}:00:00+05:30`);
-  const end = new Date(`${date}T${String(h2).padStart(2, "0")}:00:00+05:30`);
+  const start = new Date(`${date}T${t1}:00+05:30`);
+  const end = new Date(`${date}T${t2}:00+05:30`);
   if (start.getTime() < Date.now()) redirect("/my/book?error=" + encodeURIComponent("That time has passed. Choose a later slot."));
+  if (!(await findSlot(site.pickup, start.toISOString()))) {
+    redirect("/my/book?error=" + encodeURIComponent("That time is full or too soon. Please choose another slot."));
+  }
   const { error } = await db.from("pickup").insert({
     customer_id: customerId,
     customer_address_id: addressId,
