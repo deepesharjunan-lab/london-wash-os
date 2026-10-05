@@ -108,6 +108,7 @@ export type Seo = {
   bing_verification: string;
   ga_id: string; // Google Analytics 4 measurement id (G-XXXX)
   gtm_id: string; // Google Tag Manager container id (GTM-XXXX), optional
+  gsc_dns: boolean; // Search Console verified by DNS (domain property), so no HTML tag is needed
   local_business: boolean; // add the business details Google reads (schema.org)
 };
 export const DEFAULT_SEO: Seo = {
@@ -124,6 +125,7 @@ export const DEFAULT_SEO: Seo = {
   bing_verification: "",
   ga_id: "",
   gtm_id: "",
+  gsc_dns: true, // verified by DNS at GoDaddy on 5 Oct 2026
   local_business: true,
 };
 
