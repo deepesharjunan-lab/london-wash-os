@@ -164,7 +164,7 @@ async function Connected({ conn, tab, sp }: { conn: NonNullable<Awaited<ReturnTy
         ))}
       </nav>
 
-      {tab === "reviews" && <ReviewsTab filter={sp.f} todo={todo ?? 0} />}
+      {tab === "reviews" && <ReviewsTab filter={sp.f} todo={todo ?? 0} loaded={conn.review_count !== null} waiting={waiting} />}
       {tab === "performance" && <PerformanceTab />}
       {tab === "posts" && <PostsTab />}
       {tab === "hours" && <HoursTab />}
@@ -174,7 +174,7 @@ async function Connected({ conn, tab, sp }: { conn: NonNullable<Awaited<ReturnTy
 
 // ---------- reviews ----------
 
-async function ReviewsTab({ filter, todo }: { filter?: string; todo: number }) {
+async function ReviewsTab({ filter, todo, loaded, waiting }: { filter?: string; todo: number; loaded: boolean; waiting: boolean }) {
   const f = filter === "all" || filter === "low" ? filter : "todo";
   const db = createAdminClient();
   let q = db
@@ -202,7 +202,17 @@ async function ReviewsTab({ filter, todo }: { filter?: string; todo: number }) {
           </Link>
         ))}
       </div>
-      {reviews.length === 0 && <p className={card + " text-[13.5px] text-ink/55"}>{f === "todo" ? "All caught up. Every review has a reply." : "No reviews here yet."}</p>}
+      {reviews.length === 0 && (
+        <p className={card + " text-[13.5px] text-ink/55"}>
+          {!loaded
+            ? waiting
+              ? "Your Google reviews will appear here once Google approves API access. They load automatically within the hour after approval."
+              : "Reviews haven't loaded from Google yet. Press Refresh now to try again."
+            : f === "todo"
+              ? "All caught up. Every review has a reply."
+              : "No reviews here yet."}
+        </p>
+      )}
       <div className="space-y-3">
         {reviews.map((r) => (
           <article key={r.review_id} className={card + " p-4"}>
