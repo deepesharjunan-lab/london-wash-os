@@ -71,6 +71,7 @@ export async function middleware(request: NextRequest) {
   const isAppShell = path === "/sw.js" || path.startsWith("/manifests/") || path.startsWith("/appicon/");
   const isWebsite = path.startsWith("/site/");
   const isInvoiceLink = path.startsWith("/i/"); // private online invoice, opened from WhatsApp (signed link)
+  const isPhotoLink = path.startsWith("/p/"); // garment photo page opened from the POS QR code (2-hour link)
   const isPublic =
     path === "/login" ||
     path.startsWith("/_next") ||
@@ -80,7 +81,8 @@ export async function middleware(request: NextRequest) {
     isStaffApp ||
     isAppShell ||
     isWebsite ||
-    isInvoiceLink;
+    isInvoiceLink ||
+    isPhotoLink;
 
   // Public pages don't use the console sign-in, so skip it entirely.
   if (isPublic && path !== "/login") return NextResponse.next();

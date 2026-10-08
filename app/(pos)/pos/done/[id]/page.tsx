@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PrintPreviewButton } from "@/lib/print/PrintPreviewButton";
+import { OrderPhotos } from "@/lib/photos/OrderPhotos";
+import { orderPhotoSet } from "@/lib/photos/order-photos";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +19,10 @@ export default async function PosDonePage({ params }: { params: { id: string } }
     .maybeSingle();
   const o = data as any;
   if (!o) notFound();
-  const [{ data: items }, { data: pays }] = await Promise.all([
+  const [{ data: items }, { data: pays }, photos] = await Promise.all([
     supabase.from("order_item").select("id, quantity, line_total_minor, notes, service:service_id(name), item:item_id(name)").eq("order_id", o.id),
     supabase.from("payment").select("amount_minor, method, status").eq("order_id", o.id),
+    orderPhotoSet(o.id),
   ]);
   const itemIds = ((items ?? []) as any[]).map((i) => i.id);
   const { count: tags } = itemIds.length ? await supabase.from("garment").select("id", { count: "exact", head: true }).in("order_item_id", itemIds) : { count: 0 };
@@ -75,6 +78,10 @@ export default async function PosDonePage({ params }: { params: { id: string } }
             </li>
           ))}
         </ul>
+
+        <div className="mt-5">
+          <OrderPhotos orderId={o.id} initial={photos} />
+        </div>
 
         <div className="mt-6 grid gap-2 sm:grid-cols-2">
           <PrintPreviewButton label="Print garment tags" url={`/orders/${o.id}/print/tags`} className={printBtn + " bg-navy text-white"} />

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { OrderPhotos } from "@/lib/photos/OrderPhotos";
+import { orderPhotoSet } from "@/lib/photos/order-photos";
 import { PrintPreviewButton } from "@/lib/print/PrintPreviewButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -259,6 +261,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </form>
             )}
           </div>
+
+          <OrderPhotos orderId={params.id} initial={await orderPhotoSet(params.id)} />
 
           {(loyaltyRows ?? []).length > 0 && (
             <div className="border-2 border-black/10 bg-white p-4">
