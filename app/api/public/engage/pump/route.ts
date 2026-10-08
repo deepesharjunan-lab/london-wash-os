@@ -1,6 +1,7 @@
 import { pumpCampaigns } from "@/lib/engage/campaigns";
 import { pumpAutomations } from "@/lib/engage/automations";
 import { syncReviewsIfDue } from "@/lib/google/reviews";
+import { cleanupOrderPhotos } from "@/lib/photos/order-photos";
 
 // Sends Engage work that is due: scheduled campaigns whose time has come,
 // queued campaign messages, and automation messages (plus the hourly check for
@@ -21,7 +22,9 @@ export async function GET(req: Request) {
     const automations = quick ? null : await pumpAutomations(20000);
     // Google reviews ride along: at most every 15 minutes, only when connected.
     const reviews = quick ? null : await syncReviewsIfDue().catch((e) => ({ ok: false, error: e?.message }));
-    return Response.json({ ok: true, ...campaigns, automations, reviews }, { headers: { "Cache-Control": "no-store" } });
+    // Garment photos: delete those of orders delivered more than 5 days ago, a batch at a time.
+    const photos = quick ? null : await cleanupOrderPhotos().catch((e) => ({ error: e?.message }));
+    return Response.json({ ok: true, ...campaigns, automations, reviews, photos }, { headers: { "Cache-Control": "no-store" } });
   } catch (e: any) {
     console.error("engage pump failed", e);
     return Response.json({ ok: false, error: e?.message ?? "failed" }, { status: 500 });
